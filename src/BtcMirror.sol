@@ -33,6 +33,17 @@ import "./interfaces/IBtcMirror.sol";
 // script, the BtcMirror contract always reports the current canonical Bitcoin
 // chain.
 contract BtcMirror is IBtcMirror {
+    error WrongBlockHeaderLength();
+    error NoGivenBlockHeaders();
+    error OldDifficultyPeriod();
+    error InsufficientTotalDifficulty();
+    error InsufficientChainLength();
+    error BadParent();
+    error ParentBlockNotYetSubmitted();
+    error BlockHashAboveTarget();
+    error LessThan25PercentDifficultyRetarget();
+    error WrongDifficultyBits();
+
     /**
      * @notice Emitted whenever the contract accepts a new heaviest chain.
      */
@@ -117,15 +128,23 @@ contract BtcMirror is IBtcMirror {
      */
     function submit(uint256 blockHeight, bytes calldata blockHeaders) public {
         uint256 numHeaders = blockHeaders.length / 80;
-        require(numHeaders * 80 == blockHeaders.length, "wrong header length");
-        require(numHeaders > 0, "must submit at least one block");
+        if (blockHeaders.length != numHeaders * 80) {
+          revert WrongBlockHeaderLength();
+        }
 
+        if (numHeaders == 0) {
+          revert NoGivenBlockHeaders();
+        }
+        
         // sanity check: the new chain must not end in a past difficulty period
         // (BtcMirror does not support a 2-week reorg)
         uint256 oldPeriod = latestBlockHeight / 2016;
         uint256 newHeight = blockHeight + numHeaders - 1;
         uint256 newPeriod = newHeight / 2016;
-        require(newPeriod >= oldPeriod, "old difficulty period");
+
+        if (newPeriod < oldPeriod) {
+          revert OldDifficultyPeriod();
+        }
 
         // if we crossed a retarget, do extra math to compare chain weight
         uint256 parentPeriod = (blockHeight - 1) / 2016;
@@ -159,7 +178,9 @@ contract BtcMirror is IBtcMirror {
             uint32 newDifficultyBits = Endian.reverse32(uint32(bytes4(lastHeader[72:76])));
 
             uint256 newWork = getWorkInPeriod(newPeriod, newHeight);
-            require(newWork > oldWork, "insufficient total difficulty");
+            if (newWork <= oldWork) {
+              revert InsufficientTotalDifficulty();
+            }
 
             // erase any block hashes above newHeight, now invalidated.
             // (in case we just accepted a shorter, heavier chain.)
@@ -173,7 +194,9 @@ contract BtcMirror is IBtcMirror {
             // with identical per-block difficulty. just keep the longest chain.
             assert(newPeriod == oldPeriod);
             assert(newPeriod == parentPeriod);
-            require(newHeight > latestBlockHeight, "insufficient chain length");
+            if (newHeight <= latestBlockHeight) {
+              revert InsufficientChainLength();
+            }
         }
 
         // record the new tip height and timestamp
@@ -218,13 +241,19 @@ contract BtcMirror is IBtcMirror {
 
         // verify previous hash
         bytes32 prevHash = bytes32(Endian.reverse256(uint256(bytes32(blockHeader[4:36]))));
-        require(prevHash == blockHeightToHash[blockHeight - 1], "bad parent");
-        require(prevHash != bytes32(0), "parent block not yet submitted");
+        if (prevHash != blockHeightToHash[blockHeight - 1]) {
+          revert BadParent();
+        }
+        if (prevHash == 0) {
+          revert ParentBlockNotYetSubmitted();
+        }
 
         // verify proof-of-work
         bytes32 bits = bytes32(blockHeader[72:76]);
         uint256 target = getTarget(bits);
-        require(blockHashNum < target, "block hash above target");
+        if (blockHashNum >= target) {
+          revert BlockHashAboveTarget();
+        }
 
         // support once-every-2016-blocks retargeting
         uint256 period = blockHeight / 2016;
@@ -236,13 +265,15 @@ contract BtcMirror is IBtcMirror {
             // ignore difficulty update rules on testnet.
             // Bitcoin testnet has some clown hacks regarding difficulty, see
             // https://blog.lopp.net/the-block-storms-of-bitcoins-testnet/
-            if (!isTestnet) {
-                require(target >> 2 < lastTarget, "<25% difficulty retarget");
+            if (!isTestnet && target >> 2 >= lastTarget) {
+                revert LessThan25PercentDifficultyRetarget();
             }
             periodToTarget[period] = target;
         } else if (!isTestnet) {
             // verify difficulty
-            require(target == periodToTarget[period], "wrong difficulty bits");
+            if (periodToTarget[period] != target) {
+                revert WrongDifficultyBits();
+            }
         }
     }
 

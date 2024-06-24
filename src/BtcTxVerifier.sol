@@ -29,6 +29,17 @@ import "./libraries/Endian.sol";
 // uses BtcMirror as a source of truth for which Bitcoin block hashes are in the
 // canonical chain.
 contract BtcTxVerifier is IBtcTxVerifier {
+    error BlockNumberTooHigh();
+    error NotEnoughBlockConfirmations();
+    error InvalidTransactionProof();
+    error BlockHashMismatch();
+    error TxMerkleRootMismatch();
+    error TxIdMismatch();
+    error ScriptHashMismatch();
+    error AmountMismatch();
+    error WrongBlockHeaderLength();
+    error ScriptBytesTooLong();
+
     IBtcMirror public immutable mirror;
 
     constructor(IBtcMirror _mirror) {
@@ -46,16 +57,20 @@ contract BtcTxVerifier is IBtcTxVerifier {
         {
             uint256 mirrorHeight = mirror.getLatestBlockHeight();
 
-            require(mirrorHeight >= blockNum, "Bitcoin Mirror doesn't have that block yet");
-
-            require(mirrorHeight + 1 >= minConfirmations + blockNum, "Not enough Bitcoin block confirmations");
+            if (blockNum > mirrorHeight) {
+              revert BlockNumberTooHigh();
+            }
+            
+            if (minConfirmations + blockNum > mirrorHeight + 1) {
+              revert NotEnoughBlockConfirmations();
+            }
         }
 
         bytes32 blockHash = mirror.getBlockHash(blockNum);
 
-        require(
-            validatePayment(blockHash, inclusionProof, txOutIx, destScriptHash, amountSats), "Invalid transaction proof"
-        );
+        if (!validatePayment(blockHash, inclusionProof, txOutIx, destScriptHash, amountSats)) {
+          revert InvalidTransactionProof();
+        }
 
         return true;
     }
@@ -82,22 +97,32 @@ contract BtcTxVerifier is IBtcTxVerifier {
         uint256 satoshisExpected
     ) internal pure returns (bool) {
         // 5. Block header to block hash
-        require(getBlockHash(txProof.blockHeader) == blockHash, "Block hash mismatch");
+        if (blockHash != getBlockHash(txProof.blockHeader)) {
+          revert BlockHashMismatch();
+        }
 
         // 4. and 3. Transaction ID included in block
         bytes32 blockTxRoot = getBlockTxMerkleRoot(txProof.blockHeader);
         bytes32 txRoot = getTxMerkleRoot(txProof.txId, txProof.txIndex, txProof.txMerkleProof);
-        require(blockTxRoot == txRoot, "Tx merkle root mismatch");
+        if (txRoot != blockTxRoot) {
+          revert TxMerkleRootMismatch();
+        }
 
         // 2. Raw transaction to TxID
-        require(getTxID(txProof.rawTx) == txProof.txId, "Tx ID mismatch");
+        if (txProof.txId != getTxID(txProof.rawTx)) {
+          revert TxIdMismatch();
+        }
 
         // 1. Finally, validate raw transaction pays stated recipient.
         BitcoinTx memory parsedTx = parseBitcoinTx(txProof.rawTx);
         BitcoinTxOut memory txo = parsedTx.outputs[txOutIx];
         bytes20 actualScriptHash = getP2SH(txo.scriptLen, txo.script);
-        require(destScriptHash == actualScriptHash, "Script hash mismatch");
-        require(txo.valueSats == satoshisExpected, "Amount mismatch");
+        if (destScriptHash != actualScriptHash) {
+          revert ScriptHashMismatch();
+        }
+        if (satoshisExpected != txo.valueSats) {
+          revert AmountMismatch();
+        }
 
         // We've verified that blockHash contains a P2SH transaction
         // that sends at least satoshisExpected to the given hash.
@@ -108,7 +133,10 @@ contract BtcTxVerifier is IBtcTxVerifier {
      * @dev Compute a block hash given a block header.
      */
     function getBlockHash(bytes calldata blockHeader) public pure returns (bytes32) {
-        require(blockHeader.length == 80);
+        if (blockHeader.length != 80) {
+          revert WrongBlockHeaderLength();
+        }
+        
         bytes32 ret = sha256(abi.encodePacked(sha256(blockHeader)));
         return bytes32(Endian.reverse256(uint256(ret)));
     }
@@ -117,7 +145,9 @@ contract BtcTxVerifier is IBtcTxVerifier {
      * @dev Get the transactions merkle root given a block header.
      */
     function getBlockTxMerkleRoot(bytes calldata blockHeader) public pure returns (bytes32) {
-        require(blockHeader.length == 80);
+        if (blockHeader.length != 80) {
+          revert WrongBlockHeaderLength();
+        }
         return bytes32(blockHeader[36:68]);
     }
 
@@ -177,7 +207,11 @@ contract BtcTxVerifier is IBtcTxVerifier {
             offset += 4;
             uint256 nInScriptBytes;
             (nInScriptBytes, offset) = readVarInt(rawTx, offset);
-            require(nInScriptBytes <= 32, "Scripts over 32 bytes unsupported");
+
+            if (nInScriptBytes > 32) {
+              revert ScriptBytesTooLong();
+            }
+            
             txIn.scriptLen = uint32(nInScriptBytes);
             txIn.script = bytes32(rawTx[offset:offset + nInScriptBytes]);
             offset += nInScriptBytes;
@@ -196,7 +230,11 @@ contract BtcTxVerifier is IBtcTxVerifier {
             offset += 8;
             uint256 nOutScriptBytes;
             (nOutScriptBytes, offset) = readVarInt(rawTx, offset);
-            require(nOutScriptBytes <= 32, "Scripts over 32 bytes unsupported");
+            
+            if (nOutScriptBytes > 32) {
+              revert ScriptBytesTooLong();
+            }
+            
             txOut.scriptLen = uint32(nOutScriptBytes);
             txOut.script = bytes32(rawTx[offset:offset + nOutScriptBytes]);
             offset += nOutScriptBytes;
