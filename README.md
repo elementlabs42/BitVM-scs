@@ -1,66 +1,66 @@
-## Foundry
+# Bitcoin Mirror
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+**[bitcoinmirror.org](https://bitcoinmirror.org)**
 
-Foundry consists of:
-
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
-
-## Documentation
-
-https://book.getfoundry.sh/
-
-## Usage
-
-### Build
-
-```shell
-$ forge build
+```
+                                        #
+                                       # #
+                                      # # #
+                                     # # # #
+                                    # # # # #
+                                   # # # # # #
+                                  # # # # # # #
+                                 # # # # # # # #
+                                # # # # # # # # #
+                               # # # # # # # # # #
+                              # # # # # # # # # # #
+                                   # # # # # #
+                               +        #        +
+                                ++++         ++++
+                                  ++++++ ++++++
+                                    +++++++++
+                                      +++++
+                                        +
 ```
 
-### Test
+## Bitcoin Mirror tracks Bitcoin on Ethereum
 
-```shell
-$ forge test
+This lets you prove a Bitcoin payment. In other words, it's a Bitcoin light client that runs on the EVM.
+
+## Quick Start
+
+### Compile and test the contract
+
+Install [Forge](https://getfoundry.sh/). Then:
+
+```
+cd packages/contracts
+forge test -vv
 ```
 
-### Format
+### Run the submitter
 
-```shell
-$ forge fmt
+Point Cloudflare Functions to your fork of the repo using `wrangler`.
+
+The submitter will run automatically and reliably, on a schedule. See `wrangler.toml`.
+
+You'll need to configure a few secrets, including `ETH_SUBMITTER_PRIVATE_KEY` and `ETH_RPC_URL`. You'll also need a free API key for [getblock.io](https://getblock.io). Set `GETBLOCK_API_KEY`.
+
+### Run the website
+
+```
+cd packages/website
+npm ci
+npm start
 ```
 
-### Gas Snapshots
+### Deploy the contract
 
-```shell
-$ forge snapshot
+Ensure `ETHERSCAN_API_KEY` is set. Then, run the following to deploy and verify.
+
+```
+cd packages/contracts
+forge script -f $RPC_URL --private-key $PK -s 'run(bool)' --broadcast --verify  DeployBtcMirror true
 ```
 
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+Run with `false` for a deployment tracking the Bitcoin testnet rather than mainnet.
