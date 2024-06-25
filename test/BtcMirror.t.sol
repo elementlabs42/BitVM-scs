@@ -55,11 +55,11 @@ contract BtcMirrorTest is Test {
     function testSubmitError() public {
         BtcMirror mirror = createBtcMirror();
         assertEq(mirror.getLatestBlockHeight(), 717694);
-        vm.expectRevert("bad parent");
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("BadParent()"))));
         mirror.submit(717695, headerWrongParentHash);
-        vm.expectRevert("wrong header length");
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("WrongBlockHeaderLength()"))));
         mirror.submit(717695, headerWrongLength);
-        vm.expectRevert("block hash above target");
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("BlockHashAboveTarget()"))));
         mirror.submit(717695, headerHashTooEasy);
     }
 
@@ -103,7 +103,7 @@ contract BtcMirrorTest is Test {
         BtcMirror mirror = createBtcMirror();
         mirror.submit(717695, headerGood);
         assertEq(mirror.getLatestBlockHeight(), 717695);
-        vm.expectRevert("must submit at least one block");
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("NoGivenBlockHeaders()"))));
         mirror.submit(717696, hex"");
         assertEq(mirror.getLatestBlockHeight(), 717695);
     }

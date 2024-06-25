@@ -131,16 +131,16 @@ contract BtcTxVerifierTest is Test {
 
         assertTrue(btcTxVerifier.verifyPayment(1, 736000, txP, 0, destSH, 25200000));
 
-        vm.expectRevert("Not enough Bitcoin block confirmations");
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("NotEnoughBlockConfirmations()"))));
         assertTrue(!btcTxVerifier.verifyPayment(2, 736000, txP, 0, destSH, 25200000));
 
-        vm.expectRevert("Amount mismatch");
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("AmountMismatch()"))));
         assertTrue(!btcTxVerifier.verifyPayment(1, 736000, txP, 0, destSH, 25200001));
 
-        vm.expectRevert("Script hash mismatch");
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("ScriptHashMismatch()"))));
         assertTrue(!btcTxVerifier.verifyPayment(1, 736000, txP, 1, destSH, 25200000));
 
-        vm.expectRevert("Block hash mismatch");
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("BlockHashMismatch()"))));
         assertTrue(!btcTxVerifier.verifyPayment(1, 700000, txP, 0, destSH, 25200000));
     }
 
@@ -275,37 +275,37 @@ contract BtcTxVerifierTest is Test {
         // );
 
         // Make each argument invalid, one at a time.
-        vm.expectRevert("Block hash mismatch");
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("BlockHashMismatch()"))));
         btcTxVerifier.mockValidatePayment(
             blockHash717695, BtcTxProof(header736000, txId736, 1, txProof736, tx736), 0, destScriptHash, 25200000
         );
 
         // - Bad tx proof (doesn't match root)
-        vm.expectRevert("Tx merkle root mismatch");
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("TxMerkleRootMismatch()"))));
         btcTxVerifier.mockValidatePayment(
             blockHash717695, BtcTxProof(headerGood, txId736, 1, txProof736, tx736), 0, destScriptHash, 25200000
         );
 
         // - Wrong tx index
-        vm.expectRevert("Tx merkle root mismatch");
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("TxMerkleRootMismatch()"))));
         btcTxVerifier.mockValidatePayment(
             blockHash736000, BtcTxProof(header736000, txId736, 2, txProof736, tx736), 0, destScriptHash, 25200000
         );
 
         // - Wrong tx output index
-        vm.expectRevert("Script hash mismatch");
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("ScriptHashMismatch()"))));
         btcTxVerifier.mockValidatePayment(
             blockHash736000, BtcTxProof(header736000, txId736, 1, txProof736, tx736), 1, destScriptHash, 25200000
         );
 
         // - Wrong dest script hash
-        vm.expectRevert("Script hash mismatch");
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("ScriptHashMismatch()"))));
         btcTxVerifier.mockValidatePayment(
             blockHash736000, BtcTxProof(header736000, txId736, 1, txProof736, tx736), 0, bytes20(hex"abcd"), 25200000
         );
 
         // - Wrong amount, off by one satoshi
-        vm.expectRevert("Amount mismatch");
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("AmountMismatch()"))));
         btcTxVerifier.mockValidatePayment(
             blockHash736000, BtcTxProof(header736000, txId736, 1, txProof736, tx736), 0, destScriptHash, 25200001
         );
