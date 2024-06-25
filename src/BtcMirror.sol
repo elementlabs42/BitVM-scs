@@ -129,13 +129,13 @@ contract BtcMirror is IBtcMirror {
     function submit(uint256 blockHeight, bytes calldata blockHeaders) public {
         uint256 numHeaders = blockHeaders.length / 80;
         if (blockHeaders.length != numHeaders * 80) {
-          revert WrongBlockHeaderLength();
+            revert WrongBlockHeaderLength();
         }
 
         if (numHeaders == 0) {
-          revert NoGivenBlockHeaders();
+            revert NoGivenBlockHeaders();
         }
-        
+
         // sanity check: the new chain must not end in a past difficulty period
         // (BtcMirror does not support a 2-week reorg)
         uint256 oldPeriod = latestBlockHeight / 2016;
@@ -143,7 +143,7 @@ contract BtcMirror is IBtcMirror {
         uint256 newPeriod = newHeight / 2016;
 
         if (newPeriod < oldPeriod) {
-          revert OldDifficultyPeriod();
+            revert OldDifficultyPeriod();
         }
 
         // if we crossed a retarget, do extra math to compare chain weight
@@ -179,7 +179,7 @@ contract BtcMirror is IBtcMirror {
 
             uint256 newWork = getWorkInPeriod(newPeriod, newHeight);
             if (newWork <= oldWork) {
-              revert InsufficientTotalDifficulty();
+                revert InsufficientTotalDifficulty();
             }
 
             // erase any block hashes above newHeight, now invalidated.
@@ -195,7 +195,7 @@ contract BtcMirror is IBtcMirror {
             assert(newPeriod == oldPeriod);
             assert(newPeriod == parentPeriod);
             if (newHeight <= latestBlockHeight) {
-              revert InsufficientChainLength();
+                revert InsufficientChainLength();
             }
         }
 
@@ -242,17 +242,17 @@ contract BtcMirror is IBtcMirror {
         // verify previous hash
         bytes32 prevHash = bytes32(Endian.reverse256(uint256(bytes32(blockHeader[4:36]))));
         if (prevHash != blockHeightToHash[blockHeight - 1]) {
-          revert BadParent();
+            revert BadParent();
         }
         if (prevHash == 0) {
-          revert ParentBlockNotYetSubmitted();
+            revert ParentBlockNotYetSubmitted();
         }
 
         // verify proof-of-work
         bytes32 bits = bytes32(blockHeader[72:76]);
         uint256 target = getTarget(bits);
         if (blockHashNum >= target) {
-          revert BlockHashAboveTarget();
+            revert BlockHashAboveTarget();
         }
 
         // support once-every-2016-blocks retargeting

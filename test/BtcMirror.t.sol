@@ -4,43 +4,9 @@ pragma solidity ^0.8.26;
 import "forge-std/Test.sol";
 
 import "../src/BtcMirror.sol";
+import "./fixture/ConstantsFixture.sol";
 
-contract BtcMirrorTest is Test {
-    // correct header for bitcoin block #717695
-    // all bitcoin header values are little-endian:
-    bytes constant bVer = hex"04002020";
-    bytes constant bParent = hex"edae5e1bd8a0e007e529fe33d099ebb7a82a06d6d63d0b000000000000000000";
-    bytes constant bTxRoot = hex"f8aec519bcd878c9713dc8153a72fd62e3667c5ade70d8d0415584b8528d79ca";
-    bytes constant bTime = hex"0b40d961";
-    bytes constant bBits = hex"ab980b17";
-    bytes constant bNonce = hex"3dcc4d5a";
-
-    // correct header for bitcoin block #717696
-    // in order, all little-endian:
-    // - version
-    // - parent hash
-    // - tx merkle root
-    // - timestamp
-    // - difficulty bits
-    // - nonce
-    bytes constant b717696 = (
-        hex"00004020" hex"9acaa5d26d392ace656c2428c991b0a3d3d773845a1300000000000000000000"
-        hex"aa8e225b1f3ea6c4b7afd5aa1cecf691a8beaa7fa1e579ce240e4a62b5ac8ecc" hex"2141d961" hex"8b8c0b17" hex"0d5c05bb"
-    );
-
-    bytes constant b717697 = (
-        hex"0400c020" hex"bf559a5b0479c2a73627af40cef1835d44de7b32dd3503000000000000000000"
-        hex"fe7be65b41f6cf522eac2a63f9dde1f7a6f61eee93c648c74b79cfc242dd1a94" hex"f241d9618b8c0b17ac09604c"
-    );
-
-    bytes headerGood = bytes.concat(bVer, bParent, bTxRoot, bTime, bBits, bNonce);
-
-    bytes headerWrongParentHash = bytes.concat(bVer, bTxRoot, bTxRoot, bTime, bBits, bNonce);
-
-    bytes headerWrongLength = bytes.concat(bVer, bParent, bTxRoot, bTime, bBits, bNonce, hex"00");
-
-    bytes headerHashTooEasy = bytes.concat(bVer, bParent, bTxRoot, bTime, bBits, hex"41b360c0");
-
+contract BtcMirrorTest is Test, ConstantsFixture {
     function testGetTarget() public {
         BtcMirror mirror = createBtcMirror();
         uint256 expectedTarget;
@@ -53,6 +19,10 @@ contract BtcMirrorTest is Test {
     }
 
     function testSubmitError() public {
+        bytes memory headerWrongParentHash = bytes.concat(bVer, bTxRoot, bTxRoot, bTime, bBits, bNonce);
+        bytes memory headerWrongLength = bytes.concat(bVer, bParent, bTxRoot, bTime, bBits, bNonce, hex"00");
+        bytes memory headerHashTooEasy = bytes.concat(bVer, bParent, bTxRoot, bTime, bBits, hex"41b360c0");
+
         BtcMirror mirror = createBtcMirror();
         assertEq(mirror.getLatestBlockHeight(), 717694);
         vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("BadParent()"))));
@@ -121,7 +91,7 @@ contract BtcMirrorTest is Test {
         );
         vm.expectEmit(true, true, true, true);
         emit NewTip(717696, 1641627937, 0x0000000000000000000335dd327bde445d83f1ce40af2736a7c279045b9a55bf);
-        mirror.submit(717696, b717696);
+        mirror.submit(717696, header717696);
         assertEq(mirror.getLatestBlockHeight(), 717696);
         assertEq(mirror.getLatestBlockTime(), 1641627937);
         assertEq(mirror.getBlockHash(717696), 0x0000000000000000000335dd327bde445d83f1ce40af2736a7c279045b9a55bf);
@@ -137,7 +107,7 @@ contract BtcMirrorTest is Test {
         vm.expectEmit(true, true, true, true);
         emit NewTip(717697, 1641628146, 0x00000000000000000000794d6f4f6ee1c09e69a81469d7456e67be3d724223fb);
         vm.recordLogs();
-        mirror.submit(717695, bytes.concat(headerGood, b717696, b717697));
+        mirror.submit(717695, bytes.concat(headerGood, header717696, header717697));
         assertEq(mirror.getLatestBlockHeight(), 717697);
         assertEq(vm.getRecordedLogs().length, 2);
     }

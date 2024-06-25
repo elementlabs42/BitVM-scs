@@ -58,18 +58,18 @@ contract BtcTxVerifier is IBtcTxVerifier {
             uint256 mirrorHeight = mirror.getLatestBlockHeight();
 
             if (blockNum > mirrorHeight) {
-              revert BlockNumberTooHigh();
+                revert BlockNumberTooHigh();
             }
-            
+
             if (minConfirmations + blockNum > mirrorHeight + 1) {
-              revert NotEnoughBlockConfirmations();
+                revert NotEnoughBlockConfirmations();
             }
         }
 
         bytes32 blockHash = mirror.getBlockHash(blockNum);
 
         if (!validatePayment(blockHash, inclusionProof, txOutIx, destScriptHash, amountSats)) {
-          revert InvalidTransactionProof();
+            revert InvalidTransactionProof();
         }
 
         return true;
@@ -98,19 +98,19 @@ contract BtcTxVerifier is IBtcTxVerifier {
     ) internal pure returns (bool) {
         // 5. Block header to block hash
         if (blockHash != getBlockHash(txProof.blockHeader)) {
-          revert BlockHashMismatch();
+            revert BlockHashMismatch();
         }
 
         // 4. and 3. Transaction ID included in block
         bytes32 blockTxRoot = getBlockTxMerkleRoot(txProof.blockHeader);
         bytes32 txRoot = getTxMerkleRoot(txProof.txId, txProof.txIndex, txProof.txMerkleProof);
         if (txRoot != blockTxRoot) {
-          revert TxMerkleRootMismatch();
+            revert TxMerkleRootMismatch();
         }
 
         // 2. Raw transaction to TxID
         if (txProof.txId != getTxID(txProof.rawTx)) {
-          revert TxIdMismatch();
+            revert TxIdMismatch();
         }
 
         // 1. Finally, validate raw transaction pays stated recipient.
@@ -118,10 +118,10 @@ contract BtcTxVerifier is IBtcTxVerifier {
         BitcoinTxOut memory txo = parsedTx.outputs[txOutIx];
         bytes20 actualScriptHash = getP2SH(txo.scriptLen, txo.script);
         if (destScriptHash != actualScriptHash) {
-          revert ScriptHashMismatch();
+            revert ScriptHashMismatch();
         }
         if (satoshisExpected != txo.valueSats) {
-          revert AmountMismatch();
+            revert AmountMismatch();
         }
 
         // We've verified that blockHash contains a P2SH transaction
@@ -134,9 +134,9 @@ contract BtcTxVerifier is IBtcTxVerifier {
      */
     function getBlockHash(bytes calldata blockHeader) public pure returns (bytes32) {
         if (blockHeader.length != 80) {
-          revert WrongBlockHeaderLength();
+            revert WrongBlockHeaderLength();
         }
-        
+
         bytes32 ret = sha256(abi.encodePacked(sha256(blockHeader)));
         return bytes32(Endian.reverse256(uint256(ret)));
     }
@@ -146,7 +146,7 @@ contract BtcTxVerifier is IBtcTxVerifier {
      */
     function getBlockTxMerkleRoot(bytes calldata blockHeader) public pure returns (bytes32) {
         if (blockHeader.length != 80) {
-          revert WrongBlockHeaderLength();
+            revert WrongBlockHeaderLength();
         }
         return bytes32(blockHeader[36:68]);
     }
@@ -209,9 +209,9 @@ contract BtcTxVerifier is IBtcTxVerifier {
             (nInScriptBytes, offset) = readVarInt(rawTx, offset);
 
             if (nInScriptBytes > 32) {
-              revert ScriptBytesTooLong();
+                revert ScriptBytesTooLong();
             }
-            
+
             txIn.scriptLen = uint32(nInScriptBytes);
             txIn.script = bytes32(rawTx[offset:offset + nInScriptBytes]);
             offset += nInScriptBytes;
@@ -230,11 +230,11 @@ contract BtcTxVerifier is IBtcTxVerifier {
             offset += 8;
             uint256 nOutScriptBytes;
             (nOutScriptBytes, offset) = readVarInt(rawTx, offset);
-            
+
             if (nOutScriptBytes > 32) {
-              revert ScriptBytesTooLong();
+                revert ScriptBytesTooLong();
             }
-            
+
             txOut.scriptLen = uint32(nOutScriptBytes);
             txOut.script = bytes32(rawTx[offset:offset + nOutScriptBytes]);
             offset += nOutScriptBytes;
