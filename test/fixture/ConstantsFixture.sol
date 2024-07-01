@@ -80,6 +80,15 @@ contract ConstantsFixture {
         hex"17" hex"16001407bf360a5fc365d23da4889952bcb59121088ee1" hex"feffffff" hex"02" hex"8085800100000000" hex"17"
         hex"a914ae2f3d4b06579b62574d6178c10c882b9150374087" hex"1c20590500000000" hex"17"
         hex"a91415ecf89e95eb07fbc351b3f7f4c54406f7ee5c1087" hex"00000000"
+
+        //02000000000101bb185dfa5b5c7682f4b2537fe2dcd00ce4f28de42eb4213c68
+        //fe57aaa264268b010000001716001407bf360a5fc365d23da4889952bcb59121
+        //088ee1feffffff02808580010000000017a914ae2f3d4b06579b62574d6178c1
+        //0c882b91503740871c2059050000000017a91415ecf89e95eb07fbc351b3f7f4
+        //c54406f7ee5c108702473044022025ace11487fbd2fb222ef00b14f0be6dc38c
+        //f0d028d8fc67476f4e2bb844d301022061d5a922d87186688d86d36507b1633a
+        //94d180a4f7f2b36f0f5c004e440ae5780121028401531bb6226b1068f4482ae5
+        //0f94cc78f64a1dd5cf7e1e41c8eceb1dcc0be300000000
     );
 
     // merkle proof that transaction above is in block 736000
@@ -103,5 +112,34 @@ contract ConstantsFixture {
     bytes constant b717695 = (
         hex"04002020" hex"edae5e1bd8a0e007e529fe33d099ebb7a82a06d6d63d0b000000000000000000"
         hex"f8aec519bcd878c9713dc8153a72fd62e3667c5ade70d8d0415584b8528d79ca" hex"0b40d961" hex"ab980b17" hex"3dcc4d5a"
+    );
+
+    // block 1213020 in mutinynet.com, peg_in_confirm tx
+    bytes constant tx3020 = (
+      hex"02000000"         // version, 4 bytes
+      hex"0001"             // marker & flag, 1 byte each
+      hex"01"               // input count, compact size (fc: 1, fd: 2, fe: 4, ff: 8)
+      // reverse(rpc) byte order: "e64922f8b0380abbdcecc21d60ce6f4db5e7018fa1bdd4e788b71a5897af985c"
+      hex"5c98af97581ab788e7d4bda18f01e7b54d6fce601dc2ecdcbb0a38b0f82249e6"     // txid, 32 bytes
+      hex"00000000"         // vout, 4 bytes
+      hex"00"               // scriptSig size, compact size, use 00 to put unlocking code in witness field for p2wpkh or p2wsh locking script
+      hex""                 // scriptSig, variable length, empty here due to 00 in scriptSig size
+      hex"ffffffff"         // sequence, 4 bytes
+      // continues for more inputs if any
+      hex"01"               // output count, compact size
+      hex"a086010000000000" // output amount, 8 bytes
+      hex"22"               // scriptPubKey size, compact size, 34(0x22) bytes
+      hex"0020be87e5c1a6f9957f1adc7d4296635b6b3f0da03a3a7819f919a827feff19501d" // scriptPubKey
+      // continues for more outputs if any
+      hex"04"               // witness stack item count, compact size
+      hex"41"               // item 0 size, compact size, 65(0x41)
+      hex"5fdb8c34a666fb7ba2fe6ca94572cdec9c2b16afa5b54f9a40a9d0335b55a103efbe8bd66422a950b2c81e062e7bc5afc3780b50caf428d4681ee77e07a5419001" // item 0
+      hex"41"               // item 1 size, compact size, 65(0x41)
+      hex"08f1d98c099d586945b6c7376ba552767ab723a46d9bc4b74668dec290aa35710b329dd9fa47706841ad3de3da0697d4b19816c49dc26bc50e0aa65ce10cf26f01" // item 1
+      hex"72"               // item 2 size, compact size, 114(0x72)
+      hex"0063036f72645118746578742f706c61696e3b636861727365743d7574662d38000b65766d20616464726573736820d0f30e3182fa18e4975996dbaaa5bfb7d9b15c6d5b57f9f7e5f5e046829d62a4ad20edf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301bac" // item 2
+      hex"41"               // item 3 size, compact size, 65(0x41)
+      hex"c1edf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301b1f73b1ad437defef81d6cec08008a0d4c243230ebc4d349c5f35149f7674cd0f" // item 3
+      hex"00000000"         // lock time, 4 bytes
     );
 }
