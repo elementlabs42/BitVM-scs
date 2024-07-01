@@ -6,7 +6,7 @@ import "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 contract EBTC is ERC20 {
     error BridgeOnly();
 
-    event TokenMinted(address to, uint amount);
+    event TokenMinted(address to, uint256 amount);
 
     address bridge;
 

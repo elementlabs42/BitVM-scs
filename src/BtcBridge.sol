@@ -55,7 +55,11 @@ contract BtcBridge {
     // own bitcoin address), and sourceBitcoinAddress is a particular UTXO that is
     // under custody of the operator+verifiers which the user would like to redeem $BTC
     // from.
-    function pegOut(bytes calldata /* destinationBitcoinAddress */, bytes calldata /* sourceBitcoinAddress */, uint /* amount */) external {
+    function pegOut(
+        bytes calldata, /* destinationBitcoinAddress */
+        bytes calldata, /* sourceBitcoinAddress */
+        uint256 /* amount */
+    ) external {
         // TODO: implement peg out flow
         emit VerifyPegOutDone();
     }
@@ -67,10 +71,8 @@ contract BtcBridge {
     // can call this method to burn the V $eBTC locked in the vault. Otherwise if this
     // method is not called within a time window (e.g. 8 weeks), user can claim V $eBTC
     // back from the vault (in the case that destinationBitcoinAddress is not paid).
-    function burnEBTC(BtcTxProof calldata /* withdrawal_proof */) external {
-      // TODO: implement bure eBTC flow
-      emit BureEBTCDone();
+    function burnEBTC(BtcTxProof calldata /* withdrawal_proof */ ) external {
+        // TODO: implement bure eBTC flow
+        emit BureEBTCDone();
     }
-
-
 }

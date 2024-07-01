@@ -43,6 +43,7 @@ contract ConstantsFixture {
     bytes32 constant blockHash736000 = hex"00000000000000000002d52d9816a419b45f1f0efe9a9df4f7b64161e508323d";
 
     // a Bitcoin P2SH (pay to script hash) transaction.
+    // https://blockstream.info/api/tx/3667d5beede7d89e41b0ec456f99c93d6cc5e5caff4c4a5f993caea477b4b9b9/hex
     // in order, all little-endian:
     // - version
     // - flags
@@ -80,15 +81,6 @@ contract ConstantsFixture {
         hex"17" hex"16001407bf360a5fc365d23da4889952bcb59121088ee1" hex"feffffff" hex"02" hex"8085800100000000" hex"17"
         hex"a914ae2f3d4b06579b62574d6178c10c882b9150374087" hex"1c20590500000000" hex"17"
         hex"a91415ecf89e95eb07fbc351b3f7f4c54406f7ee5c1087" hex"00000000"
-
-        //02000000000101bb185dfa5b5c7682f4b2537fe2dcd00ce4f28de42eb4213c68
-        //fe57aaa264268b010000001716001407bf360a5fc365d23da4889952bcb59121
-        //088ee1feffffff02808580010000000017a914ae2f3d4b06579b62574d6178c1
-        //0c882b91503740871c2059050000000017a91415ecf89e95eb07fbc351b3f7f4
-        //c54406f7ee5c108702473044022025ace11487fbd2fb222ef00b14f0be6dc38c
-        //f0d028d8fc67476f4e2bb844d301022061d5a922d87186688d86d36507b1633a
-        //94d180a4f7f2b36f0f5c004e440ae5780121028401531bb6226b1068f4482ae5
-        //0f94cc78f64a1dd5cf7e1e41c8eceb1dcc0be300000000
     );
 
     // merkle proof that transaction above is in block 736000
@@ -115,6 +107,7 @@ contract ConstantsFixture {
     );
 
     // block 1213020 in mutinynet.com, peg_in_confirm tx
+    // forgefmt: disable-start
     bytes constant tx3020 = (
       hex"02000000"         // version, 4 bytes
       hex"0001"             // marker & flag, 1 byte each
@@ -142,4 +135,5 @@ contract ConstantsFixture {
       hex"c1edf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301b1f73b1ad437defef81d6cec08008a0d4c243230ebc4d349c5f35149f7674cd0f" // item 3
       hex"00000000"         // lock time, 4 bytes
     );
+    // forgefmt: disable-end
 }

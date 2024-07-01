@@ -171,13 +171,33 @@ contract BtcTxVerifierTest is Test, ConstantsFixture {
 
         assertEq(t.witnesses.length, 4);
         assertEq(t.witnesses[0].itemSize, 65);
-        assertEq(t.witnesses[0].item, bytes(hex"5fdb8c34a666fb7ba2fe6ca94572cdec9c2b16afa5b54f9a40a9d0335b55a103efbe8bd66422a950b2c81e062e7bc5afc3780b50caf428d4681ee77e07a5419001"));
+        assertEq(
+            t.witnesses[0].item,
+            bytes(
+                hex"5fdb8c34a666fb7ba2fe6ca94572cdec9c2b16afa5b54f9a40a9d0335b55a103efbe8bd66422a950b2c81e062e7bc5afc3780b50caf428d4681ee77e07a5419001"
+            )
+        );
         assertEq(t.witnesses[1].itemSize, 65);
-        assertEq(t.witnesses[1].item, bytes(hex"08f1d98c099d586945b6c7376ba552767ab723a46d9bc4b74668dec290aa35710b329dd9fa47706841ad3de3da0697d4b19816c49dc26bc50e0aa65ce10cf26f01"));
+        assertEq(
+            t.witnesses[1].item,
+            bytes(
+                hex"08f1d98c099d586945b6c7376ba552767ab723a46d9bc4b74668dec290aa35710b329dd9fa47706841ad3de3da0697d4b19816c49dc26bc50e0aa65ce10cf26f01"
+            )
+        );
         assertEq(t.witnesses[2].itemSize, 114);
-        assertEq(t.witnesses[2].item, bytes(hex"0063036f72645118746578742f706c61696e3b636861727365743d7574662d38000b65766d20616464726573736820d0f30e3182fa18e4975996dbaaa5bfb7d9b15c6d5b57f9f7e5f5e046829d62a4ad20edf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301bac"));
+        assertEq(
+            t.witnesses[2].item,
+            bytes(
+                hex"0063036f72645118746578742f706c61696e3b636861727365743d7574662d38000b65766d20616464726573736820d0f30e3182fa18e4975996dbaaa5bfb7d9b15c6d5b57f9f7e5f5e046829d62a4ad20edf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301bac"
+            )
+        );
         assertEq(t.witnesses[3].itemSize, 65);
-        assertEq(t.witnesses[3].item, bytes(hex"c1edf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301b1f73b1ad437defef81d6cec08008a0d4c243230ebc4d349c5f35149f7674cd0f"));
+        assertEq(
+            t.witnesses[3].item,
+            bytes(
+                hex"c1edf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301b1f73b1ad437defef81d6cec08008a0d4c243230ebc4d349c5f35149f7674cd0f"
+            )
+        );
 
         assertEq(t.locktime, 0);
     }
