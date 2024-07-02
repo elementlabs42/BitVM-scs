@@ -49,7 +49,7 @@ struct BtcTxProof {
      */
     bytes txMerkleProof;
     /**
-     * @notice Raw transaction, HASH-SERIALIZED, no witnesses.
+     * @notice Raw transaction.
      */
     bytes rawTx;
 }
@@ -68,6 +68,14 @@ struct BitcoinTx {
      */
     uint32 version;
     /**
+     * @dev Marker. Must be 0 to indicate a segwit transaction.
+     */
+    uint8 marker;
+    /**
+     * @dev Flag. Must be 1 or greater.
+     */
+    uint8 flag;
+    /**
      * @dev Each input spends a previous UTXO.
      */
     BitcoinTxIn[] inputs;
@@ -75,6 +83,10 @@ struct BitcoinTx {
      * @dev Each output creates a new UTXO.
      */
     BitcoinTxOut[] outputs;
+    /**
+     * @dev Witness stack.
+     */
+    BitcoinTxWitness[] witnesses;
     /**
      * @dev Locktime. Either 0 for no lock, blocks if <500k, or seconds.
      */
@@ -99,9 +111,9 @@ struct BitcoinTxIn {
      */
     uint32 scriptLen;
     /**
-     * @dev Input script, spending a previous UTXO. Over 32 bytes unsupported.
+     * @dev Input script, spending a previous UTXO.
      */
-    bytes32 script;
+    bytes script;
 }
 
 struct BitcoinTxOut {
@@ -114,9 +126,20 @@ struct BitcoinTxOut {
      */
     uint32 scriptLen;
     /**
-     * @dev Output script. Over 32 bytes unsupported.
+     * @dev Output script.
      */
-    bytes32 script;
+    bytes script;
+}
+
+struct BitcoinTxWitness {
+    /**
+     * @dev Witness item size.
+     */
+    uint32 itemSize;
+    /**
+     * @dev Witness item.
+     */
+    bytes item;
 }
 
 /**
@@ -167,6 +190,11 @@ interface IBtcTxVerifier {
      *      This means no flags and no segwit witnesses.
      */
     function parseBitcoinTx(bytes calldata rawTx) external returns (BitcoinTx memory ret);
+
+    /**
+     * @dev Parses a Segregated Witness Bitcoin transaction.
+     */
+    function parseSegwitTx(bytes calldata rawTx) external returns (BitcoinTx memory ret);
 
     /**
      * Reads a Bitcoin-serialized varint = a u256 serialized in 1-9 bytes.
