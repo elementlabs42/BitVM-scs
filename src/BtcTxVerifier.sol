@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
+import {BitcoinTxIn, BitcoinTxOut, BitcoinTxWitness} from "./interfaces/IBtcBridge.sol";
 import "./interfaces/IBtcMirror.sol";
 import "./interfaces/IBtcTxVerifier.sol";
 import "./libraries/Endian.sol";
@@ -104,13 +105,13 @@ contract BtcTxVerifier is IBtcTxVerifier {
 
         // 4. and 3. Transaction ID included in block
         bytes32 blockTxRoot = getBlockTxMerkleRoot(txProof.blockHeader);
-        bytes32 txRoot = getTxMerkleRoot(txProof.txId, txProof.txIndex, txProof.txMerkleProof);
+        bytes32 txRoot = getTxMerkleRoot(txProof.outpoint.txId, txProof.outpoint.txIndex, txProof.txMerkleProof);
         if (txRoot != blockTxRoot) {
             revert TxMerkleRootMismatch();
         }
 
         // 2. Raw transaction to TxID
-        if (txProof.txId != getTxID(txProof.rawTx)) {
+        if (txProof.outpoint.txId != getTxID(txProof.rawTx)) {
             revert TxIdMismatch();
         }
 
