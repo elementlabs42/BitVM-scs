@@ -2,7 +2,6 @@ pragma solidity >=0.5.10;
 pragma experimental ABIEncoderV2;
 
 import "./SafeMath.sol";
-import "forge-std/console.sol";
 import "./EllipticCurve.sol";
 
 library TaprootHelper {
@@ -12,10 +11,38 @@ library TaprootHelper {
     uint256 constant private SECP256K1_P = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;
     uint256 constant private SECP256K1_A = 0;
     uint256 constant private SECP256K1_B = 7;
+    uint256 constant private SECP256K1_GX = 0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798;
+    uint256 constant private SECP256K1_GY = 0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8;
+    uint8 constant  private LEAF_VERSION_TAPSCRIPT = 0xc0;
 
     function taggedHash(string memory tag, bytes memory m) internal pure returns (bytes32) {
         bytes32 tagHash = sha256(abi.encodePacked(tag));
         return sha256(abi.encodePacked(tagHash, tagHash, m));
+    }
+
+    function tapleafTaggedHash(bytes memory script) internal pure returns (bytes32) {
+        bytes memory scriptPart = abi.encodePacked(LEAF_VERSION_TAPSCRIPT, prependCompactSize(script));
+        return taggedHash("TapLeaf", scriptPart);
+    }
+
+    function tapbranchTaggedHash(bytes32 thashedA, bytes32 thashedB) internal pure returns (bytes32) {
+        if (thashedA < thashedB) {
+            return taggedHash("TapBranch", abi.encodePacked(thashedA, thashedB));
+        } else {
+            return taggedHash("TapBranch", abi.encodePacked(thashedB, thashedA));
+        }
+    }
+
+    function prependCompactSize(bytes memory data) internal pure returns (bytes memory) {
+        if (data.length < 0xfd) {
+            return abi.encodePacked(uint8(data.length), data);
+        } else if (data.length <= 0xffff) {
+            return abi.encodePacked(uint8(0xfd), uint16(data.length), data);
+        } else if (data.length <= 0xffffffff) {
+            return abi.encodePacked(uint8(0xfe), uint32(data.length), data);
+        } else {
+            return abi.encodePacked(uint8(0xff), uint64(data.length), data);
+        }
     }
 
     function hash160(bytes memory data) internal pure returns (bytes20) {
@@ -27,66 +54,67 @@ library TaprootHelper {
 
         bytes32 merkleRootHash = merkleRoot(scripts);
 
-
         bytes32 tweak = taggedHash("TapTweak", abi.encodePacked(internalKey, merkleRootHash));
         uint256 tweakInt = uint256(tweak);
 
         // Convert internalKey to elliptic curve point
-        (uint256 x1, uint256 y1) = publicKeyToPoint(internalKey);
+        (uint256 px, uint256 py) = publicKeyToPoint(internalKey);
 
-        // Convert tweak to elliptic curve point
-        (uint256 x2, uint256 y2) = publicKeyToPoint(bytes32(tweakInt));
+        // Compute H(P|c)G
+        (uint256 gx, uint256 gy) = EllipticCurve.ecMul(tweakInt, SECP256K1_GX, SECP256K1_GY, SECP256K1_A, SECP256K1_P);
 
-        // Add the points on the elliptic curve
-        (uint256 x3, uint256 y3) = EllipticCurve.ecAdd(x1, y1, x2, y2, SECP256K1_A, SECP256K1_P);
-        console.logUint(x3);
-        console.logUint(y3);
+        // Compute Q = P + H(P|c)G
+        (uint256 qx, uint256 qy) = EllipticCurve.ecAdd(px, py, gx, gy, SECP256K1_A, SECP256K1_P);
 
         // Convert the resulting point back to bytes32
-        bytes32 outputKey = pointToPublicKey(x3, y3);
+        bytes32 outputKey = bytes32(qx);
+
         return outputKey;
 
     }
 
     function publicKeyToPoint(bytes32 pubKey) internal pure returns (uint256, uint256) {
         uint256 x = uint256(pubKey);
-        uint8 prefix = (uint8(pubKey[31]) % 2 == 0) ? 0x02 : 0x03; // Determine parity for y-coordinate
+        uint8 prefix = x & 1 == 0 ? 0x03 : 0x02;
         uint256 y = EllipticCurve.deriveY(prefix, x, SECP256K1_A, SECP256K1_B, SECP256K1_P);
         return (x, y);
     }
 
-    function pointToPublicKey(uint256 x, uint256 y) internal pure returns (bytes32) {
-        // Convert elliptic curve point (x, y) to compressed public key format
-        bytes memory publicKey = new bytes(33);
-        publicKey[0] = y % 2 == 0 ? bytes1(0x02) : bytes1(0x03);
-        for (uint i = 0; i < 32; i++) {
-            publicKey[32 - i] = bytes1(uint8(x >> (8 * i)));
-        }
-        return bytesToBytes32(publicKey);
-    }
-
-
-    function merkleRoot(bytes[] memory leaves) internal view returns (bytes32) {
-        if (leaves.length == 0) {
+    function merkleRoot(bytes[] memory scripts) internal view returns (bytes32) {
+        // empty scripts or empty list
+        if (scripts.length == 0) {
             return bytes32(0);
         }
-        while (leaves.length > 1) {
-            if (leaves.length % 2 != 0) {
-                bytes[] memory temp = new bytes[](leaves.length + 1);
-                for (uint i = 0; i < leaves.length; i++) {
-                    temp[i] = leaves[i];
-                }
-                temp[leaves.length] = leaves[leaves.length - 1];
-                leaves = temp;
-            }
-            uint256 newLength = leaves.length / 2;
-            bytes[] memory newLeaves = new bytes[](newLength);
-            for (uint i = 0; i < newLength; i++) {
-                newLeaves[i] = abi.encodePacked(taggedHash("TapBranch", abi.encodePacked(leaves[2 * i], leaves[2 * i + 1])));
-            }
-            leaves = newLeaves;
+
+        // if not list return tapleaf_hash of Script
+        if (scripts.length == 1) {
+            return tapleafTaggedHash(scripts[0]);
         }
-        return bytesToBytes32(leaves[0]);
+
+        // list
+        if (scripts.length == 2) {
+            bytes32 left = tapleafTaggedHash(scripts[0]);
+            bytes32 right = tapleafTaggedHash(scripts[1]);
+            return tapbranchTaggedHash(left, right);
+        } else {
+            bytes32[] memory hashes = new bytes32[](scripts.length);
+            for (uint i = 0; i < scripts.length; i++) {
+                hashes[i] = tapleafTaggedHash(scripts[i]);
+            }
+            while (hashes.length > 1) {
+                uint newLength = (hashes.length + 1) / 2;
+                bytes32[] memory newHashes = new bytes32[](newLength);
+                for (uint i = 0; i < newLength; i++) {
+                    if (2 * i + 1 < hashes.length) {
+                        newHashes[i] = tapbranchTaggedHash(hashes[2 * i], hashes[2 * i + 1]);
+                    } else {
+                        newHashes[i] = tapbranchTaggedHash(hashes[2 * i], hashes[2 * i]);
+                    }
+                }
+                hashes = newHashes;
+            }
+            return hashes[0];
+        }
     }
 
     function toBech32(bytes20 data) internal pure returns (bytes memory) {

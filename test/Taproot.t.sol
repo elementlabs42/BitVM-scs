@@ -8,8 +8,8 @@ import "../src/libraries/TaprootHelper.sol";
 contract TaprootTest is Test {
     function testTaprootAddress() public view {
         bytes[] memory scripts = new bytes[](2);
-        scripts[0] = hex"54b27520edf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301bac";
-        scripts[1] = hex"00632a3078303030303030303030303030303030303030303030303030303030303030303030303030303030306820d0f30e3182fa18e4975996dbaaa5bfb7d9b15c6d5b57f9f7e5f5e046829d62a4ad20edf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301bac";
-        assertEq(TaprootHelper.createTaprootAddress(0xd0f30e3182fa18e4975996dbaaa5bfb7d9b15c6d5b57f9f7e5f5e046829d62a4, scripts), 0x4d4ed1067e0bfddc5f26396fe0452966cecaac26f298a38c342c6de7cefda9ea);
+        scripts[0] = hex"2013f523102815e9fbbe132ffb8329b0fef5a9e4836d216dce1824633287b0abc6ac";
+        scripts[1] = hex"20e808f1396f12a253cf00efdf841e01c8376b616fb785c39595285c30f2817e71ac";
+        assertEq(TaprootHelper.createTaprootAddress(0x1036a7ed8d24eac9057e114f22342ebf20c16d37f0d25cfd2c900bf401ec09c9, scripts), 0x6e45f10a20f5b5622e6673ffac5bdc080625d86a59a948c7bcd10e0b06f6f280);
     }
 }
