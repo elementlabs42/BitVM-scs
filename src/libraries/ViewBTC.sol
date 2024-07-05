@@ -1,8 +1,12 @@
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.5.10;
 
-/** @title BitcoinSPV */
-/** @author Summa (https://summa.one) */
-
+/**
+ * @title BitcoinSPV
+ */
+/**
+ * @author Summa (https://summa.one)
+ */
 import {SafeMath} from "./SafeMath.sol";
 import "./TypedMemView.sol";
 
@@ -13,31 +17,32 @@ library ViewBTC {
     // The target at minimum Difficulty. Also the target of the genesis block
     uint256 public constant DIFF1_TARGET = 0xffff0000000000000000000000000000000000000000000000000000;
 
-    uint256 public constant RETARGET_PERIOD = 2 * 7 * 24 * 60 * 60;  // 2 weeks in seconds
-    uint256 public constant RETARGET_PERIOD_BLOCKS = 2016;  // 2 weeks in blocks
+    uint256 public constant RETARGET_PERIOD = 2 * 7 * 24 * 60 * 60; // 2 weeks in seconds
+    uint256 public constant RETARGET_PERIOD_BLOCKS = 2016; // 2 weeks in blocks
 
     enum BTCTypes {
-        Unknown,            // 0x0
-        CompactInt,         // 0x1
-        ScriptSig,          // 0x2 - with length prefix
-        Outpoint,           // 0x3
-        TxIn,               // 0x4
-        IntermediateTxIns,  // 0x5 - used in vin parsing
-        Vin,                // 0x6
-        ScriptPubkey,       // 0x7 - with length prefix
-        PKH,                // 0x8 - the 20-byte payload digest
-        WPKH,               // 0x9 - the 20-byte payload digest
-        WSH,                // 0xa - the 32-byte payload digest
-        SH,                 // 0xb - the 20-byte payload digest
-        OpReturnPayload,    // 0xc
-        TxOut,              // 0xd
+        Unknown, // 0x0
+        CompactInt, // 0x1
+        ScriptSig, // 0x2 - with length prefix
+        Outpoint, // 0x3
+        TxIn, // 0x4
+        IntermediateTxIns, // 0x5 - used in vin parsing
+        Vin, // 0x6
+        ScriptPubkey, // 0x7 - with length prefix
+        PKH, // 0x8 - the 20-byte payload digest
+        WPKH, // 0x9 - the 20-byte payload digest
+        WSH, // 0xa - the 32-byte payload digest
+        SH, // 0xb - the 20-byte payload digest
+        OpReturnPayload, // 0xc
+        TxOut, // 0xd
         IntermediateTxOuts, // 0xe - used in vout parsing
-        Vout,               // 0xf
-        Header,             // 0x10
-        HeaderArray,        // 0x11
-        MerkleNode,         // 0x12
-        MerkleStep,         // 0x13
-        MerkleArray         // 0x14
+        Vout, // 0xf
+        Header, // 0x10
+        HeaderArray, // 0x11
+        MerkleNode, // 0x12
+        MerkleStep, // 0x13
+        MerkleArray // 0x14
+
     }
 
     // TODO: any way to bubble up more info?
@@ -52,12 +57,7 @@ library ViewBTC {
     /// Revert with an error message re: non-minimal VarInts
     function revertNonMinimal(bytes29 ref) private pure returns (string memory) {
         (, uint256 g) = TypedMemView.encodeHex(ref.indexUint(0, uint8(ref.len())));
-        string memory err = string(
-            abi.encodePacked(
-                "Non-minimal var int. Got 0x",
-                uint144(g)
-            )
-        );
+        string memory err = string(abi.encodePacked("Non-minimal var int. Got 0x", uint144(g)));
         revert(err);
     }
 
@@ -71,13 +71,13 @@ library ViewBTC {
             return uint64(flag);
         } else if (flag == 0xfd) {
             number = uint64(memView.indexLEUint(_index + 1, 2));
-            if (compactIntLength(number) != 3) {revertNonMinimal(memView.slice(_index, 3, 0));}
+            if (compactIntLength(number) != 3) revertNonMinimal(memView.slice(_index, 3, 0));
         } else if (flag == 0xfe) {
             number = uint64(memView.indexLEUint(_index + 1, 4));
-            if (compactIntLength(number) != 5) {revertNonMinimal(memView.slice(_index, 5, 0));}
+            if (compactIntLength(number) != 5) revertNonMinimal(memView.slice(_index, 5, 0));
         } else if (flag == 0xff) {
             number = uint64(memView.indexLEUint(_index + 1, 8));
-            if (compactIntLength(number) != 9) {revertNonMinimal(memView.slice(_index, 9, 0));}
+            if (compactIntLength(number) != 9) revertNonMinimal(memView.slice(_index, 9, 0));
         }
     }
 
@@ -137,7 +137,12 @@ library ViewBTC {
     /// @notice         determines the length of the first input in an array of inputs
     /// @param _inputs  the vin without its length prefix
     /// @return         the input length
-    function inputLength(bytes29 _inputs) internal pure typeAssert(_inputs, BTCTypes.IntermediateTxIns) returns (uint256) {
+    function inputLength(bytes29 _inputs)
+        internal
+        pure
+        typeAssert(_inputs, BTCTypes.IntermediateTxIns)
+        returns (uint256)
+    {
         uint64 scriptLength = indexCompactInt(_inputs, 36);
         return uint256(compactIntLength(scriptLength)) + uint256(scriptLength) + 36 + 4;
     }
@@ -188,7 +193,12 @@ library ViewBTC {
     /// @notice             determines the length of the first output in an array of outputs
     /// @param _outputs     the vout without its length prefix
     /// @return             the output length
-    function outputLength(bytes29 _outputs) internal pure typeAssert(_outputs, BTCTypes.IntermediateTxOuts) returns (uint256) {
+    function outputLength(bytes29 _outputs)
+        internal
+        pure
+        typeAssert(_outputs, BTCTypes.IntermediateTxOuts)
+        returns (uint256)
+    {
         uint64 scriptLength = indexCompactInt(_outputs, 8);
         return uint256(compactIntLength(scriptLength)) + uint256(scriptLength) + 8;
     }
@@ -197,7 +207,12 @@ library ViewBTC {
     /// @param _vout    the vout
     /// @param _index   the index of the desired output
     /// @return         the desired output
-    function indexVout(bytes29 _vout, uint256 _index) internal pure typeAssert(_vout, BTCTypes.Vout) returns (bytes29) {
+    function indexVout(bytes29 _vout, uint256 _index)
+        internal
+        pure
+        typeAssert(_vout, BTCTypes.Vout)
+        returns (bytes29)
+    {
         uint256 _nOuts = uint256(indexCompactInt(_vout, 0));
         uint256 _viewLen = _vout.len();
         require(_index < _nOuts, "Vout read overrun");
@@ -220,7 +235,10 @@ library ViewBTC {
     function opReturnPayload(bytes29 _spk) internal pure typeAssert(_spk, BTCTypes.ScriptPubkey) returns (bytes29) {
         uint64 _bodyLength = indexCompactInt(_spk, 0);
         uint64 _payloadLen = uint64(_spk.indexUint(2, 1));
-        if (_bodyLength > 77 || _bodyLength < 4 || _spk.indexUint(1, 1) != 0x6a || _spk.indexUint(2, 1) != _bodyLength - 2) {
+        if (
+            _bodyLength > 77 || _bodyLength < 4 || _spk.indexUint(1, 1) != 0x6a
+                || _spk.indexUint(2, 1) != _bodyLength - 2
+        ) {
             return TypedMemView.nullView();
         }
         return _spk.slice(3, _payloadLen, uint40(BTCTypes.OpReturnPayload));
@@ -239,7 +257,8 @@ library ViewBTC {
         // Legacy
         if (_bodyLength == 0x19 && _spk.indexUint(0, 4) == 0x1976a914 && _spk.indexUint(_spkLength - 2, 2) == 0x88ac) {
             return _spk.slice(4, 20, uint40(BTCTypes.PKH));
-        } else if (_bodyLength == 0x17 && _spk.indexUint(0, 3) == 0x17a914 && _spk.indexUint(_spkLength - 1, 1) == 0x87) {
+        } else if (_bodyLength == 0x17 && _spk.indexUint(0, 3) == 0x17a914 && _spk.indexUint(_spkLength - 1, 1) == 0x87)
+        {
             return _spk.slice(3, 20, uint40(BTCTypes.SH));
         }
 
@@ -341,17 +360,20 @@ library ViewBTC {
         return _header.castTo(uint40(BTCTypes.Header));
     }
 
-
     /// @notice         Index a header array.
     /// @dev            Errors on overruns
     /// @param _arr     The header array
     /// @param index    The 0-indexed location of the header to get
     /// @return         the typed header at `index`
-    function indexHeaderArray(bytes29 _arr, uint256 index) internal pure typeAssert(_arr, BTCTypes.HeaderArray) returns (bytes29) {
+    function indexHeaderArray(bytes29 _arr, uint256 index)
+        internal
+        pure
+        typeAssert(_arr, BTCTypes.HeaderArray)
+        returns (bytes29)
+    {
         uint256 _start = index.mul(80);
         return _arr.slice(_start, 80, uint40(BTCTypes.Header));
     }
-
 
     /// @notice     verifies the header array and converts to a typed memory
     /// @dev        will return null in error cases
@@ -385,7 +407,7 @@ library ViewBTC {
     /// @notice         extracts the target from the header
     /// @param _header  the header
     /// @return         the target
-    function target(bytes29  _header) internal pure typeAssert(_header, BTCTypes.Header) returns (uint256) {
+    function target(bytes29 _header) internal pure typeAssert(_header, BTCTypes.Header) returns (uint256) {
         uint256 _mantissa = _header.indexLEUint(72, 3);
         uint256 _exponent = _header.indexUint(75, 1).sub(3);
         return _mantissa.mul(256 ** _exponent);
@@ -394,21 +416,21 @@ library ViewBTC {
     /// @notice         calculates the difficulty from a target
     /// @param _target  the target
     /// @return         the difficulty
-    function toDiff(uint256  _target) internal pure returns (uint256) {
+    function toDiff(uint256 _target) internal pure returns (uint256) {
         return DIFF1_TARGET.div(_target);
     }
 
     /// @notice         extracts the difficulty from the header
     /// @param _header  the header
     /// @return         the difficulty
-    function diff(bytes29  _header) internal pure typeAssert(_header, BTCTypes.Header) returns (uint256) {
+    function diff(bytes29 _header) internal pure typeAssert(_header, BTCTypes.Header) returns (uint256) {
         return toDiff(target(_header));
     }
 
     /// @notice         extracts the timestamp from the header
     /// @param _header  the header
     /// @return         the timestamp
-    function time(bytes29  _header) internal pure typeAssert(_header, BTCTypes.Header) returns (uint32) {
+    function time(bytes29 _header) internal pure typeAssert(_header, BTCTypes.Header) returns (uint32) {
         return uint32(_header.indexLEUint(68, 4));
     }
 
@@ -438,9 +460,9 @@ library ViewBTC {
     /// @param _a        The first hash
     /// @param _b        The second hash
     /// @return          digest The double-sha256 of the concatenated hashes
-    function _merkleStep(bytes32 _a, bytes32 _b) internal view returns (bytes32 digest) {
+    function _merkleStep(bytes32 _a, bytes32 _b) internal pure returns (bytes32 digest) {
         assembly {
-        // solium-disable-previous-line security/no-inline-assembly
+            // solium-disable-previous-line security/no-inline-assembly
             let ptr := mload(0x40)
             mstore(ptr, _a)
             mstore(add(ptr, 0x20), _b)
@@ -456,12 +478,12 @@ library ViewBTC {
     /// @param _root    the merkle root
     /// @param _index   the index
     /// @return         true if valid, false if otherwise
-    function checkMerkle(
-        bytes32 _leaf,
-        bytes29 _proof,
-        bytes32 _root,
-        uint256 _index
-    ) internal view typeAssert(_proof, BTCTypes.MerkleArray) returns (bool) {
+    function checkMerkle(bytes32 _leaf, bytes29 _proof, bytes32 _root, uint256 _index)
+        internal
+        pure
+        typeAssert(_proof, BTCTypes.MerkleArray)
+        returns (bool)
+    {
         uint256 nodes = _proof.len() / 32;
         if (nodes == 0) {
             return _leaf == _root;
@@ -470,7 +492,7 @@ library ViewBTC {
         uint256 _idx = _index;
         bytes32 _current = _leaf;
 
-        for (uint i = 0; i < nodes; i++) {
+        for (uint256 i = 0; i < nodes; i++) {
             bytes32 _next = _proof.index(i * 32, 32);
             if (_idx % 2 == 1) {
                 _current = _merkleStep(_next, _current);
@@ -489,11 +511,11 @@ library ViewBTC {
     /// @param _firstTimestamp  the timestamp of the first block in the difficulty period
     /// @param _secondTimestamp the timestamp of the last block in the difficulty period
     /// @return                 the new period's target threshold
-    function retargetAlgorithm(
-        uint256 _previousTarget,
-        uint256 _firstTimestamp,
-        uint256 _secondTimestamp
-    ) internal pure returns (uint256) {
+    function retargetAlgorithm(uint256 _previousTarget, uint256 _firstTimestamp, uint256 _secondTimestamp)
+        internal
+        pure
+        returns (uint256)
+    {
         uint256 _elapsedTime = _secondTimestamp.sub(_firstTimestamp);
 
         // Normalize ratio to factor of 4 if very long or very short

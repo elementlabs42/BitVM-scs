@@ -1,4 +1,5 @@
-pragma solidity >=0.5.10;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.26;
 pragma experimental ABIEncoderV2;
 
 import "./SafeMath.sol";
@@ -8,12 +9,12 @@ library TaprootHelper {
     using SafeMath for uint256;
     using EllipticCurve for uint256;
 
-    uint256 constant private SECP256K1_P = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;
-    uint256 constant private SECP256K1_A = 0;
-    uint256 constant private SECP256K1_B = 7;
-    uint256 constant private SECP256K1_GX = 0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798;
-    uint256 constant private SECP256K1_GY = 0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8;
-    uint8 constant  private LEAF_VERSION_TAPSCRIPT = 0xc0;
+    uint256 private constant SECP256K1_P = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;
+    uint256 private constant SECP256K1_A = 0;
+    uint256 private constant SECP256K1_B = 7;
+    uint256 private constant SECP256K1_GX = 0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798;
+    uint256 private constant SECP256K1_GY = 0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8;
+    uint8 private constant LEAF_VERSION_TAPSCRIPT = 0xc0;
 
     function taggedHash(string memory tag, bytes memory m) internal pure returns (bytes32) {
         bytes32 tagHash = sha256(abi.encodePacked(tag));
@@ -49,7 +50,7 @@ library TaprootHelper {
         return ripemd160(abi.encodePacked(sha256(data)));
     }
 
-    function createTaprootAddress(bytes32 n_of_n_pubkey, bytes[] memory scripts) public view returns (bytes32) {
+    function createTaprootAddress(bytes32 n_of_n_pubkey, bytes[] memory scripts) public pure returns (bytes32) {
         bytes32 internalKey = n_of_n_pubkey;
 
         bytes32 merkleRootHash = merkleRoot(scripts);
@@ -70,7 +71,6 @@ library TaprootHelper {
         bytes32 outputKey = bytes32(qx);
 
         return outputKey;
-
     }
 
     function publicKeyToPoint(bytes32 pubKey) internal pure returns (uint256, uint256) {
@@ -80,7 +80,7 @@ library TaprootHelper {
         return (x, y);
     }
 
-    function merkleRoot(bytes[] memory scripts) internal view returns (bytes32) {
+    function merkleRoot(bytes[] memory scripts) internal pure returns (bytes32) {
         // empty scripts or empty list
         if (scripts.length == 0) {
             return bytes32(0);
@@ -98,13 +98,13 @@ library TaprootHelper {
             return tapbranchTaggedHash(left, right);
         } else {
             bytes32[] memory hashes = new bytes32[](scripts.length);
-            for (uint i = 0; i < scripts.length; i++) {
+            for (uint256 i = 0; i < scripts.length; i++) {
                 hashes[i] = tapleafTaggedHash(scripts[i]);
             }
             while (hashes.length > 1) {
-                uint newLength = (hashes.length + 1) / 2;
+                uint256 newLength = (hashes.length + 1) / 2;
                 bytes32[] memory newHashes = new bytes32[](newLength);
-                for (uint i = 0; i < newLength; i++) {
+                for (uint256 i = 0; i < newLength; i++) {
                     if (2 * i + 1 < hashes.length) {
                         newHashes[i] = tapbranchTaggedHash(hashes[2 * i], hashes[2 * i + 1]);
                     } else {
@@ -120,11 +120,11 @@ library TaprootHelper {
     function toBech32(bytes20 data) internal pure returns (bytes memory) {
         bytes memory hrp = "bc";
         bytes memory combined = new bytes(data.length + 6);
-        for (uint i = 0; i < data.length; i++) {
+        for (uint256 i = 0; i < data.length; i++) {
             combined[i] = data[i];
         }
         bytes32 polymod = bech32Polymod(hrpExpand(hrp), combined);
-        for (uint i = 0; i < 6; i++) {
+        for (uint256 i = 0; i < 6; i++) {
             combined[data.length + i] = bytes1(uint8(polymod[i] & 0x1F));
         }
         return abi.encodePacked(hrp, combined);
@@ -132,18 +132,18 @@ library TaprootHelper {
 
     function bech32Polymod(bytes memory values1, bytes memory values2) internal pure returns (bytes32) {
         uint32[5] memory GEN = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3];
-        uint chk = 1;
-        for (uint i = 0; i < values1.length; i++) {
-            uint b = (chk >> 25);
+        uint256 chk = 1;
+        for (uint256 i = 0; i < values1.length; i++) {
+            uint256 b = (chk >> 25);
             chk = (chk & 0x1ffffff) << 5 ^ uint8(values1[i]);
-            for (uint j = 0; j < 5; j++) {
+            for (uint256 j = 0; j < 5; j++) {
                 chk ^= ((b >> j) & 1) != 0 ? GEN[j] : 0;
             }
         }
-        for (uint i = 0; i < values2.length; i++) {
-            uint b = (chk >> 25);
+        for (uint256 i = 0; i < values2.length; i++) {
+            uint256 b = (chk >> 25);
             chk = (chk & 0x1ffffff) << 5 ^ uint8(values2[i]);
-            for (uint j = 0; j < 5; j++) {
+            for (uint256 j = 0; j < 5; j++) {
                 chk ^= ((b >> j) & 1) != 0 ? GEN[j] : 0;
             }
         }
@@ -152,7 +152,7 @@ library TaprootHelper {
 
     function hrpExpand(bytes memory hrp) internal pure returns (bytes memory) {
         bytes memory expanded = new bytes(hrp.length * 2 + 1);
-        for (uint i = 0; i < hrp.length; i++) {
+        for (uint256 i = 0; i < hrp.length; i++) {
             expanded[i] = bytes1(uint8(hrp[i]) >> 5);
             expanded[i + hrp.length + 1] = bytes1(uint8(hrp[i]) & 0x1F);
         }

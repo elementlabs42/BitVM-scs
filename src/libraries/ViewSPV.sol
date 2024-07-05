@@ -1,12 +1,15 @@
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.5.10;
 
-/** @title ViewSPV */
-/** @author Summa (https://summa.one) */
-
+/**
+ * @title ViewSPV
+ */
+/**
+ * @author Summa (https://summa.one)
+ */
 import "./TypedMemView.sol";
 import {ViewBTC} from "./ViewBTC.sol";
 import {SafeMath} from "./SafeMath.sol";
-
 
 library ViewSPV {
     using TypedMemView for bytes;
@@ -45,12 +48,12 @@ library ViewSPV {
     /// @param _intermediateNodes   The proof's intermediate nodes (digests between leaf and root)
     /// @param _index               The leaf's index in the tree (0-indexed)
     /// @return                     true if fully valid, false otherwise
-    function prove(
-        bytes32 _txid,
-        bytes32 _merkleRoot,
-        bytes29 _intermediateNodes,
-        uint _index
-    ) internal view typeAssert(_intermediateNodes, ViewBTC.BTCTypes.MerkleArray) returns (bool) {
+    function prove(bytes32 _txid, bytes32 _merkleRoot, bytes29 _intermediateNodes, uint256 _index)
+        internal
+        pure
+        typeAssert(_intermediateNodes, ViewBTC.BTCTypes.MerkleArray)
+        returns (bool)
+    {
         // Shortcut the empty-block case
         if (_txid == _merkleRoot && _index == 0 && _intermediateNodes.len() == 0) {
             return true;
@@ -66,12 +69,13 @@ library ViewSPV {
     /// @param _vout        Raw bytes length-prefixed output vector
     /// @param _locktime    4-byte tx locktime
     /// @return             32-byte transaction id, little endian
-    function calculateTxId(
-        bytes4 _version,
-        bytes29 _vin,
-        bytes29 _vout,
-        bytes4 _locktime
-    ) internal view typeAssert(_vin, ViewBTC.BTCTypes.Vin) typeAssert(_vout, ViewBTC.BTCTypes.Vout) returns (bytes32) {
+    function calculateTxId(bytes4 _version, bytes29 _vin, bytes29 _vout, bytes4 _locktime)
+        internal
+        view
+        typeAssert(_vin, ViewBTC.BTCTypes.Vin)
+        typeAssert(_vout, ViewBTC.BTCTypes.Vout)
+        returns (bytes32)
+    {
         // TODO: write in assembly
         return abi.encodePacked(_version, _vin.clone(), _vout.clone(), _locktime).ref(0).hash256();
     }
@@ -81,17 +85,26 @@ library ViewSPV {
     /// @param _header      Header view
     /// @param _target      The target threshold
     /// @return             true if header work is valid, false otherwise
-    function checkWork(bytes29 _header, uint256 _target) internal view typeAssert(_header, ViewBTC.BTCTypes.Header) returns (bool) {
+    function checkWork(bytes29 _header, uint256 _target)
+        internal
+        view
+        typeAssert(_header, ViewBTC.BTCTypes.Header)
+        returns (bool)
+    {
         return _header.work() < _target;
     }
-
 
     /// @notice                     Checks validity of header chain
     /// @dev                        Compares current header parent to previous header's digest
     /// @param _header              The raw bytes header
     /// @param _prevHeaderDigest    The previous header's digest
     /// @return                     true if the connect is valid, false otherwise
-    function checkParent(bytes29 _header, bytes32 _prevHeaderDigest) internal pure typeAssert(_header, ViewBTC.BTCTypes.Header) returns (bool) {
+    function checkParent(bytes29 _header, bytes32 _prevHeaderDigest)
+        internal
+        pure
+        typeAssert(_header, ViewBTC.BTCTypes.Header)
+        returns (bool)
+    {
         return _header.parent() == _prevHeaderDigest;
     }
 
@@ -99,19 +112,24 @@ library ViewSPV {
     /// @notice             Compares the hash of each header to the prevHash in the next header
     /// @param _headers     Raw byte array of header chain
     /// @return             _totalDifficulty The total accumulated difficulty of the header chain, or an error code
-    function checkChain(bytes29 _headers) internal view typeAssert(_headers, ViewBTC.BTCTypes.HeaderArray) returns (uint256 _totalDifficulty) {
+    function checkChain(bytes29 _headers)
+        internal
+        view
+        typeAssert(_headers, ViewBTC.BTCTypes.HeaderArray)
+        returns (uint256 _totalDifficulty)
+    {
         bytes32 _digest;
         uint256 _headerCount = _headers.len() / 80;
         for (uint256 i = 0; i < _headerCount; i += 1) {
             bytes29 _header = _headers.indexHeaderArray(i);
             if (i != 0) {
-                if (!checkParent(_header, _digest)) {return ERR_INVALID_CHAIN;}
+                if (!checkParent(_header, _digest)) return ERR_INVALID_CHAIN;
             }
             _digest = _header.workHash();
             uint256 _work = TypedMemView.reverseUint256(uint256(_digest));
             uint256 _target = _header.target();
 
-            if (_work > _target) {return ERR_LOW_WORK;}
+            if (_work > _target) return ERR_LOW_WORK;
 
             _totalDifficulty += ViewBTC.toDiff(_target);
         }

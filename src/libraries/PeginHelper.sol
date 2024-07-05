@@ -1,8 +1,11 @@
-pragma solidity >=0.5.10;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.26;
+
 import "./SafeMath.sol";
 import {TaprootHelper} from "./TaprootHelper.sol";
+import {BtcTxProof} from "../interfaces/IBtcBridge.sol";
 
-library  PeginHelper {
+library PeginHelper {
     using SafeMath for uint256;
     using TaprootHelper for bytes32;
 
@@ -22,7 +25,11 @@ library  PeginHelper {
         return abi.encodePacked("OP_DUP OP_RIPEMD160 ", dstAddress, " CHECKSIG OP_EQUALVERIFY OP_CHECKSIG");
     }
 
-    function generateDepositTaproot(bytes32 nOfNPubkey , address evmAddress, bytes32 userPk, uint256 lockDuration) internal view returns (bytes32) {
+    function generateDepositTaproot(bytes32 nOfNPubkey, address evmAddress, bytes32 userPk, uint256 lockDuration)
+        internal
+        pure
+        returns (bytes32)
+    {
         bytes memory depositScript = generateDepositScript(nOfNPubkey, evmAddress);
         bytes memory timelockScript = generateTimelockLeaf(userPk, lockDuration);
         bytes[] memory scripts = new bytes[](2);
@@ -31,7 +38,12 @@ library  PeginHelper {
         return nOfNPubkey.createTaprootAddress(scripts);
     }
 
-    function validatePeginProof(bytes32 nOfNPubkey, address evmAddress, BtcTxProof memory proof1, BtcTxProof memory proof2) internal pure returns (bool) {
+    function validatePeginProof(
+        bytes32 nOfNPubkey,
+        address evmAddress,
+        BtcTxProof memory proof1,
+        BtcTxProof memory proof2
+    ) internal pure returns (bool) {
         // todo: do all proof verification logic here
         return true;
     }
