@@ -1,6 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
+struct Block {
+    uint32 version;
+    uint32 timestamp;
+    uint32 bits;
+    uint32 nonce;
+    bytes32 previousBlockHash;
+    bytes32 merkleRoot;
+}
+
 struct Outpoint {
     /**
      * @notice Bitcoin transaction ID, equal to SHA256(SHA256(rawTx))
