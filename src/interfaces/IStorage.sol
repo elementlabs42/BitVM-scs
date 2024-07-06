@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-interface IKeyBlocksStorage {
+interface IStorage {
     struct KeyBlock {
         bytes32 blockHash;
         uint256 accumulatedDifficulty;

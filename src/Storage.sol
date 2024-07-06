@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import "./interfaces/IKeyBlocksStorage.sol";
+import "./interfaces/IStorage.sol";
 import "./libraries/Endian.sol";
 import "./libraries/Decoder.sol";
 
 /**
  * @dev Contract that stores key Bitcoin blocks for SPV validation
  */
-contract KeyBlocksStorage is IKeyBlocksStorage {
+contract Storage is IStorage {
     uint256 public immutable blockStepDistance;
     uint256 public immutable initialBlockHeight;
     KeyBlock[] private storedBlocks;
