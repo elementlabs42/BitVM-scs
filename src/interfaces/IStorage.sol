@@ -11,7 +11,12 @@ interface IStorage {
     error BlockCountInvalid(uint256 inputLength);
     error BlockHeightTooLow(uint256 inputHeight);
     error BlockHeightInvalid(uint256 inputHeight);
-    error BlockHeightNotContinuous(uint256 inputHeight, uint256 storedLength);
+    error BlockHeightTooHigh(uint256 inputHeight, uint256 storedLength);
     error BlockHashMismatch(bytes32 expected, bytes32 actual);
     error NoGivenBlockHeaders();
+    error HashNotBelowTarget(bytes32 hash, bytes32 target);
+
+    function submit(bytes calldata data, uint256 blockHeight) external;
+    function getKeyBlock(uint256 blockHeight) external view returns (KeyBlock memory _block);
+    function getKeyBlockCount() external view returns (uint256);
 }

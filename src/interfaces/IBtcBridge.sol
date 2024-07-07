@@ -4,10 +4,10 @@ pragma solidity ^0.8.26;
 struct Block {
     uint32 version;
     uint32 timestamp;
-    uint32 bits;
+    bytes4 bits; // reversed order
     uint32 nonce;
-    bytes32 previousBlockHash;
-    bytes32 merkleRoot;
+    bytes32 previousBlockHash; // natural order
+    bytes32 merkleRoot; // natural order
 }
 
 struct Outpoint {

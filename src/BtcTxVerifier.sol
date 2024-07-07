@@ -5,7 +5,6 @@ import {BitcoinTxIn, BitcoinTxOut, BitcoinTxWitness} from "./interfaces/IBtcBrid
 import "./interfaces/IBtcMirror.sol";
 import "./interfaces/IBtcTxVerifier.sol";
 import "./libraries/Endian.sol";
-import "forge-std/console.sol"; //TODO: delete me
 
 //
 //                                        #
