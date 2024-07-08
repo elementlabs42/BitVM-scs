@@ -11,7 +11,13 @@ import "./libraries/Coder.sol";
 contract Storage is IStorage {
     uint256 public immutable blockStepDistance;
     uint256 public immutable initialBlockHeight;
+
     KeyBlock[] private storedBlocks;
+    /**
+     * @dev index of the last stored block, to represent length of storedBlocks
+     *      stored separately since chain can be shorter when reorg
+     */
+    uint256 private tipIndex;
 
     /**
      * @param distance block height distance for every key blocks
@@ -32,33 +38,31 @@ contract Storage is IStorage {
      *                    the value should be latest storedBlock height + 1
      */
     function submit(bytes calldata data, uint256 blockHeight) external override {
-        if (blockHeight <= initialBlockHeight) {
-            revert BlockHeightTooLow(blockHeight);
+        if (data.length == 0 || blockHeight == 0) {
+            revert NoGivenBlockHeaders();
         }
+
+        uint256 index = heightToIndex(blockHeight - 1);
         if ((blockHeight - initialBlockHeight - 1) % blockStepDistance != 0) {
             revert BlockHeightInvalid(blockHeight);
         }
-        uint256 index = (blockHeight - initialBlockHeight - 1) / blockStepDistance;
-        uint256 storageSize = storedBlocks.length;
-        if (storageSize <= index) {
-            revert BlockHeightTooHigh(blockHeight, storageSize);
+        if (tipIndex < index) {
+            revert BlockHeightTooHigh(blockHeight, tipIndex);
         }
 
+        uint256 reorgCount;
         bytes32 previousHash = storedBlocks[index].blockHash;
-        uint256 accumulatedDifficulty = storedBlocks[storageSize - 1].accumulatedDifficulty;
+        uint256 accumulatedDifficulty = storedBlocks[tipIndex].accumulatedDifficulty;
         uint256 accumulatedDifficultyNew = storedBlocks[index].accumulatedDifficulty;
 
         uint256 headerCount = data.length / Coder.BLOCK_HEADER_LENGTH;
-        if (data.length == 0) {
-            revert NoGivenBlockHeaders();
-        }
         if (data.length != headerCount * Coder.BLOCK_HEADER_LENGTH) {
             revert Coder.BlockHeaderLengthInvalid(data.length);
         }
         if (headerCount % blockStepDistance != 0) {
             revert BlockCountInvalid(headerCount);
         }
-        for (uint256 i = 0; i < headerCount; i++) {
+        for (uint256 i = 0; i < headerCount; ++i) {
             bytes memory header = data[Coder.BLOCK_HEADER_LENGTH * i:Coder.BLOCK_HEADER_LENGTH * (i + 1)];
             Block memory _block = Coder.decodeBlockPartial(header);
             if (previousHash != _block.previousBlockHash) {
@@ -73,36 +77,48 @@ contract Storage is IStorage {
             previousHash = _hash;
 
             if (i % blockStepDistance == 0) {
+                ++index;
                 KeyBlock memory keyBlock = KeyBlock(_hash, accumulatedDifficultyNew, _block.timestamp);
-                if (storageSize > index) {
+                if (tipIndex >= index) {
                     storedBlocks[index] = keyBlock;
+                    ++reorgCount;
                 } else {
                     storedBlocks.push(keyBlock);
                 }
-                ++index;
             }
         }
 
         if (accumulatedDifficultyNew <= accumulatedDifficulty) {
             revert BlockCountInvalid(headerCount);
         }
+
+        emit KeyBlocksSubmitted(indexToHeight(index), headerCount, reorgCount);
+        tipIndex = index;
     }
 
     function getKeyBlock(uint256 blockHeight) external view override returns (KeyBlock memory _block) {
-        if (blockHeight <= initialBlockHeight) {
-            revert BlockHeightTooLow(blockHeight);
-        }
-        if ((blockHeight - initialBlockHeight - 1) % blockStepDistance != 0) {
+        uint256 index = heightToIndex(blockHeight);
+        if ((blockHeight - initialBlockHeight) % blockStepDistance != 0) {
             revert BlockHeightInvalid(blockHeight);
         }
-        uint256 index = (blockHeight - initialBlockHeight - 1) / blockStepDistance;
-        if (storedBlocks.length <= index) {
-            revert BlockHeightTooHigh(blockHeight, storedBlocks.length);
+        if (tipIndex < index) {
+            revert BlockHeightTooHigh(blockHeight, tipIndex);
         }
         _block = storedBlocks[index];
     }
 
     function getKeyBlockCount() external view override returns (uint256) {
-        return storedBlocks.length;
+        return tipIndex + 1;
+    }
+
+    function indexToHeight(uint256 index) internal view returns (uint256) {
+        return initialBlockHeight + index * blockStepDistance;
+    }
+
+    function heightToIndex(uint256 blockHeight) internal view returns (uint256) {
+        if (blockHeight < initialBlockHeight) {
+            revert BlockHeightTooLow(blockHeight);
+        }
+        return (blockHeight - initialBlockHeight) / blockStepDistance;
     }
 }

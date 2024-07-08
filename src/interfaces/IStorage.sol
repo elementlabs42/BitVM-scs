@@ -8,10 +8,12 @@ interface IStorage {
         uint256 timestamp;
     }
 
+    event KeyBlocksSubmitted(uint256 tip, uint256 total, uint256 reorg);
+
     error BlockCountInvalid(uint256 inputLength);
     error BlockHeightTooLow(uint256 inputHeight);
     error BlockHeightInvalid(uint256 inputHeight);
-    error BlockHeightTooHigh(uint256 inputHeight, uint256 storedLength);
+    error BlockHeightTooHigh(uint256 inputHeight, uint256 tipIndex);
     error BlockHashMismatch(bytes32 expected, bytes32 actual);
     error NoGivenBlockHeaders();
     error HashNotBelowTarget(bytes32 hash, bytes32 target);
