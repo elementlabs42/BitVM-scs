@@ -5,7 +5,7 @@ import "./SafeMath.sol";
 import {TaprootHelper} from "./TaprootHelper.sol";
 import {BtcTxProof} from "../interfaces/IBtcBridge.sol";
 
-library PeginHelper {
+library Script {
     using SafeMath for uint256;
     using TaprootHelper for bytes32;
 
@@ -36,15 +36,5 @@ library PeginHelper {
         scripts[0] = depositScript;
         scripts[1] = timelockScript;
         return nOfNPubkey.createTaprootAddress(scripts);
-    }
-
-    function validatePeginProof(
-        bytes32 nOfNPubkey,
-        address evmAddress,
-        BtcTxProof memory proof1,
-        BtcTxProof memory proof2
-    ) internal pure returns (bool) {
-        // todo: do all proof verification logic here
-        return true;
     }
 }

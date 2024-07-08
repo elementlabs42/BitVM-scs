@@ -14,6 +14,6 @@ contract MockBtcTxVerifier is IMockBtcTxVerifier, BtcTxVerifier {
         bytes20 destScriptHash,
         uint256 satoshisExpected
     ) public pure returns (bool) {
-        return validatePayment(blockHash, txProof, txOutIx, destScriptHash, satoshisExpected);
+        return false;
     }
 }

@@ -10,6 +10,7 @@ struct Block {
     bytes32 merkleRoot; // natural order
 }
 
+
 struct Outpoint {
     /**
      * @notice Bitcoin transaction ID, equal to SHA256(SHA256(rawTx))
@@ -25,18 +26,15 @@ struct Outpoint {
  * @notice Proof that a transaction (rawTx) is in a given block.
  */
 struct BtcTxProof {
-    /**
-     * @notice 80-byte block header.
-     */
-    bytes blockHeader;
-    Outpoint outpoint;
-    /**
-     * @notice Merkle proof. Concatenated sibling hashes, 32*n bytes.
-     */
-    bytes txMerkleProof;
-    /**
-     * @notice Raw transaction.
-     */
+    bytes32 txId;
+    bytes32 userPubKey;
+    bytes32 merkleRoot;
+    bytes29 intermediateNodes;
+    uint256 index;
+    bytes29 header;
+    bytes29[] parents;
+    bytes29[] children;
+    uint256 blockIndex;
     bytes rawTx;
 }
 

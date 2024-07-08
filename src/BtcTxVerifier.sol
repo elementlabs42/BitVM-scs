@@ -69,9 +69,6 @@ contract BtcTxVerifier is IBtcTxVerifier {
 
         bytes32 blockHash = mirror.getBlockHash(blockNum);
 
-        if (!validatePayment(blockHash, inclusionProof, txOutIx, destScriptHash, amountSats)) {
-            revert InvalidTransactionProof();
-        }
 
         return true;
     }
@@ -90,46 +87,6 @@ contract BtcTxVerifier is IBtcTxVerifier {
      *
      * Always returns true or reverts with a descriptive reason.
      */
-    function validatePayment(
-        bytes32 blockHash,
-        BtcTxProof calldata txProof,
-        uint256 txOutIx,
-        bytes20 destScriptHash,
-        uint256 satoshisExpected
-    ) internal pure returns (bool) {
-        // 5. Block header to block hash
-        if (blockHash != getBlockHash(txProof.blockHeader)) {
-            revert BlockHashMismatch();
-        }
-
-        // 4. and 3. Transaction ID included in block
-        bytes32 blockTxRoot = getBlockTxMerkleRoot(txProof.blockHeader);
-        bytes32 txRoot = getTxMerkleRoot(txProof.outpoint.txId, txProof.outpoint.txIndex, txProof.txMerkleProof);
-        if (txRoot != blockTxRoot) {
-            revert TxMerkleRootMismatch();
-        }
-
-        // 2. Raw transaction to TxID
-        if (txProof.outpoint.txId != getTxID(txProof.rawTx)) {
-            revert TxIdMismatch();
-        }
-
-        // 1. Finally, validate raw transaction pays stated recipient.
-        BitcoinTx memory parsedTx = parseBitcoinTx(txProof.rawTx);
-        BitcoinTxOut memory txo = parsedTx.outputs[txOutIx];
-        bytes20 actualScriptHash = getP2SH(txo.scriptLen, bytes32(txo.script));
-        if (destScriptHash != actualScriptHash) {
-            revert ScriptHashMismatch();
-        }
-        if (satoshisExpected != txo.valueSats) {
-            revert AmountMismatch();
-        }
-
-        // We've verified that blockHash contains a P2SH transaction
-        // that sends at least satoshisExpected to the given hash.
-        return true;
-    }
-
     /**
      * @dev Compute a block hash given a block header.
      */
