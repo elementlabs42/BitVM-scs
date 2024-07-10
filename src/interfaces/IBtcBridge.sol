@@ -10,21 +10,37 @@ struct Block {
     bytes32 merkleRoot; // natural order
 }
 
+struct InputPoint {
+   bytes32 txid;
+   uint32 vout;
+   bytes scriptSig;
+   uint32 sequence;
+}
+
+struct OutputPoint {
+   uint64 value;
+   bytes scriptPubKey;
+}
 
 /**
  * @notice Proof that a transaction (rawTx) is in a given block.
  */
 struct BtcTxProof {
+    bytes4 version;
+    bytes4 locktime;
     bytes32 txId;
     bytes32 userPubKey;
     bytes32 merkleRoot;
-    bytes intermediateNodes;
     uint256 index;
     bytes32 header;
     bytes32[] parents;
     bytes32[] children;
     uint256 blockIndex;
-    bytes rawTx;
+    bytes rawVin;
+    bytes rawVout;
+    bytes intermediateNodes;
+    InputPoint[] vin;
+    OutputPoint[] vout;
 }
 
 enum PegoutStatus {
