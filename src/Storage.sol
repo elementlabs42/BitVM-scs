@@ -26,6 +26,9 @@ contract Storage is IStorage {
      * @param timestamp timestamp of the initial block
      */
     constructor(uint256 distance, uint256 blockHeight, bytes32 blockHash, uint256 timestamp) {
+        if (distance == 0) {
+            revert BlockStepDistanceInvalid(distance);
+        }
         blockStepDistance = distance;
         initialBlockHeight = blockHeight;
         storedBlocks.push(KeyBlock(blockHash, 0, timestamp));

@@ -9,6 +9,11 @@ import "./fixture/ConstantsFixture.sol";
 import "../src/Storage.sol";
 
 contract StorageTest is Test, ConstantsFixture {
+    function testStorage_constructor_zeroDistance() public {
+        vm.expectRevert(abi.encodeWithSelector(IStorage.BlockStepDistanceInvalid.selector, 0));
+        new Storage(0, 0, hex"", 0);
+    }
+
     function testStorage_Submit() public {
         IStorage _storage = new Storage(10, 832000, blockHash832000, 1708879379);
         _storage.submit(block832001to832050, 832001);
@@ -46,5 +51,55 @@ contract StorageTest is Test, ConstantsFixture {
         IStorage.KeyBlock memory actualKeyBlock = _storage.getKeyBlock(841192);
         assertEq(expectedKeyBlock.blockHash, actualKeyBlock.blockHash);
         assertEq(expectedKeyBlock.timestamp, actualKeyBlock.timestamp);
+    }
+
+    function testStorage_Submit_zeroInput() public {
+        IStorage _storage = new Storage(17, 841107, blockHash841107, 1073676288);
+
+        vm.expectRevert(abi.encodeWithSelector(IStorage.NoGivenBlockHeaders.selector));
+        _storage.submit(hex"", 841108);
+
+        vm.expectRevert(abi.encodeWithSelector(IStorage.NoGivenBlockHeaders.selector));
+        _storage.submit(block841108to841209, 0);
+
+        vm.expectRevert(abi.encodeWithSelector(IStorage.NoGivenBlockHeaders.selector));
+        _storage.submit(hex"", 0);
+    }
+
+    function testStorage_Submit_lowHeight() public {
+        uint256 initialHeight = 201;
+        uint256 lowHeight = 201;
+        IStorage _storage = new Storage(1, initialHeight, hex"", 0);
+
+        vm.expectRevert(abi.encodeWithSelector(IStorage.BlockHeightTooLow.selector, lowHeight - 1));
+        _storage.submit(hex"ff", lowHeight);
+    }
+
+    function testStorage_Submit_notOnPace() public {
+        uint256 height = 34;
+        IStorage _storage = new Storage(17, 0, hex"", 0);
+
+        vm.expectRevert(abi.encodeWithSelector(IStorage.BlockHeightInvalid.selector, height));
+        _storage.submit(hex"ff", height);
+    }
+
+    function testStorage_Submit_highHeight() public {
+        uint256 initialHeight = 201;
+        uint256 legitHeight = initialHeight + 1;
+        uint256 highHeight = legitHeight + 1;
+        IStorage _storage = new Storage(1, initialHeight, hex"", 0);
+
+        vm.expectRevert(abi.encodeWithSelector(IStorage.BlockHeightTooHigh.selector, highHeight, 0));
+        _storage.submit(hex"ff", highHeight);
+
+        uint256 step = 10;
+        initialHeight = 832000;
+        _storage = new Storage(step, initialHeight, blockHash832000, 1708879379);
+        _storage.submit(block832001to832050, 832001);
+
+        legitHeight = initialHeight + (_storage.getKeyBlockCount() - 1) * step + 1;
+        highHeight = legitHeight + step;
+        vm.expectRevert(abi.encodeWithSelector(IStorage.BlockHeightTooHigh.selector, highHeight, 5));
+        _storage.submit(block832001to832050, highHeight);
     }
 }

@@ -82,7 +82,6 @@ const getBlockInfos = async (start, end) => {
 const getBlockHeaders = async (blockInfos) => {
   const headers = await Promise.all(blockInfos.map(async (info, i) => {
     if (info.header) {
-      console.log(`>>> reading header from cache for ${info.height} ...`)
       return info.header
     } else {
       console.log(`>>> fetching block header for ${info.height} ...`)
@@ -99,6 +98,7 @@ const getBlockHeaders = async (blockInfos) => {
   return headers
 }
 
+  // usage: `node script/fetchBlockHeaders.mjs <startHeight> <count>`
   ; (async () => {
     const start = parseInt(process.argv[2])
     const count = parseInt(process.argv[3])
