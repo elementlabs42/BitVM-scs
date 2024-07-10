@@ -3,15 +3,14 @@ pragma solidity ^0.8.26;
 
 import "./interfaces/IBtcBridge.sol";
 import "./EBTC.sol";
-import "./BtcTxVerifier.sol";
 import "./libraries/ViewBTC.sol";
 import "./libraries/ViewSPV.sol";
 import "./libraries/Script.sol";
 import {IStorage} from "./interfaces/IStorage.sol";
+import "./libraries/Transaction.sol";
 
 contract BtcBridge is IBtcBridge {
     EBTC ebtc;
-    BtcTxVerifier btcTxVerifier;
     IStorage blockStorage;
     uint256 target;
     bytes32 nOfNPubKey;
@@ -19,7 +18,10 @@ contract BtcBridge is IBtcBridge {
     using ViewBTC for bytes29;
     using ViewSPV for bytes32;
     using ViewSPV for bytes29;
+    using ViewSPV for bytes4;
     using Script for bytes32;
+    using TypedMemView for bytes;
+    using Transaction for bytes;
 
     /**
      * @dev withdrawer to pegout
@@ -30,11 +32,12 @@ contract BtcBridge is IBtcBridge {
      */
     mapping(bytes32 txId => mapping(uint256 txIndex => address withdrawer)) withdrawers;
 
+    mapping(bytes32 txId => bool) pegins;
+
     uint256 private constant PEG_OUT_MAX_PENDING_TIME = 8 weeks;
 
-    constructor(EBTC _ebtc, BtcTxVerifier _btcTxVerifier, IStorage _blockStorage, uint256 _target, bytes32 _nOfNPubKey) {
+    constructor(EBTC _ebtc, IStorage _blockStorage, uint256 _target, bytes32 _nOfNPubKey) {
         ebtc = _ebtc;
-        btcTxVerifier = _btcTxVerifier;
         blockStorage = _blockStorage;
         target = _target;
         nOfNPubKey = _nOfNPubKey;
@@ -47,43 +50,62 @@ contract BtcBridge is IBtcBridge {
     ) external returns (bool) {
         require(is_pegin_valid(proof1.txId), "Pegged in invalid");
         bytes32 userPk = proof1.userPubKey;
-        bytes32 taproot = nOfNPubKey.generateDepositTaproot(nOfNPubKey, evmAddress, userPk, 1 days);
+        bytes32 taproot = nOfNPubKey.generateDepositTaproot(evmAddress, userPk, 1 days);
+        bytes memory multisigScript = nOfNPubKey.generatePreSignScript();
+        Transaction.BTCTransaction memory tx1 =  proof1.rawTx.parseBTCTransaction();
+        Transaction.BTCTransaction memory tx2 =  proof2.rawTx.parseBTCTransaction();
 
-        BitcoinTx memory tx1 = IBtcTxVerifier.parseSegwitTx(proof1.rawTx);
-        BitcoinTx memory tx2 = IBtcTxVerifier.parseSegwitTx(proof2.rawTx);
+        require(tx1.vout.length == 1, "Invalid vout length");
+        require(tx1.vout[0].scriptPubKey == taproot, "Invalid script key");
 
-        require(tx1.outputs.length == 1, "Vout length invalid");
-        require(tx2.inputs.length == 1, "Vin length invalid");
-        //todo: check script pubkey is equal to taproot
+        bytes32 tx1Id = tx1.version.calculateTxId(tx1.rawVin.ref(0), tx1.rawVout.ref(0), tx1.locktime);
 
-        IBtcTxVerifier.getTxID(proof1.rawTx);
+        require(tx2.vin.length == 1, "Invalid vin length");
+        require(tx2.vin[0].txid == tx1Id, "Mismatch transaction id");
+        require(tx2.vout[0].scriptPubKey == multisigScript, "Mismatch multisig script");
+
+        require(isValidAmount(tx2.vout[0].value), "Invalid vout value");
+
+        bytes32 tx2Id = tx2.version.calculateTxId(tx2.rawVin.ref(0), tx2.rawVout.ref(0), tx2.locktime);
+
+        require(tx1Id == proof1.txId, "Mismatch transaction id");
+        require(tx2Id == proof2.txId, "Mismatch transaction id");
+
+        require(check_spv_proof(proof1), "Spv check failed");
+        require(check_spv_proof(proof2), "Spv check failed");
+
+        ebtc.mint(evmAddress, tx2.vout[0].value);
+
+        pegins[proof2.txId] = true;
 
         return true;
 
     }
 
     function check_spv_proof(BtcTxProof memory proof) internal view returns (bool) {
-        require(proof.txId.prove(proof.merkleRoot, proof.intermediateNodes, proof.index), "Merkle proof failed");
-        require(proof.header.merkleRoot() == proof.merkleRoot, "Merkle root mismatch");
-        require(proof.header.checkWork(proof.header.target()), "Difficulty mismatch");
+        bytes29 header = proof.header.ref();
+        bytes29 intermediateNodes = proof.intermediateNodes.ref(0);
+        require(proof.txId.prove(proof.merkleRoot, intermediateNodes, proof.index), "Merkle proof failed");
+        require(header.merkleRoot() == proof.merkleRoot, "Merkle root mismatch");
+        require(header.checkWork(header.target()), "Difficulty mismatch");
 
         bytes32 prevHash = blockStorage.getKeyBlock(proof.blockIndex).blockHash;
-        bytes29 header = proof.header;
 
         uint256 i;
 
         for (;i < proof.parents.length; i++) {
-            require(header.checkParent(proof.parents[i]), "Parent check failed");
-            header = proof.parents[i];
+            bytes32 parent = proof.parents[i];
+            require(header.checkParent(parent), "Parent check failed");
+            header = parent.ref();
         }
         require(header.workHash() == prevHash, "Previous hash mismatch");
 
         bytes32 nextHash = blockStorage.getKeyBlock(proof.blockIndex + 1).blockHash;
-        header = proof.header;
 
         for (;i < proof.children.length; i++) {
-            require(header.checkParent(proof.children[i]), "Parent check failed");
-            header = proof.children[i];
+            bytes32 child = proof.children[i];
+            require(header.checkParent(child), "Parent check failed");
+            header = child.ref();
         }
         require(header.workHash() == nextHash, "Next hash mismatch");
 
@@ -96,7 +118,14 @@ contract BtcBridge is IBtcBridge {
         return true;
     }
 
-    function is_pegin_valid(bytes32 txId)  internal returns (bool) {
+    function is_pegin_valid(bytes32 txId)  internal view returns (bool) {
+            return pegins[txId];
+    }
 
+    /**
+    * @dev checks any given number is a power of 2
+     */
+    function isValidAmount(uint256 n) internal pure returns (bool) {
+        return (n != 0) && ((n & (n - 1)) == 0);
     }
 }
