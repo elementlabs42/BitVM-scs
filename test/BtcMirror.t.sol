@@ -54,6 +54,7 @@ contract BtcMirrorTest is Test, ConstantsFixture {
             0x0000000000000000000b3dd6d6062aa8b7eb99d033fe29e507e0a0d81b5eaeed,
             1641627092,
             0x0000000000000000000B98AB0000000000000000000000000000000000000000,
+            10,
             false
         );
     }
@@ -73,7 +74,7 @@ contract BtcMirrorTest is Test, ConstantsFixture {
         BtcMirror mirror = createBtcMirror();
         mirror.submit(717695, headerGood);
         assertEq(mirror.getLatestBlockHeight(), 717695);
-        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("NoGivenBlockHeaders()"))));
+        vm.expectRevert(abi.encodeWithSelector(bytes4(keccak256("MissingBlockHeaders()"))));
         mirror.submit(717696, hex"");
         assertEq(mirror.getLatestBlockHeight(), 717695);
     }

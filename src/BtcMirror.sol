@@ -34,7 +34,7 @@ import "./interfaces/IBtcMirror.sol";
 // chain.
 contract BtcMirror is IBtcMirror {
     error WrongBlockHeaderLength();
-    error NoGivenBlockHeaders();
+    error MissingBlockHeaders();
     error OldDifficultyPeriod();
     error InsufficientTotalDifficulty();
     error InsufficientChainLength();
@@ -77,6 +77,11 @@ contract BtcMirror is IBtcMirror {
     uint256 public longestReorg;
 
     /**
+     * @notice Only store every nth block, to save gas.
+     */
+    uint256 public immutable everyNthBlockToStore;
+
+    /**
      * @notice Whether we're tracking testnet or mainnet Bitcoin.
      */
     bool public immutable isTestnet;
@@ -92,12 +97,14 @@ contract BtcMirror is IBtcMirror {
         bytes32 _blockHash,
         uint256 _blockTime,
         uint256 _expectedTarget,
+        uint256 _everyNthBlockToStore,
         bool _isTestnet
     ) {
         blockHeightToHash[_blockHeight] = _blockHash;
         latestBlockHeight = _blockHeight;
         latestBlockTime = _blockTime;
         periodToTarget[_blockHeight / 2016] = _expectedTarget;
+        everyNthBlockToStore = _everyNthBlockToStore;
         isTestnet = _isTestnet;
     }
 
@@ -133,7 +140,7 @@ contract BtcMirror is IBtcMirror {
         }
 
         if (numHeaders == 0) {
-            revert NoGivenBlockHeaders();
+            revert MissingBlockHeaders();
         }
 
         // sanity check: the new chain must not end in a past difficulty period
@@ -148,7 +155,7 @@ contract BtcMirror is IBtcMirror {
 
         // if we crossed a retarget, do extra math to compare chain weight
         uint256 parentPeriod = (blockHeight - 1) / 2016;
-        uint256 oldWork = 0;
+        uint256 oldWork;
         if (newPeriod > parentPeriod) {
             assert(newPeriod == parentPeriod + 1);
             // the submitted chain segment contains a difficulty retarget.
@@ -164,10 +171,14 @@ contract BtcMirror is IBtcMirror {
 
         // verify and store each block
         bytes32 oldTip = getBlockHash(latestBlockHeight);
-        uint256 nReorg = 0;
-        for (uint256 i = 0; i < numHeaders; i++) {
+        uint256 nReorg;
+        bytes32 prevHash = blockHeightToHash[blockHeight - 1];
+        for (uint256 i; i < numHeaders; ++i) {
             uint256 blockNum = blockHeight + i;
-            nReorg += submitBlock(blockNum, blockHeaders[80 * i:80 * (i + 1)]);
+            bytes calldata blockHeader = blockHeaders[80 * i:80 * (i + 1)];
+            (uint256 _nReorg, bytes32 _newHash) = submitBlock(blockNum, prevHash, blockHeader);
+            nReorg += _nReorg;
+            prevHash = _newHash;
         }
 
         // check that we have a new heaviest chain
@@ -184,8 +195,8 @@ contract BtcMirror is IBtcMirror {
 
             // erase any block hashes above newHeight, now invalidated.
             // (in case we just accepted a shorter, heavier chain.)
-            for (uint256 i = newHeight + 1; i <= latestBlockHeight; i++) {
-                blockHeightToHash[i] = 0;
+            for (uint256 i = newHeight + 1; i <= latestBlockHeight; ++i) {
+                delete blockHeightToHash[i];
             }
 
             emit NewTotalDifficultySinceRetarget(newHeight, newWork, newDifficultyBits);
@@ -223,25 +234,30 @@ contract BtcMirror is IBtcMirror {
         return numBlocks * workPerBlock;
     }
 
-    function submitBlock(uint256 blockHeight, bytes calldata blockHeader) private returns (uint256 numReorged) {
+    function submitBlock(uint256 blockHeight, bytes32 prevHash, bytes calldata blockHeader) private 
+    // returns (uint256 numReorged) {
+    returns (uint256 numReorged, bytes32 newHash) {
         // compute the block hash
         assert(blockHeader.length == 80);
         uint256 blockHashNum = Endian.reverse256(uint256(sha256(abi.encode(sha256(blockHeader)))));
-
+        
         // optimistically save the block hash
         // we'll revert if the header turns out to be invalid
         bytes32 oldHash = blockHeightToHash[blockHeight];
-        bytes32 newHash = bytes32(blockHashNum);
+        newHash = bytes32(blockHashNum);
         if (oldHash != bytes32(0) && oldHash != newHash) {
             // if we're overwriting a non-zero block hash, that block is reorged
             numReorged = 1;
         }
         // this is the most expensive line. 20,000 gas to use a new storage slot
-        blockHeightToHash[blockHeight] = newHash;
-
+        // only store the nth block, to save gas
+        if (blockHeight % everyNthBlockToStore == 0) {
+            blockHeightToHash[blockHeight] = newHash;
+        }
+        
         // verify previous hash
-        bytes32 prevHash = bytes32(Endian.reverse256(uint256(bytes32(blockHeader[4:36]))));
-        if (prevHash != blockHeightToHash[blockHeight - 1]) {
+        bytes32 prevHashFromBlockHeader = bytes32(Endian.reverse256(uint256(bytes32(blockHeader[4:36]))));
+        if (prevHashFromBlockHeader != prevHash) {
             revert BadParent();
         }
         if (prevHash == 0) {

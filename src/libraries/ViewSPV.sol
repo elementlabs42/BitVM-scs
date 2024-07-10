@@ -120,7 +120,7 @@ library ViewSPV {
     {
         bytes32 _digest;
         uint256 _headerCount = _headers.len() / 80;
-        for (uint256 i = 0; i < _headerCount; i += 1) {
+        for (uint256 i; i < _headerCount; ++i) {
             bytes29 _header = _headers.indexHeaderArray(i);
             if (i != 0) {
                 if (!checkParent(_header, _digest)) return ERR_INVALID_CHAIN;

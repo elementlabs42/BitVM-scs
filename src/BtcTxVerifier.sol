@@ -5,7 +5,6 @@ import {BitcoinTxIn, BitcoinTxOut, BitcoinTxWitness} from "./interfaces/IBtcBrid
 import "./interfaces/IBtcMirror.sol";
 import "./interfaces/IBtcTxVerifier.sol";
 import "./libraries/Endian.sol";
-import "forge-std/console.sol"; //TODO: delete me
 
 //
 //                                        #
@@ -159,7 +158,7 @@ contract BtcTxVerifier is IBtcTxVerifier {
     function getTxMerkleRoot(bytes32 txId, uint256 txIndex, bytes calldata siblings) public pure returns (bytes32) {
         bytes32 ret = bytes32(Endian.reverse256(uint256(txId)));
         uint256 len = siblings.length / 32;
-        for (uint256 i = 0; i < len; i++) {
+        for (uint256 i; i < len; ++i) {
             bytes32 s = bytes32(Endian.reverse256(uint256(bytes32(siblings[i * 32:(i + 1) * 32]))));
             if (txIndex & 1 == 0) {
                 ret = doubleSha(abi.encodePacked(ret, s));
@@ -201,7 +200,7 @@ contract BtcTxVerifier is IBtcTxVerifier {
         uint256 nInputs;
         (nInputs, offset) = readVarInt(rawTx, offset);
         ret.inputs = new BitcoinTxIn[](nInputs);
-        for (uint256 i = 0; i < nInputs; i++) {
+        for (uint256 i; i < nInputs; ++i) {
             BitcoinTxIn memory txIn;
             txIn.prevTxID = Endian.reverse256(uint256(bytes32(rawTx[offset:offset + 32])));
             offset += 32;
@@ -226,7 +225,7 @@ contract BtcTxVerifier is IBtcTxVerifier {
         uint256 nOutputs;
         (nOutputs, offset) = readVarInt(rawTx, offset);
         ret.outputs = new BitcoinTxOut[](nOutputs);
-        for (uint256 i = 0; i < nOutputs; i++) {
+        for (uint256 i; i < nOutputs; ++i) {
             BitcoinTxOut memory txOut;
             txOut.valueSats = Endian.reverse64(uint64(bytes8(rawTx[offset:offset + 8])));
             offset += 8;
@@ -278,7 +277,7 @@ contract BtcTxVerifier is IBtcTxVerifier {
         uint256 nInputs;
         (nInputs, offset) = readVarInt(rawTx, offset);
         ret.inputs = new BitcoinTxIn[](nInputs);
-        for (uint256 i = 0; i < nInputs; i++) {
+        for (uint256 i; i < nInputs; ++i) {
             BitcoinTxIn memory txIn;
             txIn.prevTxID = Endian.reverse256(uint256(bytes32(rawTx[offset:offset + 32])));
             offset += 32;
@@ -299,7 +298,7 @@ contract BtcTxVerifier is IBtcTxVerifier {
         uint256 nOutputs;
         (nOutputs, offset) = readVarInt(rawTx, offset);
         ret.outputs = new BitcoinTxOut[](nOutputs);
-        for (uint256 i = 0; i < nOutputs; i++) {
+        for (uint256 i; i < nOutputs; ++i) {
             BitcoinTxOut memory txOut;
             txOut.valueSats = Endian.reverse64(uint64(bytes8(rawTx[offset:offset + 8])));
             offset += 8;
@@ -316,7 +315,7 @@ contract BtcTxVerifier is IBtcTxVerifier {
         uint256 nWitnesses;
         (nWitnesses, offset) = readVarInt(rawTx, offset);
         ret.witnesses = new BitcoinTxWitness[](nWitnesses);
-        for (uint256 i = 0; i < nWitnesses; i++) {
+        for (uint256 i; i < nWitnesses; ++i) {
             BitcoinTxWitness memory txWitness;
             uint256 nWitnessItemBytes;
             (nWitnessItemBytes, offset) = readVarInt(rawTx, offset);

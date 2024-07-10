@@ -721,8 +721,8 @@ library TypedMemView {
             if gt(ptr, _location) { revert(0x60, 0x20) } // empty revert message
         }
 
-        uint256 _offset = 0;
-        for (uint256 i = 0; i < memViews.length; i++) {
+        uint256 _offset;
+        for (uint256 i; i < memViews.length; ++i) {
             bytes29 memView = memViews[i];
             unsafeCopyTo(memView, _location + _offset);
             _offset += len(memView);

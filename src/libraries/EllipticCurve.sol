@@ -19,7 +19,7 @@ library EllipticCurve {
     /// @return q such that x*q = 1 (mod _pp)
     function invMod(uint256 _x, uint256 _pp) internal pure returns (uint256) {
         require(_x != 0 && _x != _pp && _pp != 0, "Invalid number");
-        uint256 q = 0;
+        uint256 q;
         uint256 newT = 1;
         uint256 r = _pp;
         uint256 t;
@@ -146,9 +146,9 @@ library EllipticCurve {
         pure
         returns (uint256, uint256)
     {
-        uint256 x = 0;
-        uint256 y = 0;
-        uint256 z = 0;
+        uint256 x;
+        uint256 y;
+        uint256 z;
 
         // Double if x1==x2 else add
         if (_x1 == _x2) {
