@@ -76,7 +76,7 @@ contract Storage is IStorage {
             accumulatedDifficultyNew += Coder.toDifficulty(target);
             previousHash = _hash;
 
-            if (i % blockStepDistance == 0) {
+            if ((blockHeight + i) % blockStepDistance == initialBlockHeight % blockStepDistance) {
                 ++index;
                 KeyBlock memory keyBlock = KeyBlock(_hash, accumulatedDifficultyNew, _block.timestamp);
                 if (tipIndex >= index) {
