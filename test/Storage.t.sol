@@ -7,6 +7,7 @@ import {Block} from "../src/interfaces/IBtcBridge.sol";
 import "../src/libraries/Coder.sol";
 import "./fixture/ConstantsFixture.sol";
 import "../src/Storage.sol";
+import "./Util.sol";
 
 contract StorageTest is Test, ConstantsFixture {
     function testStorage_constructor_zeroDistance() public {
@@ -101,5 +102,14 @@ contract StorageTest is Test, ConstantsFixture {
         highHeight = legitHeight + step;
         vm.expectRevert(abi.encodeWithSelector(IStorage.BlockHeightTooHigh.selector, highHeight, 5));
         _storage.submit(block832001to832050, highHeight);
+    }
+
+    function testStorage_Submit_invalidLength() public {
+        IStorage _storage = new Storage(10, 832000, blockHash832000, 1708879379);
+        uint256 newLength = block832001to832050.length - 2;
+        bytes memory corruptedData = Util.slice(block832001to832050, 0, newLength);
+
+        vm.expectRevert(abi.encodeWithSelector(Coder.BlockHeaderLengthInvalid.selector, newLength));
+        _storage.submit(corruptedData, 832001);
     }
 }

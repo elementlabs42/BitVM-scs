@@ -65,7 +65,7 @@ contract Storage is IStorage {
         if (headerCount % blockStepDistance != 0) {
             revert BlockCountInvalid(headerCount);
         }
-        for (uint256 i = 0; i < headerCount; ++i) {
+        for (uint256 i; i < headerCount; ++i) {
             bytes memory header = data[Coder.BLOCK_HEADER_LENGTH * i:Coder.BLOCK_HEADER_LENGTH * (i + 1)];
             Block memory _block = Coder.decodeBlockPartial(header);
             if (previousHash != _block.previousBlockHash) {
