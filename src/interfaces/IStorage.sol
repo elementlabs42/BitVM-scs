@@ -16,6 +16,7 @@ interface IStorage {
     error BlockHeightInvalid(uint256 inputHeight);
     error BlockHeightTooHigh(uint256 inputHeight, uint256 tipIndex);
     error BlockHashMismatch(bytes32 expected, bytes32 actual);
+    error ChainWorkNotEnough();
     error NoGivenBlockHeaders();
     error HashNotBelowTarget(bytes32 hash, bytes32 target);
 

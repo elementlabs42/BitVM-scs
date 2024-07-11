@@ -38,7 +38,7 @@ contract Storage is IStorage {
      * @param data concatenated and continuous block headers as seen in explorer,
      *             the length should be multiple of Coder.BLOCK_HEADER_LENGTH * blockStepDistance
      * @param blockHeight first block height in @param data,
-     *                    the value should be latest storedBlock height + 1
+     *                    the value should be any storedBlock height + 1
      */
     function submit(bytes calldata data, uint256 blockHeight) external override {
         if (data.length == 0 || blockHeight == 0) {
@@ -92,7 +92,7 @@ contract Storage is IStorage {
         }
 
         if (accumulatedDifficultyNew <= accumulatedDifficulty) {
-            revert BlockCountInvalid(headerCount);
+            revert ChainWorkNotEnough();
         }
 
         emit KeyBlocksSubmitted(indexToHeight(index), headerCount, reorgCount);

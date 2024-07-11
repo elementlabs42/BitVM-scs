@@ -39,7 +39,7 @@ library Coder {
     }
 
     function toHash(bytes calldata header) external pure returns (bytes32 _hash) {
-        if (header.length != 80) {
+        if (header.length != BLOCK_HEADER_LENGTH) {
             revert BlockHeaderLengthInvalid(header.length);
         }
 

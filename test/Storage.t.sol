@@ -54,6 +54,21 @@ contract StorageTest is Test, ConstantsFixture {
         assertEq(expectedKeyBlock.timestamp, actualKeyBlock.timestamp);
     }
 
+    function testStorage_Submit_step2() public {
+        IStorage _storage = new Storage(2, 832000, blockHash832000, 1708879379);
+        _storage.submit(block832001to832050, 832001);
+
+        uint256 keyBlockCount = _storage.getKeyBlockCount();
+        assertEq(keyBlockCount, 26);
+
+        IStorage.KeyBlock memory expectedKeyBlock = IStorage.KeyBlock(blockHash832002, 0, 1708880822);
+        IStorage.KeyBlock memory actualKeyBlock = _storage.getKeyBlock(832002);
+        assertEq(expectedKeyBlock.blockHash, actualKeyBlock.blockHash);
+        assertEq(expectedKeyBlock.timestamp, actualKeyBlock.timestamp);
+    }
+
+    function testStorage_Submit_reorg() public {}
+
     function testStorage_Submit_zeroInput() public {
         IStorage _storage = new Storage(17, 841107, blockHash841107, 1073676288);
 
@@ -110,6 +125,37 @@ contract StorageTest is Test, ConstantsFixture {
         bytes memory corruptedData = Util.slice(block832001to832050, 0, newLength);
 
         vm.expectRevert(abi.encodeWithSelector(Coder.BlockHeaderLengthInvalid.selector, newLength));
+        _storage.submit(corruptedData, 832001);
+    }
+
+    function testStorage_Submit_invalidHeaderCount() public {
+        IStorage _storage = new Storage(10, 832000, blockHash832000, 1708879379);
+        uint256 newLength = block832001to832050.length - Coder.BLOCK_HEADER_LENGTH;
+        bytes memory corruptedData = Util.slice(block832001to832050, 0, newLength);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(IStorage.BlockCountInvalid.selector, newLength / Coder.BLOCK_HEADER_LENGTH)
+        );
+        _storage.submit(corruptedData, 832001);
+    }
+
+    function testStorage_Submit_differentHash() public {
+        IStorage _storage = new Storage(2, 832000, blockHash832000, 1708879379);
+        vm.expectRevert(abi.encodeWithSelector(IStorage.BlockHashMismatch.selector, blockHash832000, blockHash842562));
+        _storage.submit(block842563to842612, 832001);
+    }
+
+    function testStorage_Submit_hashValueTooBig() public {
+        IStorage _storage = new Storage(1, 832000, blockHash832000, 1708879379);
+        bytes memory corruptedData = Util.slice(block832001to832050, 0, Coder.BLOCK_HEADER_LENGTH);
+        // make target too small
+        corruptedData[72] = 0x00;
+        corruptedData[73] = 0x00;
+        corruptedData[74] = 0x00;
+        corruptedData[75] = 0x03; // exponent bit
+        bytes32 corruptedHash = Coder.toHash(corruptedData);
+
+        vm.expectRevert(abi.encodeWithSelector(IStorage.HashNotBelowTarget.selector, corruptedHash, 0x0));
         _storage.submit(corruptedData, 832001);
     }
 }
