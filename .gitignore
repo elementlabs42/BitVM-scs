@@ -16,3 +16,6 @@ docs/
 
 # Dotenv file
 .env
+
+# Script output
+blocks-*-*.json

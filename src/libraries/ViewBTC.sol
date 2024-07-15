@@ -158,7 +158,7 @@ library ViewBTC {
 
         uint256 _offset = uint256(compactIntLength(uint64(_nIns)));
         bytes29 _remaining;
-        for (uint256 _i = 0; _i < _index; _i += 1) {
+        for (uint256 _i; _i < _index; ++_i) {
             _remaining = _vin.postfix(_viewLen.sub(_offset), uint40(BTCTypes.IntermediateTxIns));
             _offset += inputLength(_remaining);
         }
@@ -219,7 +219,7 @@ library ViewBTC {
 
         uint256 _offset = uint256(compactIntLength(uint64(_nOuts)));
         bytes29 _remaining;
-        for (uint256 _i = 0; _i < _index; _i += 1) {
+        for (uint256 _i; _i < _index; ++_i) {
             _remaining = _vout.postfix(_viewLen - _offset, uint40(BTCTypes.IntermediateTxOuts));
             _offset += outputLength(_remaining);
         }
@@ -306,7 +306,7 @@ library ViewBTC {
         }
 
         uint256 _offset = uint256(compactIntLength(_nIns));
-        for (uint256 i = 0; i < _nIns; i++) {
+        for (uint256 i; i < _nIns; ++i) {
             if (_offset >= _viewLen) {
                 // We've reached the end, but are still trying to read more
                 return TypedMemView.nullView();
@@ -335,7 +335,7 @@ library ViewBTC {
         }
 
         uint256 _offset = uint256(compactIntLength(_nOuts));
-        for (uint256 i = 0; i < _nOuts; i++) {
+        for (uint256 i; i < _nOuts; ++i) {
             if (_offset >= _viewLen) {
                 // We've reached the end, but are still trying to read more
                 return TypedMemView.nullView();
@@ -492,7 +492,7 @@ library ViewBTC {
         uint256 _idx = _index;
         bytes32 _current = _leaf;
 
-        for (uint256 i = 0; i < nodes; i++) {
+        for (uint256 i; i < nodes; ++i) {
             bytes32 _next = _proof.index(i * 32, 32);
             if (_idx % 2 == 1) {
                 _current = _merkleStep(_next, _current);

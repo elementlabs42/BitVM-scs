@@ -10,11 +10,13 @@ interface IStorage {
 
     event KeyBlocksSubmitted(uint256 tip, uint256 total, uint256 reorg);
 
+    error BlockStepDistanceInvalid(uint256 inputDistance);
     error BlockCountInvalid(uint256 inputLength);
     error BlockHeightTooLow(uint256 inputHeight);
     error BlockHeightInvalid(uint256 inputHeight);
     error BlockHeightTooHigh(uint256 inputHeight, uint256 tipIndex);
     error BlockHashMismatch(bytes32 expected, bytes32 actual);
+    error ChainWorkNotEnough();
     error NoGivenBlockHeaders();
     error HashNotBelowTarget(bytes32 hash, bytes32 target);
 

@@ -26,6 +26,9 @@ contract Storage is IStorage {
      * @param timestamp timestamp of the initial block
      */
     constructor(uint256 distance, uint256 blockHeight, bytes32 blockHash, uint256 timestamp) {
+        if (distance == 0) {
+            revert BlockStepDistanceInvalid(distance);
+        }
         blockStepDistance = distance;
         initialBlockHeight = blockHeight;
         storedBlocks.push(KeyBlock(blockHash, 0, timestamp));
@@ -35,7 +38,7 @@ contract Storage is IStorage {
      * @param data concatenated and continuous block headers as seen in explorer,
      *             the length should be multiple of Coder.BLOCK_HEADER_LENGTH * blockStepDistance
      * @param blockHeight first block height in @param data,
-     *                    the value should be latest storedBlock height + 1
+     *                    the value should be any storedBlock height + 1
      */
     function submit(bytes calldata data, uint256 blockHeight) external override {
         if (data.length == 0 || blockHeight == 0) {
@@ -62,7 +65,7 @@ contract Storage is IStorage {
         if (headerCount % blockStepDistance != 0) {
             revert BlockCountInvalid(headerCount);
         }
-        for (uint256 i = 0; i < headerCount; ++i) {
+        for (uint256 i; i < headerCount; ++i) {
             bytes memory header = data[Coder.BLOCK_HEADER_LENGTH * i:Coder.BLOCK_HEADER_LENGTH * (i + 1)];
             Block memory _block = Coder.decodeBlockPartial(header);
             if (previousHash != _block.previousBlockHash) {
@@ -76,7 +79,7 @@ contract Storage is IStorage {
             accumulatedDifficultyNew += Coder.toDifficulty(target);
             previousHash = _hash;
 
-            if (i % blockStepDistance == 0) {
+            if ((blockHeight + i) % blockStepDistance == initialBlockHeight % blockStepDistance) {
                 ++index;
                 KeyBlock memory keyBlock = KeyBlock(_hash, accumulatedDifficultyNew, _block.timestamp);
                 if (tipIndex >= index) {
@@ -89,7 +92,7 @@ contract Storage is IStorage {
         }
 
         if (accumulatedDifficultyNew <= accumulatedDifficulty) {
-            revert BlockCountInvalid(headerCount);
+            revert ChainWorkNotEnough();
         }
 
         emit KeyBlocksSubmitted(indexToHeight(index), headerCount, reorgCount);
