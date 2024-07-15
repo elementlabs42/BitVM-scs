@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import "./SafeMath.sol";
 import {TaprootHelper} from "./TaprootHelper.sol";
 import {BtcTxProof} from "../interfaces/IBtcBridge.sol";
 
 library PeginHelper {
-    using SafeMath for uint256;
     using TaprootHelper for bytes32;
 
     function generatePreSignScript(bytes32 nOfNPubkey) internal pure returns (bytes memory) {

@@ -62,6 +62,10 @@ struct BitcoinTx {
      */
     uint8 flag;
     /**
+     * @dev Locktime. Either 0 for no lock, blocks if <500k, or seconds.
+     */
+    uint32 locktime;
+    /**
      * @dev Each input spends a previous UTXO.
      */
     BitcoinTxIn[] inputs;
@@ -73,10 +77,6 @@ struct BitcoinTx {
      * @dev Witness stack.
      */
     BitcoinTxWitness[] witnesses;
-    /**
-     * @dev Locktime. Either 0 for no lock, blocks if <500k, or seconds.
-     */
-    uint32 locktime;
 }
 
 struct BitcoinTxIn {

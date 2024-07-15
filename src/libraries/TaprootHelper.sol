@@ -2,11 +2,9 @@
 pragma solidity ^0.8.26;
 pragma experimental ABIEncoderV2;
 
-import "./SafeMath.sol";
 import "./EllipticCurve.sol";
 
 library TaprootHelper {
-    using SafeMath for uint256;
     using EllipticCurve for uint256;
 
     uint256 private constant SECP256K1_P = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;

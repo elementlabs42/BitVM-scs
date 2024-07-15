@@ -66,7 +66,7 @@ contract Storage is IStorage {
             revert BlockCountInvalid(headerCount);
         }
         for (uint256 i; i < headerCount; ++i) {
-            bytes memory header = data[Coder.BLOCK_HEADER_LENGTH * i:Coder.BLOCK_HEADER_LENGTH * (i + 1)];
+            bytes calldata header = data[Coder.BLOCK_HEADER_LENGTH * i:Coder.BLOCK_HEADER_LENGTH * (i + 1)];
             Block memory _block = Coder.decodeBlockPartial(header);
             if (previousHash != _block.previousBlockHash) {
                 revert BlockHashMismatch(previousHash, _block.previousBlockHash);
@@ -122,6 +122,9 @@ contract Storage is IStorage {
         if (blockHeight < initialBlockHeight) {
             revert BlockHeightTooLow(blockHeight);
         }
-        return (blockHeight - initialBlockHeight) / blockStepDistance;
+        
+        unchecked{
+            return (blockHeight - initialBlockHeight) / blockStepDistance;
+        }
     }
 }

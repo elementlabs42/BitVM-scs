@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.5.10;
+pragma solidity ^0.8.26;
 
 /**
  * @title BitcoinSPV
@@ -7,12 +7,10 @@ pragma solidity >=0.5.10;
 /**
  * @author Summa (https://summa.one)
  */
-import {SafeMath} from "./SafeMath.sol";
 import "./TypedMemView.sol";
 
 library ViewBTC {
     using TypedMemView for bytes29;
-    using SafeMath for uint256;
 
     // The target at minimum Difficulty. Also the target of the genesis block
     uint256 public constant DIFF1_TARGET = 0xffff0000000000000000000000000000000000000000000000000000;
@@ -159,11 +157,11 @@ library ViewBTC {
         uint256 _offset = uint256(compactIntLength(uint64(_nIns)));
         bytes29 _remaining;
         for (uint256 _i; _i < _index; ++_i) {
-            _remaining = _vin.postfix(_viewLen.sub(_offset), uint40(BTCTypes.IntermediateTxIns));
+            _remaining = _vin.postfix(_viewLen - _offset, uint40(BTCTypes.IntermediateTxIns));
             _offset += inputLength(_remaining);
         }
 
-        _remaining = _vin.postfix(_viewLen.sub(_offset), uint40(BTCTypes.IntermediateTxIns));
+        _remaining = _vin.postfix(_viewLen - _offset, uint40(BTCTypes.IntermediateTxIns));
         uint256 _len = inputLength(_remaining);
         return _vin.slice(_offset, _len, uint40(BTCTypes.TxIn));
     }
@@ -371,7 +369,7 @@ library ViewBTC {
         typeAssert(_arr, BTCTypes.HeaderArray)
         returns (bytes29)
     {
-        uint256 _start = index.mul(80);
+        uint256 _start = index * 80;
         return _arr.slice(_start, 80, uint40(BTCTypes.Header));
     }
 
@@ -409,15 +407,15 @@ library ViewBTC {
     /// @return         the target
     function target(bytes29 _header) internal pure typeAssert(_header, BTCTypes.Header) returns (uint256) {
         uint256 _mantissa = _header.indexLEUint(72, 3);
-        uint256 _exponent = _header.indexUint(75, 1).sub(3);
-        return _mantissa.mul(256 ** _exponent);
+        uint256 _exponent = _header.indexUint(75, 1) - 3;
+        return _mantissa * (256 ** _exponent);
     }
 
     /// @notice         calculates the difficulty from a target
     /// @param _target  the target
     /// @return         the difficulty
     function toDiff(uint256 _target) internal pure returns (uint256) {
-        return DIFF1_TARGET.div(_target);
+        return DIFF1_TARGET / _target;
     }
 
     /// @notice         extracts the difficulty from the header
@@ -516,14 +514,14 @@ library ViewBTC {
         pure
         returns (uint256)
     {
-        uint256 _elapsedTime = _secondTimestamp.sub(_firstTimestamp);
+        uint256 _elapsedTime = _secondTimestamp - _firstTimestamp;
 
         // Normalize ratio to factor of 4 if very long or very short
-        if (_elapsedTime < RETARGET_PERIOD.div(4)) {
-            _elapsedTime = RETARGET_PERIOD.div(4);
+        if (_elapsedTime < RETARGET_PERIOD / 4) {
+            _elapsedTime = RETARGET_PERIOD / 4;
         }
-        if (_elapsedTime > RETARGET_PERIOD.mul(4)) {
-            _elapsedTime = RETARGET_PERIOD.mul(4);
+        if (_elapsedTime > RETARGET_PERIOD * 4) {
+            _elapsedTime = RETARGET_PERIOD * 4;
         }
 
         /*
@@ -531,7 +529,7 @@ library ViewBTC {
                 so we divide it by 256**2, then multiply by 256**2 later
                 we know the target is evenly divisible by 256**2, so this isn't an issue
         */
-        uint256 _adjusted = _previousTarget.div(65536).mul(_elapsedTime);
-        return _adjusted.div(RETARGET_PERIOD).mul(65536);
+        uint256 _adjusted = _previousTarget * _elapsedTime / 65536;
+        return _adjusted * 65536 / RETARGET_PERIOD;
     }
 }

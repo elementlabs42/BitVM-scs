@@ -29,13 +29,15 @@ library Coder {
         _block.bits = bytes4(header[72:76]);
     }
 
-    function encodeBlock(Block calldata _block) external pure returns (bytes memory header) {
-        bytes4 version = bytes4(Endian.reverse32(_block.version));
-        bytes32 previousBlockHash = bytes32(Endian.reverse256(uint256(_block.previousBlockHash)));
-        bytes32 merkleRoot = bytes32(Endian.reverse256(uint256(_block.merkleRoot)));
-        bytes4 timestamp = bytes4(Endian.reverse32(_block.timestamp));
-        bytes4 nonce = bytes4(Endian.reverse32(_block.nonce));
-        header = abi.encodePacked(version, previousBlockHash, merkleRoot, timestamp, _block.bits, nonce);
+    function encodeBlock(Block calldata _block) external pure returns (bytes memory) {
+        return abi.encodePacked(
+            bytes4(Endian.reverse32(_block.version)),
+            bytes32(Endian.reverse256(uint256(_block.previousBlockHash))),
+            bytes32(Endian.reverse256(uint256(_block.merkleRoot))),
+            bytes4(Endian.reverse32(_block.timestamp)),
+            _block.bits,
+            bytes4(Endian.reverse32(_block.nonce))
+        );
     }
 
     function toHash(bytes calldata header) external pure returns (bytes32 _hash) {
