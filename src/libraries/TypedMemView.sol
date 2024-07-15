@@ -3,6 +3,15 @@ pragma solidity ^0.8.26;
 
 
 library TypedMemView {
+    error ValidityAssertionFailed();
+    error InvalidDataLength();
+    error OverranTheView(uint96 sliceLocation, uint96 sliceLength, uint256 indexOffset, uint256 indexLength);
+    error Sha2Failed();
+    error Hash160Failed();
+    error Hash256Failed();
+    error NullPointer();
+    error InvalidPointer();
+    error ViewCopyFailed();
 
     // Why does this exist?
     // the solidity `bytes memory` type has a few weaknesses.
@@ -208,7 +217,9 @@ library TypedMemView {
      * @return          bytes29 - The validated view
      */
     function assertValid(bytes29 memView) internal pure returns (bytes29) {
-        require(isValid(memView), "Validity assertion failed");
+        if (!isValid(memView)) {
+            revert ValidityAssertionFailed();
+        }
         return memView;
     }
 
@@ -485,10 +496,14 @@ library TypedMemView {
      */
     function index(bytes29 memView, uint256 _index, uint8 _bytes) internal pure returns (bytes32 result) {
         if (_bytes == 0) return bytes32(0);
+        
         if (_index + _bytes > len(memView)) {
-            revert(indexErrOverrun(loc(memView), len(memView), _index, uint256(_bytes)));
+            revert OverranTheView(loc(memView), len(memView), _index, uint256(_bytes));
         }
-        require(_bytes <= 32, "TypedMemView/index - Attempted to index more than 32 bytes");
+        if (_bytes > 32) {
+            revert InvalidDataLength();
+        }
+        
 
         uint8 bitLength = _bytes * 8;
         uint256 _loc = loc(memView);
@@ -564,7 +579,9 @@ library TypedMemView {
             res := staticcall(gas(), 2, _loc, _len, ptr, 0x20) // sha2 #1
             digest := mload(ptr)
         }
-        require(res, "sha2 OOG");
+        if (!res) {
+            revert Sha2Failed();
+        }
     }
 
     /**
@@ -583,7 +600,9 @@ library TypedMemView {
             res := and(res, staticcall(gas(), 3, ptr, 0x20, ptr, 0x20)) // rmd160
             digest := mload(add(ptr, 0xc)) // return value is 0-prefixed.
         }
-        require(res, "hash160 OOG");
+        if (!res) {
+            revert Hash160Failed();
+        }
     }
 
     /**
@@ -602,7 +621,9 @@ library TypedMemView {
             res := and(res, staticcall(gas(), 2, ptr, 0x20, ptr, 0x20)) // sha2 #2
             digest := mload(ptr)
         }
-        require(res, "hash256 OOG");
+        if (!res) {
+            revert Hash256Failed();
+        }
     }
 
     /**
@@ -659,8 +680,12 @@ library TypedMemView {
      * @return          written - the unsafe memory reference
      */
     function unsafeCopyTo(bytes29 memView, uint256 _newLoc) private view returns (bytes29 written) {
-        require(notNull(memView), "TypedMemView/copyTo - Null pointer deref");
-        require(isValid(memView), "TypedMemView/copyTo - Invalid pointer deref");
+        if (!notNull(memView)) {
+            revert NullPointer();
+        }
+        if (!isValid(memView)) {
+            revert InvalidPointer();
+        }
         uint256 _len = len(memView);
         uint256 _oldLoc = loc(memView);
 
@@ -675,7 +700,9 @@ library TypedMemView {
             // use the identity precompile to copy
             res := staticcall(gas(), 4, _oldLoc, _len, _newLoc, _len)
         }
-        require(res, "identity OOG");
+        if (!res) {
+            revert ViewCopyFailed();
+        }
         written = unsafeBuildUnchecked(typeOf(memView), _newLoc, _len);
     }
 
