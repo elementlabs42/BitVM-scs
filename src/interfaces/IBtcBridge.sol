@@ -11,8 +11,8 @@ struct Block {
 }
 
 struct InputPoint {
-   bytes32 txid;
-   uint32 vout;
+   bytes32 prevTxID;
+   bytes4 prevTxIndex;
    bytes scriptSig;
    uint32 sequence;
 }
@@ -29,7 +29,6 @@ struct BtcTxProof {
     bytes4 version;
     bytes4 locktime;
     bytes32 txId;
-    bytes32 userPubKey;
     bytes32 merkleRoot;
     uint256 index;
     bytes32 header;
@@ -39,8 +38,6 @@ struct BtcTxProof {
     bytes rawVin;
     bytes rawVout;
     bytes intermediateNodes;
-    InputPoint[] vin;
-    OutputPoint[] vout;
 }
 
 enum PegoutStatus {

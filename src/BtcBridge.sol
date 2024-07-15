@@ -7,6 +7,7 @@ import "./libraries/ViewBTC.sol";
 import "./libraries/ViewSPV.sol";
 import "./libraries/Script.sol";
 import {IStorage} from "./interfaces/IStorage.sol";
+import {TransactionHelper} from "./libraries/TransactionHelper.sol";
 
 contract BtcBridge is IBtcBridge {
     EBTC ebtc;
@@ -20,6 +21,7 @@ contract BtcBridge is IBtcBridge {
     using ViewSPV for bytes4;
     using Script for bytes32;
     using Script for bytes;
+    using TransactionHelper for bytes;
     using TypedMemView for bytes;
 
     /**
@@ -44,24 +46,28 @@ contract BtcBridge is IBtcBridge {
 
     function pegin(
         address evmAddress,
+        bytes32 userPk,
         BtcTxProof calldata proof1,
         BtcTxProof calldata proof2
     ) external returns (bool) {
         require(is_pegin_valid(proof1.txId), "Pegged in invalid");
-        bytes32 userPk = proof1.userPubKey;
         bytes32 taproot = nOfNPubKey.generateDepositTaproot(evmAddress, userPk, 1 days);
         bytes memory multisigScript = nOfNPubKey.generatePreSignScriptAddress();
 
-        require(proof1.vout.length == 1, "Invalid vout length");
-        require(proof1.vout[0].scriptPubKey.equal(abi.encodePacked(taproot)), "Invalid script key");
+        OutputPoint[] memory vout1 =  proof1.rawVout.parseVout();
+        InputPoint[] memory vin2 = proof2.rawVin.parseVin();
+        OutputPoint[] memory vout2 = proof2.rawVout.parseVout();
+
+        require(vout1.length == 1, "Invalid vout length");
+        require(vout1[0].scriptPubKey.equal(abi.encodePacked(taproot)), "Invalid script key");
 
         bytes32 tx1Id = proof1.version.calculateTxId(proof1.rawVin.ref(0), proof1.rawVout.ref(0), proof1.locktime);
 
-        require(proof2.vin.length == 1, "Invalid vin length");
-        require(proof2.vin[0].txid == tx1Id, "Mismatch transaction id");
-        require(proof2.vout[0].scriptPubKey.equal(multisigScript), "Mismatch multisig script");
+        require(vin2.length == 1, "Invalid vin length");
+        require(vin2[0].prevTxID == tx1Id, "Mismatch transaction id");
+        require(vout2[0].scriptPubKey.equal(multisigScript), "Mismatch multisig script");
 
-        require(isValidAmount(proof2.vout[0].value), "Invalid vout value");
+        require(isValidAmount(vout2[0].value), "Invalid vout value");
 
         bytes32 tx2Id = proof2.version.calculateTxId(proof2.rawVin.ref(0), proof2.rawVout.ref(0), proof2.locktime);
 
@@ -71,7 +77,7 @@ contract BtcBridge is IBtcBridge {
         require(check_spv_proof(proof1), "Spv check failed");
         require(check_spv_proof(proof2), "Spv check failed");
 
-        ebtc.mint(evmAddress, proof2.vout[0].value);
+        ebtc.mint(evmAddress, vout2[0].value);
 
         pegins[proof2.txId] = true;
 
