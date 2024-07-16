@@ -134,4 +134,8 @@ library ViewSPV {
             _totalDifficulty += ViewBTC.toDiff(_target);
         }
     }
+
+    function ref(bytes32 b) internal view returns(bytes29) {
+        return abi.encodePacked(b).ref(0);
+    }
 }
