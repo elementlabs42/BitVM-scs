@@ -13,7 +13,6 @@ contract ScriptTest is Test {
             hex"2102d0f30e3182fa18e4975996dbaaa5bfb7d9b15c6d5b57f9f7e5f5e046829d62a4ac"
         );
         bytes memory result = Script.generatePreSignScript(nOfNPubkey);
-        console.logBytes(result);
         assertTrue(Script.equal(result, expected));
     }
 
@@ -27,12 +26,11 @@ contract ScriptTest is Test {
     function testGenerateDepositTaprootAddress() public {
         address evmAddress = 0x0000000000000000000000000000000000000000;
         bytes32 userPk = 0xedf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301b;
-        uint256 time = 4;
+        uint32 time = 4;
         bytes32 expected = 0x04c49a30b0b5434ca94598089adc09d7c48cf1f21f2dd6cc7b11151779795ac4;
         bytes32 result = nOfNPubkey.generateDepositTaproot(evmAddress, userPk, time);
         assertEq(expected, result);
     }
-
 
     function testEqual() public {
         bytes memory a = hex"1234567890abcdef";

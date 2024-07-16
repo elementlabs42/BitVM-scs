@@ -75,23 +75,20 @@ library TaprootHelper {
 
     function publicKeyToPoint(bytes32 pubKey) internal view returns (uint256, uint256) {
         uint256 x = uint256(pubKey);
-        uint8 prefix = x & 1 == 0 ? 0x03 : 0x02;
+        uint8 prefix = x & 1 == 0 ? 0x02 : 0x03;
         uint256 y = EllipticCurve.deriveY(prefix, x, SECP256K1_A, SECP256K1_B, SECP256K1_P);
         return (x, y);
     }
 
     function merkleRoot(bytes[] memory scripts) internal view returns (bytes32) {
-        // empty scripts or empty list
         if (scripts.length == 0) {
             return bytes32(0);
         }
 
-        // if not list return tapleaf_hash of Script
         if (scripts.length == 1) {
             return tapleafTaggedHash(scripts[0]);
         }
 
-        // list
         if (scripts.length == 2) {
             bytes32 left = tapleafTaggedHash(scripts[0]);
             bytes32 right = tapleafTaggedHash(scripts[1]);
@@ -114,58 +111,6 @@ library TaprootHelper {
                 hashes = newHashes;
             }
             return hashes[0];
-        }
-    }
-
-    function toBech32(bytes20 data) internal view returns (bytes memory) {
-        bytes memory hrp = "bc";
-        bytes memory combined = new bytes(data.length + 6);
-        for (uint256 i; i < data.length; ++i) {
-            combined[i] = data[i];
-        }
-        bytes32 polymod = bech32Polymod(hrpExpand(hrp), combined);
-        for (uint256 i; i < 6; ++i) {
-            combined[data.length + i] = bytes1(uint8(polymod[i] & 0x1F));
-        }
-        return abi.encodePacked(hrp, combined);
-    }
-
-    function bech32Polymod(bytes memory values1, bytes memory values2) internal view returns (bytes32) {
-        uint32[5] memory GEN = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3];
-        uint256 chk = 1;
-        for (uint256 i; i < values1.length; ++i) {
-            uint256 b = (chk >> 25);
-            chk = (chk & 0x1ffffff) << 5 ^ uint8(values1[i]);
-            for (uint256 j; j < 5; ++j) {
-                chk ^= ((b >> j) & 1) != 0 ? GEN[j] : 0;
-            }
-        }
-        for (uint256 i; i < values2.length; ++i) {
-            uint256 b = (chk >> 25);
-            chk = (chk & 0x1ffffff) << 5 ^ uint8(values2[i]);
-            for (uint256 j; j < 5; ++j) {
-                chk ^= ((b >> j) & 1) != 0 ? GEN[j] : 0;
-            }
-        }
-        return bytes32(chk ^ 1);
-    }
-
-    function hrpExpand(bytes memory hrp) internal view returns (bytes memory) {
-        bytes memory expanded = new bytes(hrp.length * 2 + 1);
-        for (uint256 i; i < hrp.length; ++i) {
-            expanded[i] = bytes1(uint8(hrp[i]) >> 5);
-            expanded[i + hrp.length + 1] = bytes1(uint8(hrp[i]) & 0x1F);
-        }
-        expanded[hrp.length] = bytes1(0);
-        return expanded;
-    }
-
-    function bytesToBytes32(bytes memory source) internal view returns (bytes32 result) {
-        if (source.length == 0) {
-            return 0x0;
-        }
-        assembly {
-            result := mload(add(source, 32))
         }
     }
 }
