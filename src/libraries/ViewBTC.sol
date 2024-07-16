@@ -10,6 +10,9 @@ pragma solidity ^0.8.26;
 import "./TypedMemView.sol";
 
 library ViewBTC {
+    error VinReadOverrun();
+    error VoutReadOverrun();
+
     using TypedMemView for bytes29;
 
     // The target at minimum Difficulty. Also the target of the genesis block
@@ -152,7 +155,9 @@ library ViewBTC {
     function indexVin(bytes29 _vin, uint256 _index) internal pure typeAssert(_vin, BTCTypes.Vin) returns (bytes29) {
         uint256 _nIns = uint256(indexCompactInt(_vin, 0));
         uint256 _viewLen = _vin.len();
-        require(_index < _nIns, "Vin read overrun");
+        if (_index >= _nIns) {
+            revert VinReadOverrun();
+        }
 
         uint256 _offset = uint256(compactIntLength(uint64(_nIns)));
         bytes29 _remaining;
@@ -213,7 +218,9 @@ library ViewBTC {
     {
         uint256 _nOuts = uint256(indexCompactInt(_vout, 0));
         uint256 _viewLen = _vout.len();
-        require(_index < _nOuts, "Vout read overrun");
+        if (_index >= _nOuts) {
+            revert VoutReadOverrun();
+        }
 
         uint256 _offset = uint256(compactIntLength(uint64(_nOuts)));
         bytes29 _remaining;
