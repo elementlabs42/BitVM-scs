@@ -43,4 +43,15 @@ contract CoderTest is Test, ConstantsFixture {
         uint256 difficulty = Coder.toDifficulty(target);
         assertEq(difficulty, 31251101365711);
     }
+
+    function testCoder_Bits() public pure {
+        Block memory _block = Coder.decodeBlock(header736000);
+        uint256 target = Coder.toTarget(_block.bits);
+        assertEq(Coder.toBits(target), bytes4(Endian.reverse32(uint32(_block.bits))));
+
+        assertEq(Coder.toBits(0x00000000000000005d859a000000000000000000000000000000000000000000), bytes4(0x185d859a));
+        assertEq(Coder.toBits(0x0000000000000113370000000000000000000000000000000000000000000000), bytes4(0x1a011337)); // height 239,904
+        assertEq(Coder.toBits(0x00000000000000000262df000000000000000000000000000000000000000000), bytes4(0x180262df)); // height 455,616
+        assertEq(Coder.toBits(0x00000000001e7eca000000000000000000000000000000000000000000000000), bytes4(0x1b1e7eca)); // height 86,688
+    }
 }

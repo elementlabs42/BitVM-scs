@@ -5,7 +5,15 @@ interface IStorage {
     struct KeyBlock {
         bytes32 blockHash;
         uint256 accumulatedDifficulty;
-        uint256 timestamp;
+        bytes4 bits;
+        uint32 timestamp;
+    }
+
+    struct CheckBlockContext {
+        uint256 accumulatedDifficulty;
+        bytes32 previousHash;
+        uint256 possibleRetargetCount;
+        uint256 currentPeriodTarget;
     }
 
     event KeyBlocksSubmitted(uint256 tip, uint256 total, uint256 reorg);
@@ -18,6 +26,7 @@ interface IStorage {
     error BlockHashMismatch(bytes32 expected, bytes32 actual);
     error ChainWorkNotEnough();
     error NoGivenBlockHeaders();
+    error RetargetTooFrequent();
     error HashNotBelowTarget(bytes32 hash, bytes32 target);
 
     function submit(bytes calldata data, uint256 blockHeight) external;
