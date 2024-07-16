@@ -3,15 +3,18 @@ pragma solidity ^0.8.26;
 
 import {Block} from "../interfaces/IBtcBridge.sol";
 import "./Endian.sol";
+import "openzeppelin-contracts/contracts/utils/math/Math.sol";
 
 /**
  * @dev Encodes and Decodes Bitcoin Entities
  */
 library Coder {
     error BlockHeaderLengthInvalid(uint256 length);
+    error RetargetBeyondFactor4();
 
     uint256 public constant BLOCK_HEADER_LENGTH = 80;
     uint256 public constant MAX_TARGET = 0x00000000FFFF0000000000000000000000000000000000000000000000000000;
+    uint256 public constant RETARGET_PERIOD = 2016;
 
     function decodeBlock(bytes calldata header) external pure returns (Block memory _block) {
         _block = decodeBlockPartial(header);
@@ -65,5 +68,23 @@ library Coder {
         mantissa = (mantissa << 8) | uint8(bits[0]);
         uint256 target = mantissa << (8 * (exp - 3));
         return target;
+    }
+
+    function toBits(uint256 target) internal pure returns (bytes4) {
+        uint256 exp = (Math.log256(target) + 1);
+        uint256 mantissa = target >> (8 * (exp - 3));
+        return bytes4(uint32(exp * 0x1000000 + mantissa));
+    }
+
+    /**
+     * @dev Check whether the new target is within the factor of 4 of the old target.
+     *      If not, revert.
+     */
+    function checkRetargetLimit(uint256 target, uint256 newTarget) internal pure {
+        // Target adjustments are limited by a factor of 4.
+        // So the maximum adjustment is either x0.25 or x4.
+        if (newTarget >> 2 >= target || target >> 2 >= newTarget) {
+            revert RetargetBeyondFactor4();
+        }
     }
 }

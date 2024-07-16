@@ -25,13 +25,13 @@ contract Storage is IStorage {
      * @param blockHash initial block hash
      * @param timestamp timestamp of the initial block
      */
-    constructor(uint256 distance, uint256 blockHeight, bytes32 blockHash, uint256 timestamp) {
+    constructor(uint256 distance, uint256 blockHeight, bytes32 blockHash, uint32 bits, uint32 timestamp) {
         if (distance == 0) {
             revert BlockStepDistanceInvalid(distance);
         }
         blockStepDistance = distance;
         initialBlockHeight = blockHeight;
-        storedBlocks.push(KeyBlock(blockHash, 0, timestamp));
+        storedBlocks.push(KeyBlock(blockHash, 0, bytes4(Endian.reverse32(bits)), timestamp));
     }
 
     /**
@@ -53,11 +53,6 @@ contract Storage is IStorage {
             revert BlockHeightTooHigh(blockHeight, tipIndex);
         }
 
-        uint256 reorgCount;
-        bytes32 previousHash = storedBlocks[index].blockHash;
-        uint256 accumulatedDifficulty = storedBlocks[tipIndex].accumulatedDifficulty;
-        uint256 accumulatedDifficultyNew = storedBlocks[index].accumulatedDifficulty;
-
         uint256 headerCount = data.length / Coder.BLOCK_HEADER_LENGTH;
         if (data.length != headerCount * Coder.BLOCK_HEADER_LENGTH) {
             revert Coder.BlockHeaderLengthInvalid(data.length);
@@ -65,38 +60,65 @@ contract Storage is IStorage {
         if (headerCount % blockStepDistance != 0) {
             revert BlockCountInvalid(headerCount);
         }
+
+        KeyBlock memory previousKeyBlock = storedBlocks[index];
+        CheckBlockContext memory ctx = CheckBlockContext(
+            previousKeyBlock.accumulatedDifficulty,
+            previousKeyBlock.blockHash,
+            headerCount / Coder.RETARGET_PERIOD + 2, //
+            Coder.toTarget(previousKeyBlock.bits)
+        );
+        uint256 accumulatedDifficulty = storedBlocks[tipIndex].accumulatedDifficulty;
+        uint256 reorgCount = tipIndex - index;
         for (uint256 i; i < headerCount; ++i) {
             bytes calldata header = data[Coder.BLOCK_HEADER_LENGTH * i:Coder.BLOCK_HEADER_LENGTH * (i + 1)];
-            Block memory _block = Coder.decodeBlockPartial(header);
-            if (previousHash != _block.previousBlockHash) {
-                revert BlockHashMismatch(previousHash, _block.previousBlockHash);
-            }
-            bytes32 _hash = Coder.toHash(header);
-            uint256 target = Coder.toTarget(_block.bits);
-            if (uint256(_hash) >= target) {
-                revert HashNotBelowTarget(_hash, bytes32(target));
-            }
-            accumulatedDifficultyNew += Coder.toDifficulty(target);
-            previousHash = _hash;
+            uint32 timestamp = checkBlock(header, ctx);
 
             if ((blockHeight + i) % blockStepDistance == initialBlockHeight % blockStepDistance) {
                 ++index;
-                KeyBlock memory keyBlock = KeyBlock(_hash, accumulatedDifficultyNew, _block.timestamp);
+                KeyBlock memory keyBlock = KeyBlock(
+                    ctx.previousHash, ctx.accumulatedDifficulty, Coder.toBits(ctx.currentPeriodTarget), timestamp
+                );
                 if (tipIndex >= index) {
                     storedBlocks[index] = keyBlock;
-                    ++reorgCount;
                 } else {
                     storedBlocks.push(keyBlock);
                 }
             }
         }
 
-        if (accumulatedDifficultyNew <= accumulatedDifficulty) {
+        if (ctx.accumulatedDifficulty <= accumulatedDifficulty) {
             revert ChainWorkNotEnough();
         }
 
         emit KeyBlocksSubmitted(indexToHeight(index), headerCount, reorgCount);
         tipIndex = index;
+    }
+
+    function checkBlock(bytes memory header, CheckBlockContext memory ctx) internal pure returns (uint32) {
+        Block memory _block = Coder.decodeBlockPartial(header);
+        if (ctx.previousHash != _block.previousBlockHash) {
+            revert BlockHashMismatch(ctx.previousHash, _block.previousBlockHash);
+        }
+        bytes32 _hash = Coder.toHash(header);
+        uint256 target = Coder.toTarget(_block.bits);
+        if (ctx.currentPeriodTarget != target) {
+            if (ctx.possibleRetargetCount > 0) {
+                if (ctx.currentPeriodTarget != 0) {
+                    Coder.checkRetargetLimit(ctx.currentPeriodTarget, target);
+                }
+                --ctx.possibleRetargetCount;
+                ctx.currentPeriodTarget = target;
+            } else {
+                revert RetargetTooFrequent();
+            }
+        }
+        if (uint256(_hash) >= target) {
+            revert HashNotBelowTarget(_hash, bytes32(target));
+        }
+        ctx.accumulatedDifficulty += Coder.toDifficulty(target);
+        ctx.previousHash = _hash;
+        return _block.timestamp;
     }
 
     function getKeyBlock(uint256 blockHeight) external view override returns (KeyBlock memory _block) {
