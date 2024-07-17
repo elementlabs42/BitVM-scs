@@ -25,17 +25,20 @@ contract BtcBridge is IBtcBridge {
     using TypedMemView for bytes;
 
     /**
-     * @dev withdrawer to pegout
+     * @dev withdrawer to pegOut
      */
-    mapping(address withdrawer => Pegout pegout) pegouts;
+    mapping(address withdrawer => PegOutInfo info) pegOuts;
     /**
-     * @dev back reference from an pegout to the withdrawer
+     * @dev back reference from an pegOut to the withdrawer
      */
-    mapping(bytes32 txId => mapping(uint256 txIndex => address withdrawer)) withdrawers;
+    mapping(bytes32 txId => mapping(uint256 vOut => address withdrawer)) withdrawers;
 
     mapping(bytes32 txId => bool) pegins;
 
     uint256 private constant PEG_OUT_MAX_PENDING_TIME = 8 weeks;
+
+    bytes4 private version = 0x02000000;
+    bytes4 private locktime = 0x00000000;
 
     constructor(EBTC _ebtc, IStorage _blockStorage, uint256 _target, bytes32 _nOfNPubKey) {
         ebtc = _ebtc;
@@ -83,6 +86,90 @@ contract BtcBridge is IBtcBridge {
 
         return true;
 
+    }
+
+    function pegOut(
+        bytes calldata destinationBitcoinAddress,
+        Outpoint calldata sourceOutpoint,
+        uint256 amount,
+        bytes calldata operatorPubkey
+    ) external {
+        if (!isValidAmount(amount)) {
+            revert InvalidAmount();
+        }
+        if (
+            pegOuts[msg.sender].status == PegOutStatus.PENDING
+                || withdrawers[sourceOutpoint.txId][sourceOutpoint.vOut] == msg.sender
+        ) {
+            revert PegOutInProgress();
+        }
+        pegOuts[msg.sender] = PegOutInfo(
+            destinationBitcoinAddress,
+            sourceOutpoint,
+            amount,
+            operatorPubkey,
+            block.timestamp + PEG_OUT_MAX_PENDING_TIME,
+            PegOutStatus.PENDING
+        );
+        withdrawers[sourceOutpoint.txId][sourceOutpoint.vOut] = msg.sender;
+
+        ebtc.transferFrom(msg.sender, address(this), amount);
+        emit PegOutInitiated(msg.sender, destinationBitcoinAddress, sourceOutpoint, amount, operatorPubkey);
+    }
+
+    function burnEBTC(address withdrawer, BtcTxProof calldata proof) external {
+        PegOutInfo memory info = pegOuts[withdrawer];
+        if (info.status == PegOutStatus.VOID) {
+            revert PegOutNotFound();
+        }
+        if (info.status == PegOutStatus.CLAIMED) {
+            revert PegOutAlreadyClaimed();
+        }
+        if (info.status == PegOutStatus.BURNT) {
+            revert PegOutAlreadyBurnt();
+        }
+
+        OutputPoint[] memory outputs =  proof.rawVout.parseVout();
+        if (outputs.length != 1) {
+            revert InvalidPegOutProofOutputsSize();
+        }
+        if (Script.equal(outputs[0].scriptPubKey, Script.generatePayToPubkeyScript(info.destinationAddress))) {
+            revert InvalidPegOutProofScriptPubKey();
+        }
+        if (outputs[0].value != info.amount) {
+            revert InvalidPegOutProofAmount();
+        }
+        bytes32 txId = ViewSPV.calculateTxId(version, bytes29(proof.rawVin), bytes29(proof.rawVout), locktime);
+        if (proof.txId != txId) {
+            revert InvalidPegOutProofTransactionId();
+        }
+        if (!check_spv_proof(proof)) {
+            revert InvalidSPVProof();
+        }
+
+        pegOuts[withdrawer].status = PegOutStatus.BURNT;
+        ebtc.burn(address(this), info.amount);
+        emit PegOutBurned(withdrawer, info.sourceOutpoint, info.amount, info.operatorPubkey);
+    }
+
+    function claimEBTC() external {
+        PegOutInfo memory info = pegOuts[msg.sender];
+        if (info.status == PegOutStatus.VOID) {
+            revert PegOutNotFound();
+        }
+        if (info.status == PegOutStatus.CLAIMED) {
+            revert PegOutAlreadyClaimed();
+        }
+        if (info.status == PegOutStatus.BURNT) {
+            revert PegOutAlreadyBurnt();
+        }
+        if (info.claimAfter > block.timestamp) {
+            revert PegOutInProgress();
+        }
+        pegOuts[msg.sender].status = PegOutStatus.CLAIMED;
+        delete withdrawers[info.sourceOutpoint.txId][info.sourceOutpoint.vOut];
+        ebtc.transfer(msg.sender, info.amount);
+        emit PegOutClaimed(msg.sender, info.sourceOutpoint, info.amount, info.operatorPubkey);
     }
 
     function check_spv_proof(BtcTxProof calldata proof) internal view returns (bool) {

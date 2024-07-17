@@ -2,12 +2,16 @@
 pragma solidity ^0.8.26;
 
 import "./SafeMath.sol";
+import "./Endian.sol";
 import {TaprootHelper} from "./TaprootHelper.sol";
 import {BtcTxProof} from "../interfaces/IBtcBridge.sol";
 
 library Script {
     using SafeMath for uint256;
     using TaprootHelper for bytes32;
+
+    error ScriptBytesTooLong();
+
     bytes1 constant PUB_KEY_LENGTH = 0x20;
     bytes1 constant ADDRESS_LENGTH = 0x2a;
     bytes1 constant VERSION = 0x02;
@@ -24,6 +28,9 @@ library Script {
     bytes1 constant OP_EQUAL = 0x87;
     bytes1 constant OP_CHECKSIGVERIFY = 0xAD;
 
+    bytes1 constant OP_PUSHDATA1 = 0x4c;
+    bytes1 constant OP_PUSHDATA2 = 0x4d;
+    bytes1 constant OP_PUSHDATA4 = 0x4e;
     bytes1 constant OP_1 = 0x51;
     bytes1 constant OP_2 = 0x52;
     bytes1 constant OP_3 = 0x53;
@@ -65,9 +72,13 @@ library Script {
         return script;
     }
 
+    function generatePayToPubkeyScript(bytes memory pubKey) internal pure returns (bytes memory script) {
+        script = abi.encodePacked(encodeData(pubKey), OP_CHECKSIG);
+    }
+
     function generateDepositTaproot(bytes32 nOfNPubkey, address evmAddress, bytes32 userPk, uint32 lockDuration)
         internal
-        view
+        pure
         returns (bytes32)
     {
         bytes memory timelockScript = generateTimelockLeaf(userPk, lockDuration);
@@ -90,12 +101,7 @@ library Script {
         if (a.length != b.length) {
             return false;
         }
-        for (uint256 i = 0; i < a.length; i++) {
-            if (a[i] != b[i]) {
-                return false;
-            }
-        }
-        return true;
+        return keccak256(a) == keccak256(b);
     }
 
     function addressToString(address _address) public pure returns (string memory) {
@@ -111,6 +117,21 @@ library Script {
         }
 
         return string(str);
+    }
+
+    function encodeData(bytes memory data) internal pure returns (bytes memory) {
+        if (data.length > 0xFFFFFFFF) {
+            revert ScriptBytesTooLong();
+        }
+        if (data.length <= 75) {
+            return abi.encodePacked(uint8(data.length), data);
+        } else if (data.length <= 0xFF) {
+            return abi.encodePacked(OP_PUSHDATA1, uint8(data.length), data);
+        } else if (data.length <= 0xFFFF) {
+            return abi.encodePacked(OP_PUSHDATA2, Endian.reverse16(uint16(data.length)), data);
+        } else {
+            return abi.encodePacked(OP_PUSHDATA4, Endian.reverse32(uint32(data.length)), data);
+        }
     }
 
     function encodeBlocks(uint32 blocks) internal pure returns (bytes memory) {
