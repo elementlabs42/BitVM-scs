@@ -3,7 +3,7 @@ pragma solidity ^0.8.26;
 
 import "forge-std/Test.sol";
 
-import {Block} from "../src/interfaces/IBtcBridge.sol";
+import {Block} from "../src/interfaces/IBridge.sol";
 import "../src/libraries/Coder.sol";
 import "./fixture/ConstantsFixture.sol";
 import "../src/Storage.sol";

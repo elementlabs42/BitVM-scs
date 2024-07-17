@@ -22,15 +22,15 @@ struct Outpoint {
 }
 
 struct InputPoint {
-   bytes32 prevTxID;
-   bytes4 prevTxIndex;
-   bytes scriptSig;
-   uint32 sequence;
+    bytes32 prevTxID;
+    bytes4 prevTxIndex;
+    bytes scriptSig;
+    uint32 sequence;
 }
 
 struct OutputPoint {
-   uint64 value;
-   bytes scriptPubKey;
+    uint64 value;
+    bytes scriptPubKey;
 }
 
 /**
@@ -70,7 +70,7 @@ struct PegOutInfo {
 /**
  * @notice Manage and gatekeeping EBTC in transit during peg in/out phases.
  */
-interface IBtcBridge {
+interface IBridge {
     event PegOutInitiated(
         address indexed withdrawer,
         bytes destinationAddress,

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import "./interfaces/IBtcBridge.sol";
+import "./interfaces/IBridge.sol";
 import "./EBTC.sol";
 import "./libraries/ViewBTC.sol";
 import "./libraries/ViewSPV.sol";
@@ -9,7 +9,7 @@ import "./libraries/Script.sol";
 import {IStorage} from "./interfaces/IStorage.sol";
 import {TransactionHelper} from "./libraries/TransactionHelper.sol";
 
-contract BtcBridge is IBtcBridge {
+contract Bridge is IBridge {
     EBTC ebtc;
     IStorage blockStorage;
     uint256 target;
@@ -47,17 +47,15 @@ contract BtcBridge is IBtcBridge {
         nOfNPubKey = _nOfNPubKey;
     }
 
-    function pegin(
-        address evmAddress,
-        bytes32 userPk,
-        BtcTxProof calldata proof1,
-        BtcTxProof calldata proof2
-    ) external returns (bool) {
+    function pegin(address evmAddress, bytes32 userPk, BtcTxProof calldata proof1, BtcTxProof calldata proof2)
+        external
+        returns (bool)
+    {
         require(is_pegin_valid(proof1.txId), "Pegged in invalid");
         bytes32 taproot = nOfNPubKey.generateDepositTaproot(evmAddress, userPk, 1 days);
         bytes memory multisigScript = nOfNPubKey.generatePreSignScriptAddress();
 
-        OutputPoint[] memory vout1 =  proof1.rawVout.parseVout();
+        OutputPoint[] memory vout1 = proof1.rawVout.parseVout();
         InputPoint[] memory vin2 = proof2.rawVin.parseVin();
         OutputPoint[] memory vout2 = proof2.rawVout.parseVout();
 
@@ -85,7 +83,6 @@ contract BtcBridge is IBtcBridge {
         pegins[proof2.txId] = true;
 
         return true;
-
     }
 
     function pegOut(
@@ -129,7 +126,7 @@ contract BtcBridge is IBtcBridge {
             revert PegOutAlreadyBurnt();
         }
 
-        OutputPoint[] memory outputs =  proof.rawVout.parseVout();
+        OutputPoint[] memory outputs = proof.rawVout.parseVout();
         if (outputs.length != 1) {
             revert InvalidPegOutProofOutputsSize();
         }
@@ -183,7 +180,7 @@ contract BtcBridge is IBtcBridge {
 
         uint256 i;
 
-        for (;i < proof.parents.length; i++) {
+        for (; i < proof.parents.length; i++) {
             bytes32 parent = proof.parents[i];
             require(header.checkParent(parent), "Parent check failed");
             header = parent.ref();
@@ -192,7 +189,7 @@ contract BtcBridge is IBtcBridge {
 
         bytes32 nextHash = blockStorage.getKeyBlock(proof.blockIndex + 1).blockHash;
 
-        for (;i < proof.children.length; i++) {
+        for (; i < proof.children.length; i++) {
             bytes32 child = proof.children[i];
             require(header.checkParent(child), "Parent check failed");
             header = child.ref();
@@ -201,19 +198,19 @@ contract BtcBridge is IBtcBridge {
 
         // 3. Accumulated difficulty
         uint256 difficulty1 = blockStorage.getKeyBlock(proof.blockIndex + 1).accumulatedDifficulty;
-        uint256 difficulty2 =  blockStorage.getFirstKeyBlock().accumulatedDifficulty;
+        uint256 difficulty2 = blockStorage.getFirstKeyBlock().accumulatedDifficulty;
         uint256 accumulatedDifficulty = difficulty2 - difficulty1;
         require(accumulatedDifficulty > target, "Insufficient accumulated difficulty");
 
         return true;
     }
 
-    function is_pegin_valid(bytes32 txId)  internal view returns (bool) {
-            return pegins[txId];
+    function is_pegin_valid(bytes32 txId) internal view returns (bool) {
+        return pegins[txId];
     }
 
     /**
-    * @dev checks any given number is a power of 2
+     * @dev checks any given number is a power of 2
      */
     function isValidAmount(uint256 n) internal pure returns (bool) {
         return (n != 0) && ((n & (n - 1)) == 0);

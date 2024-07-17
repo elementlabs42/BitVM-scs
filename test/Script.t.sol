@@ -7,12 +7,11 @@ import "./Util.sol";
 
 contract ScriptTest is Test {
     using Script for bytes32;
+
     bytes32 nOfNPubkey = hex"d0f30e3182fa18e4975996dbaaa5bfb7d9b15c6d5b57f9f7e5f5e046829d62a4";
 
     function testGeneratePreSignScript() public view {
-        bytes memory expected = (
-            hex"2102d0f30e3182fa18e4975996dbaaa5bfb7d9b15c6d5b57f9f7e5f5e046829d62a4ac"
-        );
+        bytes memory expected = (hex"2102d0f30e3182fa18e4975996dbaaa5bfb7d9b15c6d5b57f9f7e5f5e046829d62a4ac");
         bytes memory result = Script.generatePreSignScript(nOfNPubkey);
         assertTrue(Script.equal(result, expected));
     }

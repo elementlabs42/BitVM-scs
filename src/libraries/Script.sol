@@ -4,7 +4,7 @@ pragma solidity ^0.8.26;
 import "./SafeMath.sol";
 import "./Endian.sol";
 import {TaprootHelper} from "./TaprootHelper.sol";
-import {BtcTxProof} from "../interfaces/IBtcBridge.sol";
+import {BtcTxProof} from "../interfaces/IBridge.sol";
 
 library Script {
     using SafeMath for uint256;
@@ -63,12 +63,29 @@ library Script {
     }
 
     function generateTimelockLeaf(bytes32 pubkey, uint32 blocks) internal pure returns (bytes memory) {
-        bytes memory script = abi.encodePacked(encodeBlocks(blocks), OP_CHECKSEQUENCEVERIFY, OP_DROP, PUB_KEY_LENGTH,pubkey, OP_CHECKSIG);
+        bytes memory script =
+            abi.encodePacked(encodeBlocks(blocks), OP_CHECKSEQUENCEVERIFY, OP_DROP, PUB_KEY_LENGTH, pubkey, OP_CHECKSIG);
         return script;
     }
 
-    function generateDepositScript(bytes32 nOfNPubkey, address evmAddress, bytes32 userPk) internal pure returns (bytes memory) {
-        bytes memory script = abi.encodePacked(OP_FALSE, OP_IF, ADDRESS_LENGTH, addressToString(evmAddress), OP_ENDIF, PUB_KEY_LENGTH, nOfNPubkey, OP_CHECKSIGVERIFY, PUB_KEY_LENGTH, userPk, OP_CHECKSIG);
+    function generateDepositScript(bytes32 nOfNPubkey, address evmAddress, bytes32 userPk)
+        internal
+        pure
+        returns (bytes memory)
+    {
+        bytes memory script = abi.encodePacked(
+            OP_FALSE,
+            OP_IF,
+            ADDRESS_LENGTH,
+            addressToString(evmAddress),
+            OP_ENDIF,
+            PUB_KEY_LENGTH,
+            nOfNPubkey,
+            OP_CHECKSIGVERIFY,
+            PUB_KEY_LENGTH,
+            userPk,
+            OP_CHECKSIG
+        );
         return script;
     }
 
@@ -109,8 +126,8 @@ library Script {
         bytes memory hexChars = "0123456789abcdef";
         bytes memory str = new bytes(2 + addressBytes.length * 2);
 
-        str[0] = '0';
-        str[1] = 'x';
+        str[0] = "0";
+        str[1] = "x";
         for (uint256 i = 0; i < addressBytes.length; i++) {
             str[2 + i * 2] = hexChars[uint8(addressBytes[i] >> 4)];
             str[3 + i * 2] = hexChars[uint8(addressBytes[i] & 0x0f)];
@@ -144,9 +161,20 @@ library Script {
         } else if (blocks <= 0xFFFF) {
             return abi.encodePacked(bytes1(0x02), bytes1(uint8(blocks & 0xFF)), bytes1(uint8((blocks >> 8) & 0xFF)));
         } else if (blocks <= 0xFFFFFF) {
-            return abi.encodePacked(bytes1(0x03), bytes1(uint8(blocks & 0xFF)), bytes1(uint8((blocks >> 8) & 0xFF)), bytes1(uint8((blocks >> 16) & 0xFF)));
+            return abi.encodePacked(
+                bytes1(0x03),
+                bytes1(uint8(blocks & 0xFF)),
+                bytes1(uint8((blocks >> 8) & 0xFF)),
+                bytes1(uint8((blocks >> 16) & 0xFF))
+            );
         } else {
-            return abi.encodePacked(bytes1(0x04), bytes1(uint8(blocks & 0xFF)), bytes1(uint8((blocks >> 8) & 0xFF)), bytes1(uint8((blocks >> 16) & 0xFF)), bytes1(uint8((blocks >> 24) & 0xFF)));
+            return abi.encodePacked(
+                bytes1(0x04),
+                bytes1(uint8(blocks & 0xFF)),
+                bytes1(uint8((blocks >> 8) & 0xFF)),
+                bytes1(uint8((blocks >> 16) & 0xFF)),
+                bytes1(uint8((blocks >> 24) & 0xFF))
+            );
         }
     }
 
