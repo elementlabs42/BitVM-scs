@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 pragma experimental ABIEncoderV2;
+
 import "./Endian.sol";
 import "../interfaces/IBtcBridge.sol";
 
 library TransactionHelper {
-
     error ScriptBytesTooLong();
 
     function readVarInt(bytes calldata buf, uint256 offset) public pure returns (uint256 val, uint256 newOffset) {
@@ -48,7 +48,6 @@ library TransactionHelper {
             inputs[i] = txIn;
         }
     }
-
 
     function parseVout(bytes calldata rawVout) public pure returns (OutputPoint[] memory outputs) {
         (uint256 nOutputs, uint256 newOffset) = readVarInt(rawVout, 0);

@@ -6,16 +6,16 @@ import "../src/libraries/TransactionHelper.sol";
 import "../src/interfaces/IBtcBridge.sol";
 
 contract TransactionHelperTest is Test {
-    function testParseVin() public pure {
+    function testTransactionHelper_parseVin() public pure {
         // Extract the rawVin part from tx3020
         bytes memory rawVin = (
-            hex"01"  // input count, compact size
+            hex"01" // input count, compact size
             hex"5c98af97581ab788e7d4bda18f01e7b54d6fce601dc2ecdcbb0a38b0f82249e6" // txid
             hex"00000000" // vout
             hex"00" // scriptSig size
             hex"" // scriptSig
-            hex"ffffffff" // sequence
-        );
+            hex"ffffffff"
+        ); // sequence
 
         InputPoint[] memory inputs = TransactionHelper.parseVin(rawVin);
 
@@ -25,14 +25,14 @@ contract TransactionHelperTest is Test {
         assertEq(inputs[0].sequence, 0xffffffff);
     }
 
-    function testParseVout() public pure {
+    function testTransactionHelper_parseVout() public pure {
         // Extract the rawVout part from tx3020
         bytes memory rawVout = (
             hex"01" // output count, compact size
             hex"a086010000000000" // output amount
             hex"22" // scriptPubKey size
-            hex"0020be87e5c1a6f9957f1adc7d4296635b6b3f0da03a3a7819f919a827feff19501d" // scriptPubKey
-        );
+            hex"0020be87e5c1a6f9957f1adc7d4296635b6b3f0da03a3a7819f919a827feff19501d"
+        ); // scriptPubKey
 
         OutputPoint[] memory outputs = TransactionHelper.parseVout(rawVout);
 

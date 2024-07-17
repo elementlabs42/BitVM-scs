@@ -7,24 +7,22 @@ import "./Util.sol";
 
 contract ScriptTest is Test {
     using Script for bytes32;
+
     bytes32 nOfNPubkey = hex"d0f30e3182fa18e4975996dbaaa5bfb7d9b15c6d5b57f9f7e5f5e046829d62a4";
 
-    function testGeneratePreSignScript() public view {
-        bytes memory expected = (
-            hex"2102d0f30e3182fa18e4975996dbaaa5bfb7d9b15c6d5b57f9f7e5f5e046829d62a4ac"
-        );
+    function testScript_generatePreSignScript() public view {
+        bytes memory expected = (hex"2102d0f30e3182fa18e4975996dbaaa5bfb7d9b15c6d5b57f9f7e5f5e046829d62a4ac");
         bytes memory result = Script.generatePreSignScript(nOfNPubkey);
         assertTrue(Script.equal(result, expected));
     }
 
-    function testGeneratePreSignScriptAddress() public view {
-        // bytes memory preSignScript = Script.generatePreSignScript(nOfNPubkey);
+    function testScript_generatePreSignScriptAddress() public view {
         bytes memory expected = (hex"0020be87e5c1a6f9957f1adc7d4296635b6b3f0da03a3a7819f919a827feff19501d");
         bytes memory result = Script.generatePreSignScriptAddress(nOfNPubkey);
         assertTrue(Script.equal(result, expected));
     }
 
-    function testGenerateDepositTaprootAddress() public view {
+    function testScript_generateDepositTaprootAddress() public view {
         address evmAddress = 0x0000000000000000000000000000000000000000;
         bytes32 userPk = 0xedf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301b;
         uint32 time = 4;
@@ -40,7 +38,7 @@ contract ScriptTest is Test {
         assertEq(expected, result);
     }
 
-    function testEqual() public pure {
+    function testScript_equal() public pure {
         bytes memory a = hex"1234567890abcdef";
         bytes memory b = hex"1234567890abcdef";
         bytes memory c = hex"abcdef1234567890";

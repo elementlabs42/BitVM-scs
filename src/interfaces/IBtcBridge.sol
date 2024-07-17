@@ -22,15 +22,15 @@ struct Outpoint {
 }
 
 struct InputPoint {
-   bytes32 prevTxID;
-   bytes4 prevTxIndex;
-   bytes scriptSig;
-   uint32 sequence;
+    bytes32 prevTxID;
+    bytes4 prevTxIndex;
+    bytes scriptSig;
+    uint32 sequence;
 }
 
 struct OutputPoint {
-   uint64 value;
-   bytes scriptPubKey;
+    uint64 value;
+    bytes scriptPubKey;
 }
 
 /**
@@ -81,8 +81,23 @@ interface IBtcBridge {
     event PegOutClaimed(address indexed withdrawer, Outpoint sourceOutpoint, uint256 amount, bytes operatorPubkey);
     event PegOutBurned(address indexed withdrawer, Outpoint sourceOutpoint, uint256 amount, bytes operatorPubkey);
 
-    error InvalidSPVProof();
+    error PeggedInInvalid();
+    error InvalidVoutLength();
+    error InvalidScriptKey();
+    error InvalidVinLength();
+    error MismatchTransactionId();
+    error MismatchMultisigScript();
+    error InvalidVoutValue();
+    error SPVCheckFailed();
     error InvalidAmount();
+    error MerkleProofFailed();
+    error MerkleRootMismatch();
+    error DifficultyMismatch();
+    error ParentCheckFailed();
+    error PreviousHashMismatch();
+    error NextHashMismatch();
+    error InsufficientAccumulatedDifficulty();
+    error InvalidSPVProof();
     error PegOutNotFound();
     error PegOutInProgress();
     error PegOutAlreadyClaimed();

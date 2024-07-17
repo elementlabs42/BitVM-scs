@@ -65,7 +65,7 @@ library TaprootHelper {
         (uint256 gx, uint256 gy) = EllipticCurve.ecMul(tweakInt, SECP256K1_GX, SECP256K1_GY, SECP256K1_A, SECP256K1_P);
 
         // Compute Q = P + H(P|c)G
-        (uint256 qx, ) = EllipticCurve.ecAdd(px, py, gx, gy, SECP256K1_A, SECP256K1_P);
+        (uint256 qx,) = EllipticCurve.ecAdd(px, py, gx, gy, SECP256K1_A, SECP256K1_P);
 
         // Convert the resulting point back to bytes32
         bytes32 outputKey = bytes32(qx);

@@ -148,6 +148,6 @@ contract Storage is IStorage {
     }
 
     function getFirstKeyBlock() public view returns (KeyBlock memory _block) {
-        return  storedBlocks[0];
+        return storedBlocks[0];
     }
 }

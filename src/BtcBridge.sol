@@ -47,45 +47,64 @@ contract BtcBridge is IBtcBridge {
         nOfNPubKey = _nOfNPubKey;
     }
 
-    function pegin(
-        address evmAddress,
-        bytes32 userPk,
-        BtcTxProof calldata proof1,
-        BtcTxProof calldata proof2
-    ) external returns (bool) {
-        require(is_pegin_valid(proof1.txId), "Pegged in invalid");
+    function pegin(address evmAddress, bytes32 userPk, BtcTxProof calldata proof1, BtcTxProof calldata proof2)
+        external
+        returns (bool)
+    {
+        if (!is_pegin_valid(proof1.txId)) {
+            revert PeggedInInvalid();
+        }
         bytes32 taproot = nOfNPubKey.generateDepositTaproot(evmAddress, userPk, 1 days);
         bytes memory multisigScript = nOfNPubKey.generatePreSignScriptAddress();
 
-        OutputPoint[] memory vout1 =  proof1.rawVout.parseVout();
+        OutputPoint[] memory vout1 = proof1.rawVout.parseVout();
         InputPoint[] memory vin2 = proof2.rawVin.parseVin();
         OutputPoint[] memory vout2 = proof2.rawVout.parseVout();
 
-        require(vout1.length == 1, "Invalid vout length");
-        require(vout1[0].scriptPubKey.equal(abi.encodePacked(taproot)), "Invalid script key");
+        if (vout1.length != 1) {
+            revert InvalidVoutLength();
+        }
+        if (!vout1[0].scriptPubKey.equal(abi.encodePacked(taproot))) {
+            revert InvalidScriptKey();
+        }
 
         bytes32 tx1Id = proof1.version.calculateTxId(proof1.rawVin.ref(0), proof1.rawVout.ref(0), proof1.locktime);
 
-        require(vin2.length == 1, "Invalid vin length");
-        require(vin2[0].prevTxID == tx1Id, "Mismatch transaction id");
-        require(vout2[0].scriptPubKey.equal(multisigScript), "Mismatch multisig script");
+        if (vin2.length != 1) {
+            revert InvalidVinLength();
+        }
+        if (vin2[0].prevTxID != tx1Id) {
+            revert MismatchTransactionId();
+        }
+        if (!vout2[0].scriptPubKey.equal(multisigScript)) {
+            revert MismatchMultisigScript();
+        }
 
-        require(isValidAmount(vout2[0].value), "Invalid vout value");
+        if (!isValidAmount(vout2[0].value)) {
+            revert InvalidVoutValue();
+        }
 
         bytes32 tx2Id = proof2.version.calculateTxId(proof2.rawVin.ref(0), proof2.rawVout.ref(0), proof2.locktime);
 
-        require(tx1Id == proof1.txId, "Mismatch transaction id");
-        require(tx2Id == proof2.txId, "Mismatch transaction id");
+        if (tx1Id != proof1.txId) {
+            revert MismatchTransactionId();
+        }
+        if (tx2Id != proof2.txId) {
+            revert MismatchTransactionId();
+        }
 
-        require(check_spv_proof(proof1), "Spv check failed");
-        require(check_spv_proof(proof2), "Spv check failed");
+        if (!check_spv_proof(proof1)) {
+            revert SPVCheckFailed();
+        }
+        if (!check_spv_proof(proof2)) {
+            revert SPVCheckFailed();
+        }
 
         ebtc.mint(evmAddress, vout2[0].value);
 
         pegins[proof2.txId] = true;
 
         return true;
-
     }
 
     function pegOut(
@@ -129,11 +148,11 @@ contract BtcBridge is IBtcBridge {
             revert PegOutAlreadyBurnt();
         }
 
-        OutputPoint[] memory outputs =  proof.rawVout.parseVout();
+        OutputPoint[] memory outputs = proof.rawVout.parseVout();
         if (outputs.length != 1) {
             revert InvalidPegOutProofOutputsSize();
         }
-        if (Script.equal(outputs[0].scriptPubKey, Script.generatePayToPubkeyScript(info.destinationAddress))) {
+        if (!Script.equal(outputs[0].scriptPubKey, Script.generatePayToPubkeyScript(info.destinationAddress))) {
             revert InvalidPegOutProofScriptPubKey();
         }
         if (outputs[0].value != info.amount) {
@@ -175,45 +194,61 @@ contract BtcBridge is IBtcBridge {
     function check_spv_proof(BtcTxProof calldata proof) internal view returns (bool) {
         bytes29 header = proof.header.ref();
         bytes29 intermediateNodes = proof.intermediateNodes.ref(0);
-        require(proof.txId.prove(proof.merkleRoot, intermediateNodes, proof.index), "Merkle proof failed");
-        require(header.merkleRoot() == proof.merkleRoot, "Merkle root mismatch");
-        require(header.checkWork(header.target()), "Difficulty mismatch");
+        if (!proof.txId.prove(proof.merkleRoot, intermediateNodes, proof.index)) {
+            revert MerkleProofFailed();
+        }
+        if (header.merkleRoot() != proof.merkleRoot) {
+            revert MerkleRootMismatch();
+        }
+        if (!header.checkWork(header.target())) {
+            revert DifficultyMismatch();
+        }
 
         bytes32 prevHash = blockStorage.getKeyBlock(proof.blockIndex).blockHash;
 
         uint256 i;
 
-        for (;i < proof.parents.length; i++) {
+        for (; i < proof.parents.length; i++) {
             bytes32 parent = proof.parents[i];
-            require(header.checkParent(parent), "Parent check failed");
+            if (!header.checkParent(parent)) {
+                revert ParentCheckFailed();
+            }
             header = parent.ref();
         }
-        require(header.workHash() == prevHash, "Previous hash mismatch");
+        if (header.workHash() != prevHash) {
+            revert PreviousHashMismatch();
+        }
 
         bytes32 nextHash = blockStorage.getKeyBlock(proof.blockIndex + 1).blockHash;
 
-        for (;i < proof.children.length; i++) {
+        for (; i < proof.children.length; i++) {
             bytes32 child = proof.children[i];
-            require(header.checkParent(child), "Parent check failed");
+            if (!header.checkParent(child)) {
+                revert ParentCheckFailed();
+            }
             header = child.ref();
         }
-        require(header.workHash() == nextHash, "Next hash mismatch");
+        if (header.workHash() != nextHash) {
+            revert NextHashMismatch();
+        }
 
         // 3. Accumulated difficulty
         uint256 difficulty1 = blockStorage.getKeyBlock(proof.blockIndex + 1).accumulatedDifficulty;
-        uint256 difficulty2 =  blockStorage.getFirstKeyBlock().accumulatedDifficulty;
+        uint256 difficulty2 = blockStorage.getFirstKeyBlock().accumulatedDifficulty;
         uint256 accumulatedDifficulty = difficulty2 - difficulty1;
-        require(accumulatedDifficulty > target, "Insufficient accumulated difficulty");
+        if (accumulatedDifficulty <= target) {
+            revert InsufficientAccumulatedDifficulty();
+        }
 
         return true;
     }
 
-    function is_pegin_valid(bytes32 txId)  internal view returns (bool) {
-            return pegins[txId];
+    function is_pegin_valid(bytes32 txId) internal view returns (bool) {
+        return pegins[txId];
     }
 
     /**
-    * @dev checks any given number is a power of 2
+     * @dev checks any given number is a power of 2
      */
     function isValidAmount(uint256 n) internal pure returns (bool) {
         return (n != 0) && ((n & (n - 1)) == 0);
