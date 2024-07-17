@@ -17,7 +17,7 @@ contract TransactionHelperTest is Test {
             hex"ffffffff"
         ); // sequence
 
-        InputPoint[] memory inputs = TransactionHelper.parseVin(rawVin);
+        Input[] memory inputs = TransactionHelper.parseVin(rawVin);
 
         assertEq(inputs.length, 1);
         assertEq(inputs[0].prevTxID, 0x5c98af97581ab788e7d4bda18f01e7b54d6fce601dc2ecdcbb0a38b0f82249e6);
@@ -34,7 +34,7 @@ contract TransactionHelperTest is Test {
             hex"0020be87e5c1a6f9957f1adc7d4296635b6b3f0da03a3a7819f919a827feff19501d"
         ); // scriptPubKey
 
-        OutputPoint[] memory outputs = TransactionHelper.parseVout(rawVout);
+        Output[] memory outputs = TransactionHelper.parseVout(rawVout);
 
         assertEq(outputs.length, 1);
         assertEq(outputs[0].value, 100000);

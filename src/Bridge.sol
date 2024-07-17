@@ -33,7 +33,7 @@ contract Bridge is IBridge {
      */
     mapping(bytes32 txId => mapping(uint256 vOut => address withdrawer)) withdrawers;
 
-    mapping(bytes32 txId => bool) pegins;
+    mapping(bytes32 txId => bool) pegIns;
 
     uint256 private constant PEG_OUT_MAX_PENDING_TIME = 8 weeks;
 
@@ -47,26 +47,26 @@ contract Bridge is IBridge {
         nOfNPubKey = _nOfNPubKey;
     }
 
-    function pegin(address evmAddress, bytes32 userPk, BtcTxProof calldata proof1, BtcTxProof calldata proof2)
+    function pegIn(address depositor, bytes32 depositorPubKey, BtcTxProof calldata proof1, BtcTxProof calldata proof2)
         external
-        returns (bool)
     {
-        require(is_pegin_valid(proof1.txId), "Pegged in invalid");
-        bytes32 taproot = nOfNPubKey.generateDepositTaproot(evmAddress, userPk, 1 days);
-        bytes memory multisigScript = nOfNPubKey.generatePreSignScriptAddress();
+        require(doesPegInExist(proof1.txId), "Pegged in invalid");
 
-        OutputPoint[] memory vout1 = proof1.rawVout.parseVout();
-        InputPoint[] memory vin2 = proof2.rawVin.parseVin();
-        OutputPoint[] memory vout2 = proof2.rawVout.parseVout();
+        Output[] memory vout1 = proof1.rawVout.parseVout();
+        Input[] memory vin2 = proof2.rawVin.parseVin();
+        Output[] memory vout2 = proof2.rawVout.parseVout();
 
         require(vout1.length == 1, "Invalid vout length");
-        require(vout1[0].scriptPubKey.equal(abi.encodePacked(taproot)), "Invalid script key");
+
+        bytes32 taproot = nOfNPubKey.generateDepositTaprootAddress(depositor, depositorPubKey, 1 days);
+        require(vout1[0].scriptPubKey.equals(abi.encodePacked(taproot)), "Invalid script key");
 
         bytes32 tx1Id = proof1.version.calculateTxId(proof1.rawVin.ref(0), proof1.rawVout.ref(0), proof1.locktime);
 
         require(vin2.length == 1, "Invalid vin length");
         require(vin2[0].prevTxID == tx1Id, "Mismatch transaction id");
-        require(vout2[0].scriptPubKey.equal(multisigScript), "Mismatch multisig script");
+        bytes memory multisigScript = nOfNPubKey.generatePreSignScriptAddress();
+        require(vout2[0].scriptPubKey.equals(multisigScript), "Mismatch multisig script");
 
         require(isValidAmount(vout2[0].value), "Invalid vout value");
 
@@ -75,14 +75,12 @@ contract Bridge is IBridge {
         require(tx1Id == proof1.txId, "Mismatch transaction id");
         require(tx2Id == proof2.txId, "Mismatch transaction id");
 
-        require(check_spv_proof(proof1), "Spv check failed");
-        require(check_spv_proof(proof2), "Spv check failed");
+        require(verifySPVProof(proof1), "Spv check failed");
+        require(verifySPVProof(proof2), "Spv check failed");
 
-        ebtc.mint(evmAddress, vout2[0].value);
+        ebtc.mint(depositor, vout2[0].value);
 
-        pegins[proof2.txId] = true;
-
-        return true;
+        pegIns[proof2.txId] = true;
     }
 
     function pegOut(
@@ -126,11 +124,11 @@ contract Bridge is IBridge {
             revert PegOutAlreadyBurnt();
         }
 
-        OutputPoint[] memory outputs = proof.rawVout.parseVout();
+        Output[] memory outputs = proof.rawVout.parseVout();
         if (outputs.length != 1) {
             revert InvalidPegOutProofOutputsSize();
         }
-        if (Script.equal(outputs[0].scriptPubKey, Script.generatePayToPubkeyScript(info.destinationAddress))) {
+        if (outputs[0].scriptPubKey.equals(Script.generatePayToPubkeyScript(info.destinationAddress))) {
             revert InvalidPegOutProofScriptPubKey();
         }
         if (outputs[0].value != info.amount) {
@@ -140,7 +138,7 @@ contract Bridge is IBridge {
         if (proof.txId != txId) {
             revert InvalidPegOutProofTransactionId();
         }
-        if (!check_spv_proof(proof)) {
+        if (!verifySPVProof(proof)) {
             revert InvalidSPVProof();
         }
 
@@ -169,7 +167,7 @@ contract Bridge is IBridge {
         emit PegOutClaimed(msg.sender, info.sourceOutpoint, info.amount, info.operatorPubkey);
     }
 
-    function check_spv_proof(BtcTxProof calldata proof) internal view returns (bool) {
+    function verifySPVProof(BtcTxProof calldata proof) internal view returns (bool) {
         bytes29 header = proof.header.ref();
         bytes29 intermediateNodes = proof.intermediateNodes.ref(0);
         require(proof.txId.prove(proof.merkleRoot, intermediateNodes, proof.index), "Merkle proof failed");
@@ -205,8 +203,8 @@ contract Bridge is IBridge {
         return true;
     }
 
-    function is_pegin_valid(bytes32 txId) internal view returns (bool) {
-        return pegins[txId];
+    function doesPegInExist(bytes32 txId) internal view returns (bool) {
+        return pegIns[txId];
     }
 
     /**

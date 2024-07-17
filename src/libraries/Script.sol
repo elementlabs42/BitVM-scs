@@ -93,7 +93,7 @@ library Script {
         script = abi.encodePacked(encodeData(pubKey), OP_CHECKSIG);
     }
 
-    function generateDepositTaproot(bytes32 nOfNPubkey, address evmAddress, bytes32 userPk, uint32 lockDuration)
+    function generateDepositTaprootAddress(bytes32 nOfNPubkey, address evmAddress, bytes32 userPk, uint32 lockDuration)
         internal
         pure
         returns (bytes32)
@@ -114,7 +114,7 @@ library Script {
         return abi.encodePacked(versionByte, hashLength, scriptHash);
     }
 
-    function equal(bytes memory a, bytes memory b) internal pure returns (bool) {
+    function equals(bytes memory a, bytes memory b) internal pure returns (bool) {
         if (a.length != b.length) {
             return false;
         }
