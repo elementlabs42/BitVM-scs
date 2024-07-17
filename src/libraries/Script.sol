@@ -5,6 +5,9 @@ import {TaprootHelper} from "./TaprootHelper.sol";
 import {BtcTxProof} from "../interfaces/IBtcBridge.sol";
 
 library Script {
+    error BlocksIsZero();
+    error OutOfRange();
+
     using TaprootHelper for bytes32;
     bytes1 constant PUB_KEY_LENGTH = 0x20;
     bytes1 constant ADDRESS_LENGTH = 0x2a;
@@ -88,7 +91,7 @@ library Script {
         if (a.length != b.length) {
             return false;
         }
-        for (uint256 i = 0; i < a.length; i++) {
+        for (uint256 i; i < a.length; ++i) {
             if (a[i] != b[i]) {
                 return false;
             }
@@ -113,7 +116,7 @@ library Script {
 
     function encodeBlocks(uint32 blocks) internal pure returns (bytes memory) {
         if (blocks == 0) {
-            revert("Blocks must be greater than 0");
+            revert BlocksIsZero();
         } else if (blocks <= 16) {
             return abi.encodePacked(getSmallIntegerOpcode(blocks));
         } else if (blocks <= 0xFF) {
@@ -144,6 +147,6 @@ library Script {
         if (value == 14) return OP_14;
         if (value == 15) return OP_15;
         if (value == 16) return OP_16;
-        revert("Value out of range for small integer opcode");
+        revert OutOfRange();
     }
 }
