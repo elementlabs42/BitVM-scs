@@ -149,4 +149,8 @@ contract Storage is IStorage {
             return (blockHeight - initialBlockHeight) / blockStepDistance;
         }
     }
+
+    function getFirstKeyBlock() public view returns (KeyBlock memory _block) {
+        return  storedBlocks[0];
+    }
 }
