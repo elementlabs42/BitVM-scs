@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import {Block} from "../interfaces/IBtcBridge.sol";
+import {Block} from "../interfaces/IBridge.sol";
 import "./Endian.sol";
 import "openzeppelin-contracts/contracts/utils/math/Math.sol";
 
