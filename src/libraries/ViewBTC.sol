@@ -300,7 +300,7 @@ library ViewBTC {
     /// @dev        will return null in error cases
     /// @param _vin the vin
     /// @return     the typed vin (or null if error)
-    function tryAsVin(bytes29 _vin) internal view typeAssert(_vin, BTCTypes.Unknown) returns (bytes29) {
+    function tryAsVin(bytes29 _vin) internal pure typeAssert(_vin, BTCTypes.Unknown) returns (bytes29) {
         if (_vin.len() == 0) {
             return TypedMemView.nullView();
         }

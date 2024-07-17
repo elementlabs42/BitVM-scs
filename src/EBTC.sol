@@ -7,6 +7,7 @@ contract EBTC is ERC20 {
     error BridgeOnly();
 
     event TokenMinted(address to, uint256 amount);
+    event TokenBurnt(address from, uint256 amount);
 
     address bridge;
 
@@ -26,5 +27,15 @@ contract EBTC is ERC20 {
         _mint(to, amount);
 
         emit TokenMinted(to, amount);
+    }
+
+    function burn(address from, uint256 amount) external {
+        if (msg.sender != bridge) {
+            revert BridgeOnly();
+        }
+
+        _burn(from, amount);
+
+        emit TokenBurnt(from, amount);
     }
 }

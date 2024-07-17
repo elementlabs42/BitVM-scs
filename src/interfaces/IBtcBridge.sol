@@ -10,6 +10,17 @@ struct Block {
     bytes32 merkleRoot; // natural order
 }
 
+struct Outpoint {
+    /**
+     * @notice Bitcoin transaction ID, equal to SHA256(SHA256(rawTx))
+     */
+    bytes32 txId;
+    /**
+     * @notice Index of transaction within the block.
+     */
+    uint256 vOut;
+}
+
 struct InputPoint {
    bytes32 prevTxID;
    bytes4 prevTxIndex;
@@ -40,28 +51,44 @@ struct BtcTxProof {
     bytes intermediateNodes;
 }
 
-enum PegoutStatus {
+enum PegOutStatus {
     VOID,
     PENDING,
     CLAIMED,
     BURNT
 }
 
-struct Pegout {
+struct PegOutInfo {
     bytes destinationAddress;
+    Outpoint sourceOutpoint;
     uint256 amount;
     bytes operatorPubkey;
     uint256 claimAfter;
-    PegoutStatus status;
+    PegOutStatus status;
 }
 
 /**
  * @notice Manage and gatekeeping EBTC in transit during peg in/out phases.
  */
 interface IBtcBridge {
+    event PegOutInitiated(
+        address indexed withdrawer,
+        bytes destinationAddress,
+        Outpoint sourceOutpoint,
+        uint256 amount,
+        bytes operatorPubkey
+    );
+    event PegOutClaimed(address indexed withdrawer, Outpoint sourceOutpoint, uint256 amount, bytes operatorPubkey);
+    event PegOutBurned(address indexed withdrawer, Outpoint sourceOutpoint, uint256 amount, bytes operatorPubkey);
+
+    error InvalidSPVProof();
     error InvalidAmount();
-    error PegoutNotFound();
-    error PegoutInProgress();
-    error PegoutAlreadyClaimed();
-    error PegoutAlreadyBurnt();
+    error PegOutNotFound();
+    error PegOutInProgress();
+    error PegOutAlreadyClaimed();
+    error PegOutAlreadyBurnt();
+    error InvalidPegOutProofOutputsSize();
+    error InvalidPegOutProofScriptPubKey();
+    error InvalidPegOutProofAmount();
+    error InvalidPegOutProofTransactionId();
 }

@@ -133,7 +133,7 @@ library ViewSPV {
         }
     }
 
-    function ref(bytes32 b) internal view returns(bytes29) {
+    function ref(bytes32 b) internal pure returns(bytes29) {
         return abi.encodePacked(b).ref(0);
     }
 }
