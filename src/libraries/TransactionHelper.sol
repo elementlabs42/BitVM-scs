@@ -3,7 +3,7 @@ pragma solidity ^0.8.26;
 pragma experimental ABIEncoderV2;
 
 import "./Endian.sol";
-import "../interfaces/IBtcBridge.sol";
+import "../interfaces/IBridge.sol";
 
 library TransactionHelper {
     error ScriptBytesTooLong();
@@ -25,11 +25,11 @@ library TransactionHelper {
         }
     }
 
-    function parseVin(bytes calldata rawVin) public pure returns (InputPoint[] memory inputs) {
+    function parseVin(bytes calldata rawVin) public pure returns (Input[] memory inputs) {
         (uint256 nInputs, uint256 newOffset) = readVarInt(rawVin, 0);
-        inputs = new InputPoint[](nInputs);
+        inputs = new Input[](nInputs);
         for (uint256 i; i < nInputs; ++i) {
-            InputPoint memory txIn;
+            Input memory txIn;
             txIn.prevTxID = bytes32(rawVin[newOffset:newOffset + 32]);
             newOffset += 32;
             txIn.prevTxIndex = bytes4(rawVin[newOffset:newOffset + 4]);
@@ -49,11 +49,11 @@ library TransactionHelper {
         }
     }
 
-    function parseVout(bytes calldata rawVout) public pure returns (OutputPoint[] memory outputs) {
+    function parseVout(bytes calldata rawVout) public pure returns (Output[] memory outputs) {
         (uint256 nOutputs, uint256 newOffset) = readVarInt(rawVout, 0);
-        outputs = new OutputPoint[](nOutputs);
+        outputs = new Output[](nOutputs);
         for (uint256 i; i < nOutputs; ++i) {
-            OutputPoint memory txOut;
+            Output memory txOut;
             txOut.value = Endian.reverse64(uint64(bytes8(rawVout[newOffset:newOffset + 8])));
             newOffset += 8;
             uint256 nOutScriptBytes;

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import "./interfaces/IBtcBridge.sol";
+import "./interfaces/IBridge.sol";
 import "./EBTC.sol";
 import "./libraries/ViewBTC.sol";
 import "./libraries/ViewSPV.sol";
@@ -9,7 +9,7 @@ import "./libraries/Script.sol";
 import {IStorage} from "./interfaces/IStorage.sol";
 import {TransactionHelper} from "./libraries/TransactionHelper.sol";
 
-contract BtcBridge is IBtcBridge {
+contract Bridge is IBridge {
     EBTC ebtc;
     IStorage blockStorage;
     uint256 target;
@@ -33,7 +33,7 @@ contract BtcBridge is IBtcBridge {
      */
     mapping(bytes32 txId => mapping(uint256 vOut => address withdrawer)) withdrawers;
 
-    mapping(bytes32 txId => bool) pegins;
+    mapping(bytes32 txId => bool) pegIns;
 
     uint256 private constant PEG_OUT_MAX_PENDING_TIME = 8 weeks;
 
@@ -47,38 +47,26 @@ contract BtcBridge is IBtcBridge {
         nOfNPubKey = _nOfNPubKey;
     }
 
-    function pegin(address evmAddress, bytes32 userPk, BtcTxProof calldata proof1, BtcTxProof calldata proof2)
+    function pegIn(address depositor, bytes32 depositorPubKey, BtcTxProof calldata proof1, BtcTxProof calldata proof2)
         external
-        returns (bool)
     {
-        if (!is_pegin_valid(proof1.txId)) {
-            revert PeggedInInvalid();
-        }
-        bytes32 taproot = nOfNPubKey.generateDepositTaproot(evmAddress, userPk, 1 days);
-        bytes memory multisigScript = nOfNPubKey.generatePreSignScriptAddress();
+        require(doesPegInExist(proof1.txId), "Pegged in invalid");
 
-        OutputPoint[] memory vout1 = proof1.rawVout.parseVout();
-        InputPoint[] memory vin2 = proof2.rawVin.parseVin();
-        OutputPoint[] memory vout2 = proof2.rawVout.parseVout();
+        Output[] memory vout1 = proof1.rawVout.parseVout();
+        Input[] memory vin2 = proof2.rawVin.parseVin();
+        Output[] memory vout2 = proof2.rawVout.parseVout();
 
-        if (vout1.length != 1) {
-            revert InvalidVoutLength();
-        }
-        if (!vout1[0].scriptPubKey.equal(abi.encodePacked(taproot))) {
-            revert InvalidScriptKey();
-        }
+        require(vout1.length == 1, "Invalid vout length");
+
+        bytes32 taproot = nOfNPubKey.generateDepositTaprootAddress(depositor, depositorPubKey, 1 days);
+        require(vout1[0].scriptPubKey.equals(abi.encodePacked(taproot)), "Invalid script key");
 
         bytes32 tx1Id = proof1.version.calculateTxId(proof1.rawVin.ref(0), proof1.rawVout.ref(0), proof1.locktime);
 
-        if (vin2.length != 1) {
-            revert InvalidVinLength();
-        }
-        if (vin2[0].prevTxID != tx1Id) {
-            revert MismatchTransactionId();
-        }
-        if (!vout2[0].scriptPubKey.equal(multisigScript)) {
-            revert MismatchMultisigScript();
-        }
+        require(vin2.length == 1, "Invalid vin length");
+        require(vin2[0].prevTxID == tx1Id, "Mismatch transaction id");
+        bytes memory multisigScript = nOfNPubKey.generatePreSignScriptAddress();
+        require(vout2[0].scriptPubKey.equals(multisigScript), "Mismatch multisig script");
 
         if (!isValidAmount(vout2[0].value)) {
             revert InvalidVoutValue();
@@ -93,18 +81,13 @@ contract BtcBridge is IBtcBridge {
             revert MismatchTransactionId();
         }
 
-        if (!check_spv_proof(proof1)) {
-            revert SPVCheckFailed();
-        }
-        if (!check_spv_proof(proof2)) {
-            revert SPVCheckFailed();
-        }
 
-        ebtc.mint(evmAddress, vout2[0].value);
+        require(verifySPVProof(proof1), "Spv check failed");
+        require(verifySPVProof(proof2), "Spv check failed");
 
-        pegins[proof2.txId] = true;
+        ebtc.mint(depositor, vout2[0].value);
 
-        return true;
+        pegIns[proof2.txId] = true;
     }
 
     function pegOut(
@@ -148,11 +131,11 @@ contract BtcBridge is IBtcBridge {
             revert PegOutAlreadyBurnt();
         }
 
-        OutputPoint[] memory outputs = proof.rawVout.parseVout();
+        Output[] memory outputs = proof.rawVout.parseVout();
         if (outputs.length != 1) {
             revert InvalidPegOutProofOutputsSize();
         }
-        if (!Script.equal(outputs[0].scriptPubKey, Script.generatePayToPubkeyScript(info.destinationAddress))) {
+        if (outputs[0].scriptPubKey.equals(Script.generatePayToPubkeyScript(info.destinationAddress))) {
             revert InvalidPegOutProofScriptPubKey();
         }
         if (outputs[0].value != info.amount) {
@@ -162,7 +145,7 @@ contract BtcBridge is IBtcBridge {
         if (proof.txId != txId) {
             revert InvalidPegOutProofTransactionId();
         }
-        if (!check_spv_proof(proof)) {
+        if (!verifySPVProof(proof)) {
             revert InvalidSPVProof();
         }
 
@@ -191,7 +174,7 @@ contract BtcBridge is IBtcBridge {
         emit PegOutClaimed(msg.sender, info.sourceOutpoint, info.amount, info.operatorPubkey);
     }
 
-    function check_spv_proof(BtcTxProof calldata proof) internal view returns (bool) {
+    function verifySPVProof(BtcTxProof calldata proof) internal view returns (bool) {
         bytes29 header = proof.header.ref();
         bytes29 intermediateNodes = proof.intermediateNodes.ref(0);
         if (!proof.txId.prove(proof.merkleRoot, intermediateNodes, proof.index)) {
@@ -243,8 +226,8 @@ contract BtcBridge is IBtcBridge {
         return true;
     }
 
-    function is_pegin_valid(bytes32 txId) internal view returns (bool) {
-        return pegins[txId];
+    function doesPegInExist(bytes32 txId) internal view returns (bool) {
+        return pegIns[txId];
     }
 
     /**
