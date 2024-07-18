@@ -174,7 +174,7 @@ contract Bridge is IBridge {
         require(header.merkleRoot() == proof.merkleRoot, "Merkle root mismatch");
         require(header.checkWork(header.target()), "Difficulty mismatch");
 
-        bytes32 prevHash = blockStorage.getKeyBlock(proof.blockIndex).blockHash;
+        bytes32 prevHash = blockStorage.getKeyBlock(proof.blockHeight).blockHash;
 
         uint256 i;
 
@@ -185,7 +185,7 @@ contract Bridge is IBridge {
         }
         require(header.workHash() == prevHash, "Previous hash mismatch");
 
-        bytes32 nextHash = blockStorage.getKeyBlock(proof.blockIndex + 1).blockHash;
+        bytes32 nextHash = blockStorage.getKeyBlock(proof.blockHeight + 1).blockHash;
 
         for (; i < proof.children.length; i++) {
             bytes32 child = proof.children[i];
@@ -195,7 +195,7 @@ contract Bridge is IBridge {
         require(header.workHash() == nextHash, "Next hash mismatch");
 
         // 3. Accumulated difficulty
-        uint256 difficulty1 = blockStorage.getKeyBlock(proof.blockIndex + 1).accumulatedDifficulty;
+        uint256 difficulty1 = blockStorage.getKeyBlock(proof.blockHeight + 1).accumulatedDifficulty;
         uint256 difficulty2 = blockStorage.getFirstKeyBlock().accumulatedDifficulty;
         uint256 accumulatedDifficulty = difficulty2 - difficulty1;
         require(accumulatedDifficulty > target, "Insufficient accumulated difficulty");

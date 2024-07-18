@@ -41,11 +41,11 @@ struct BtcTxProof {
     bytes4 locktime;
     bytes32 txId;
     bytes32 merkleRoot;
-    uint256 index;
+    uint256 index; // tx index in block
     bytes32 header;
     bytes32[] parents;
     bytes32[] children;
-    uint256 blockIndex;
+    uint256 blockHeight;
     bytes rawVin;
     bytes rawVout;
     bytes intermediateNodes;
