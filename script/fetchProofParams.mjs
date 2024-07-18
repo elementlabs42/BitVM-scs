@@ -271,14 +271,15 @@ const toCompactSize = (size) => {
 
   // usage: `node script/fetchProofParams.mjs <provider> <step:initialHeight> <txId>`
   // provider: 1 for blockstream, 2 for mutinynet
-  // output:  Field                     Size        Format        
-  //          merkle proof count        variable    compact size
-  //          merkle proof              32 bytes    natural byte order
-  //          parent blockHash count    variable    compact size
-  //          parent blockHash          32 bytes    natural byte order
-  //          children blockHash count  variable    compact size
-  //          children blockHash        32 bytes    natural byte order
-  //          raw transaction           variable    segwit transaction format
+  // output:  Field                       Size        Format
+  //          merkle proof count          variable    compact size
+  //          merkle proof                32 bytes    natural byte order
+  //          parent blockHash count      variable    compact size
+  //          parent blockHash            32 bytes    natural byte order
+  //          children blockHash count    variable    compact size
+  //          children blockHash          32 bytes    natural byte order
+  //          transaction index in block  variable    compact size
+  //          raw transaction             variable    bitcoin transaction format
   ; (async () => {
     const providerId = parseInt(process.argv[2])
     const provider = getProvider(providerId)
@@ -307,6 +308,7 @@ const toCompactSize = (size) => {
     output += toCompactSize(merkleProof.merkle.length) + merkleProof.merkle.join('')
     output += toCompactSize(parents.length) + parents.join('')
     output += toCompactSize(children.length) + children.join('')
+    output += toCompactSize(proofInfo.block_index)
     output += rawTx
     console.log(output)
 
