@@ -119,14 +119,12 @@ library TypedMemView {
             }
         }
 
-        // abusing underflow here =_=
-        unchecked{
-            for (uint8 i = 15; i < 255; --i) {
-                uint8 _byte = uint8(_b >> (i * 8));
-                second |= byteHex(_byte);
-                if (i != 0) {
-                    second <<= 16;
-                }
+        // it is reverted  here deliberately
+        for (uint8 i = 15; i < 255; --i) {
+            uint8 _byte = uint8(_b >> (i * 8));
+            second |= byteHex(_byte);
+            if (i != 0) {
+               second <<= 16;
             }
         }
     }
@@ -496,14 +494,14 @@ library TypedMemView {
      */
     function index(bytes29 memView, uint256 _index, uint8 _bytes) internal pure returns (bytes32 result) {
         if (_bytes == 0) return bytes32(0);
-        
+
         if (_index + _bytes > len(memView)) {
             revert OverranTheView(loc(memView), len(memView), _index, uint256(_bytes));
         }
         if (_bytes > 32) {
             revert InvalidDataLength();
         }
-        
+
 
         uint8 bitLength = _bytes * 8;
         uint256 _loc = loc(memView);

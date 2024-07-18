@@ -536,7 +536,7 @@ library ViewBTC {
                 so we divide it by 256**2, then multiply by 256**2 later
                 we know the target is evenly divisible by 256**2, so this isn't an issue
         */
-        uint256 _adjusted = _previousTarget * _elapsedTime / 65536;
-        return _adjusted * 65536 / RETARGET_PERIOD;
+        uint256 _adjusted = _previousTarget / _elapsedTime * 65536;
+        return _adjusted / 65536 * RETARGET_PERIOD;
     }
 }
