@@ -12,7 +12,7 @@ import {ViewBTC} from "./ViewBTC.sol";
 
 library ViewSPV {
     error EmptyMemView();
-    
+
     using TypedMemView for bytes;
     using TypedMemView for bytes29;
     using ViewBTC for bytes29;

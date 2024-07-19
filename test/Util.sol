@@ -5,7 +5,7 @@ import "../src/libraries/Endian.sol";
 
 library Util {
     bytes private constant NIBBLE_LOOKUP = "0123456789abcdef";
-    
+
     function slice(bytes memory data, uint256 start, uint256 length) external pure returns (bytes memory) {
         bytes memory ret = new bytes(length);
         for (uint256 i = start; i < length;) {
@@ -31,16 +31,12 @@ library Util {
     /**
      * @dev Recomputes the transaction ID for a raw transaction.
      */
-    function getTxID(bytes memory rawTransaction)
-        public
-        pure
-        returns (bytes32)
-    {
+    function getTxID(bytes memory rawTransaction) public pure returns (bytes32) {
         bytes32 ret = doubleSha(rawTransaction);
         return bytes32(Endian.reverse256(uint256(ret)));
     }
 
-        /**
+    /**
      * @dev Computes the ubiquitious Bitcoin SHA256(SHA256(x))
      */
     function doubleSha(bytes memory buf) internal pure returns (bytes32) {
