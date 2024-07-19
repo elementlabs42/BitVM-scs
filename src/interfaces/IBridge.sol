@@ -87,7 +87,7 @@ interface IBridge {
         bytes operatorPubkey
     );
     event PegOutClaimed(address indexed withdrawer, Outpoint sourceOutpoint, uint256 amount, bytes operatorPubkey);
-    event PegOutBurned(address indexed withdrawer, Outpoint sourceOutpoint, uint256 amount, bytes operatorPubkey);
+    event PegOutBurnt(address indexed withdrawer, Outpoint sourceOutpoint, uint256 amount, bytes operatorPubkey);
 
     error PeggedInInvalid();
     error InvalidVoutLength();

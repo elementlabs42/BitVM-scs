@@ -100,7 +100,7 @@ contract Bridge is IBridge {
         }
         if (
             pegOuts[msg.sender].status == PegOutStatus.PENDING
-                || withdrawers[sourceOutpoint.txId][sourceOutpoint.vOut] == msg.sender
+                || withdrawers[sourceOutpoint.txId][sourceOutpoint.vOut] != address(0)
         ) {
             revert PegOutInProgress();
         }
@@ -150,10 +150,10 @@ contract Bridge is IBridge {
 
         pegOuts[withdrawer].status = PegOutStatus.BURNT;
         ebtc.burn(address(this), info.amount);
-        emit PegOutBurned(withdrawer, info.sourceOutpoint, info.amount, info.operatorPubkey);
+        emit PegOutBurnt(withdrawer, info.sourceOutpoint, info.amount, info.operatorPubkey);
     }
 
-    function claimEBTC() external {
+    function refundEBTC() external {
         PegOutInfo memory info = pegOuts[msg.sender];
         if (info.status == PegOutStatus.VOID) {
             revert PegOutNotFound();
