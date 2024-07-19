@@ -34,11 +34,13 @@ contract ConstantsFixture {
         hex"fe7be65b41f6cf522eac2a63f9dde1f7a6f61eee93c648c74b79cfc242dd1a94" hex"f241d9618b8c0b17ac09604c"
     );
 
+    bytes32 constant txRoot736 = hex"31b669b35884e22c31b286ed8949007609db6cb50afe8b6e6e649e62cc24e19c";
     // header for bitcoin block #736000
     bytes constant header736000 = (
         hex"04000020" hex"d8280f9ce6eeebd2e117f39e1af27cb17b23c5eae6e703000000000000000000"
         hex"31b669b35884e22c31b286ed8949007609db6cb50afe8b6e6e649e62cc24e19c" hex"a5657c62" hex"ba010917" hex"36d09865"
     );
+    uint256 txIndex736 = 1;
 
     bytes32 constant blockHash736000 = hex"00000000000000000002d52d9816a419b45f1f0efe9a9df4f7b64161e508323d";
 

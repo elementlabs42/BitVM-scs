@@ -12,6 +12,8 @@ import {ViewBTC} from "./ViewBTC.sol";
 import {SafeMath} from "./SafeMath.sol";
 
 library ViewSPV {
+    error EmptyMemView();
+    
     using TypedMemView for bytes;
     using TypedMemView for bytes29;
     using ViewBTC for bytes29;
@@ -37,6 +39,9 @@ library ViewSPV {
     /// @param memView      a 29-byte view with a 5-byte type
     /// @param t            the expected type (e.g. BTCTypes.Outpoint, BTCTypes.TxIn, etc)
     modifier typeAssert(bytes29 memView, ViewBTC.BTCTypes t) {
+        if (uint256(bytes32(memView)) == 0) {
+            revert EmptyMemView();
+        }
         memView.assertType(uint40(t));
         _;
     }
