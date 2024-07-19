@@ -3,7 +3,6 @@ pragma solidity ^0.8.26;
 
 import "./Endian.sol";
 import {TaprootHelper} from "./TaprootHelper.sol";
-import {BtcTxProof} from "../interfaces/IBridge.sol";
 
 library Script {
     error BlocksIsZero();

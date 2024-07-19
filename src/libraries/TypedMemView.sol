@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-
 library TypedMemView {
     error ValidityAssertionFailed();
     error InvalidDataLength();
@@ -124,7 +123,7 @@ library TypedMemView {
             uint8 _byte = uint8(_b >> (i * 8));
             second |= byteHex(_byte);
             if (i != 0) {
-               second <<= 16;
+                second <<= 16;
             }
         }
     }
@@ -424,7 +423,7 @@ library TypedMemView {
             return NULL;
         }
 
-        _loc = _loc+ _index;
+        _loc = _loc + _index;
         return build(newType, _loc, _len);
     }
 
@@ -501,7 +500,6 @@ library TypedMemView {
         if (_bytes > 32) {
             revert InvalidDataLength();
         }
-
 
         uint8 bitLength = _bytes * 8;
         uint256 _loc = loc(memView);

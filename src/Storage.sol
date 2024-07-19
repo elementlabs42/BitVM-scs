@@ -144,8 +144,8 @@ contract Storage is IStorage {
         if (blockHeight < initialBlockHeight) {
             revert BlockHeightTooLow(blockHeight);
         }
-        
-        unchecked{
+
+        unchecked {
             return (blockHeight - initialBlockHeight) / blockStepDistance;
         }
     }

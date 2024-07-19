@@ -47,7 +47,7 @@ contract Bridge is IBridge {
         nOfNPubKey = _nOfNPubKey;
     }
 
-    function pegIn(address depositor, bytes32 depositorPubKey, BtcTxProof calldata proof1, BtcTxProof calldata proof2)
+    function pegIn(address depositor, bytes32 depositorPubKey, ProofInfo calldata proof1, ProofInfo calldata proof2)
         external
     {
         require(doesPegInExist(proof1.txId), "Pegged in invalid");
@@ -80,7 +80,6 @@ contract Bridge is IBridge {
         if (tx2Id != proof2.txId) {
             revert MismatchTransactionId();
         }
-
 
         require(verifySPVProof(proof1), "Spv check failed");
         require(verifySPVProof(proof2), "Spv check failed");
@@ -119,7 +118,7 @@ contract Bridge is IBridge {
         emit PegOutInitiated(msg.sender, destinationBitcoinAddress, sourceOutpoint, amount, operatorPubkey);
     }
 
-    function burnEBTC(address withdrawer, BtcTxProof calldata proof) external {
+    function burnEBTC(address withdrawer, ProofInfo calldata proof) external {
         PegOutInfo memory info = pegOuts[withdrawer];
         if (info.status == PegOutStatus.VOID) {
             revert PegOutNotFound();
@@ -174,9 +173,9 @@ contract Bridge is IBridge {
         emit PegOutClaimed(msg.sender, info.sourceOutpoint, info.amount, info.operatorPubkey);
     }
 
-    function verifySPVProof(BtcTxProof calldata proof) internal view returns (bool) {
+    function verifySPVProof(ProofInfo calldata proof) internal view returns (bool) {
         bytes29 header = proof.header.ref();
-        bytes29 intermediateNodes = proof.intermediateNodes.ref(0);
+        bytes29 intermediateNodes = proof.merkleProof.ref(0);
         if (!proof.txId.prove(proof.merkleRoot, intermediateNodes, proof.index)) {
             revert MerkleProofFailed();
         }

@@ -21,7 +21,6 @@ struct Outpoint {
     uint256 vOut;
 }
 
-
 struct Input {
     bytes32 prevTxID;
     bytes4 prevTxIndex;
@@ -29,16 +28,23 @@ struct Input {
     uint32 sequence;
 }
 
-
 struct Output {
     uint64 value;
     bytes scriptPubKey;
 }
 
+struct ProofParam {
+    bytes merkleProof;
+    bytes parents;
+    bytes children;
+    bytes rawTx;
+    uint256 blockIndex;
+}
+
 /**
  * @notice Proof that a transaction (rawTx) is in a given block.
  */
-struct BtcTxProof {
+struct ProofInfo {
     bytes4 version;
     bytes4 locktime;
     bytes32 txId;
@@ -50,7 +56,7 @@ struct BtcTxProof {
     uint256 blockHeight;
     bytes rawVin;
     bytes rawVout;
-    bytes intermediateNodes;
+    bytes merkleProof;
 }
 
 enum PegOutStatus {
