@@ -9,13 +9,15 @@ import "./fixture/ConstantsFixture.sol";
 import "./Util.sol";
 
 contract ViewSPVTest is Test, ConstantsFixture {
+    using TypedMemView for bytes;
+
     function testViewSPV_prove_emptyParameters() public {
         bytes32 txid;
         bytes32 merkleRoot;
-        bytes29 intermediateNodes;
+        bytes29 merkleProof;
         uint256 index;
         vm.expectRevert(abi.encodeWithSelector(ViewSPV.EmptyMemView.selector));
-        ViewSPV.prove(txid, merkleRoot, intermediateNodes, index);
+        ViewSPV.prove(txid, merkleRoot, merkleProof, index);
     }
 
     function testViewSPV_prove_emptyBlock() public pure {
@@ -24,13 +26,13 @@ contract ViewSPVTest is Test, ConstantsFixture {
         bytes32 txid;
         bytes32 merkleRoot;
         ViewBTC.BTCTypes _type = ViewBTC.BTCTypes.MerkleArray;
-        bytes29 intermediateNodes;
+        bytes29 merkleProof;
         assembly {
             // solium-disable-previous-line security/no-inline-assembly
-            intermediateNodes := shl(SHIFT_TO_TYPE, _type) // append lower 27 bytes
+            merkleProof := shl(SHIFT_TO_TYPE, _type) // append lower 27 bytes
         }
         uint256 index;
-        bool result = ViewSPV.prove(txid, merkleRoot, intermediateNodes, index);
+        bool result = ViewSPV.prove(txid, merkleRoot, merkleProof, index);
         assertEq(result, true);
     }
 
@@ -42,18 +44,18 @@ contract ViewSPVTest is Test, ConstantsFixture {
         (uint256 a, uint256 b) = Util.encodeHex(uint256(_txid));
         console.log("testProveBlock() _txid", string(abi.encodePacked("0x", a, b)));
 
-        bytes memory _intermediateNodes = txProof736;
+        bytes memory _merkleProof = txProof736;
 
         bytes32 _merkleRoot = txRoot736;
         uint256 _index = txIndex736;
 
         ViewBTC.BTCTypes _type = ViewBTC.BTCTypes.MerkleArray;
-        bytes29 intermediateNodes;
+        bytes29 merkleProof;
         assembly {
             // solium-disable-previous-line security/no-inline-assembly
-            intermediateNodes := shl(SHIFT_TO_TYPE, _type) // append lower 27 bytes
+            merkleProof := shl(SHIFT_TO_TYPE, _type) // append lower 27 bytes
         }
-        bool result = ViewSPV.prove(_txid, _merkleRoot, bytes29(_intermediateNodes), _index);
+        bool result = ViewSPV.prove(_txid, _merkleRoot, _merkleProof.ref(0), _index);
         assertEq(result, true);
     }
 }
