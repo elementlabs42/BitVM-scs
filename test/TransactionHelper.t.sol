@@ -6,7 +6,7 @@ import "../src/libraries/TransactionHelper.sol";
 import "../src/interfaces/IBridge.sol";
 
 contract TransactionHelperTest is Test {
-    function testParseVin() public pure {
+    function testTransactionHelper_parseVin() public pure {
         // Extract the rawVin part from tx3020
         bytes memory rawVin = (
             hex"01" // input count, compact size
@@ -25,7 +25,7 @@ contract TransactionHelperTest is Test {
         assertEq(inputs[0].sequence, 0xffffffff);
     }
 
-    function testParseVout() public pure {
+    function testTransactionHelper_parseVout() public pure {
         // Extract the rawVout part from tx3020
         bytes memory rawVout = (
             hex"01" // output count, compact size

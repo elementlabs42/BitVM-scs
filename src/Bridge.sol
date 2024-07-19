@@ -68,12 +68,19 @@ contract Bridge is IBridge {
         bytes memory multisigScript = nOfNPubKey.generatePreSignScriptAddress();
         require(vout2[0].scriptPubKey.equals(multisigScript), "Mismatch multisig script");
 
-        require(isValidAmount(vout2[0].value), "Invalid vout value");
+        if (!isValidAmount(vout2[0].value)) {
+            revert InvalidVoutValue();
+        }
 
         bytes32 tx2Id = proof2.version.calculateTxId(proof2.rawVin.ref(0), proof2.rawVout.ref(0), proof2.locktime);
 
-        require(tx1Id == proof1.txId, "Mismatch transaction id");
-        require(tx2Id == proof2.txId, "Mismatch transaction id");
+        if (tx1Id != proof1.txId) {
+            revert MismatchTransactionId();
+        }
+        if (tx2Id != proof2.txId) {
+            revert MismatchTransactionId();
+        }
+
 
         require(verifySPVProof(proof1), "Spv check failed");
         require(verifySPVProof(proof2), "Spv check failed");
@@ -170,9 +177,15 @@ contract Bridge is IBridge {
     function verifySPVProof(BtcTxProof calldata proof) internal view returns (bool) {
         bytes29 header = proof.header.ref();
         bytes29 intermediateNodes = proof.intermediateNodes.ref(0);
-        require(proof.txId.prove(proof.merkleRoot, intermediateNodes, proof.index), "Merkle proof failed");
-        require(header.merkleRoot() == proof.merkleRoot, "Merkle root mismatch");
-        require(header.checkWork(header.target()), "Difficulty mismatch");
+        if (!proof.txId.prove(proof.merkleRoot, intermediateNodes, proof.index)) {
+            revert MerkleProofFailed();
+        }
+        if (header.merkleRoot() != proof.merkleRoot) {
+            revert MerkleRootMismatch();
+        }
+        if (!header.checkWork(header.target())) {
+            revert DifficultyMismatch();
+        }
 
         bytes32 prevHash = blockStorage.getKeyBlock(proof.blockHeight).blockHash;
 
@@ -180,25 +193,35 @@ contract Bridge is IBridge {
 
         for (; i < proof.parents.length; i++) {
             bytes32 parent = proof.parents[i];
-            require(header.checkParent(parent), "Parent check failed");
+            if (!header.checkParent(parent)) {
+                revert ParentCheckFailed();
+            }
             header = parent.ref();
         }
-        require(header.workHash() == prevHash, "Previous hash mismatch");
+        if (header.workHash() != prevHash) {
+            revert PreviousHashMismatch();
+        }
 
         bytes32 nextHash = blockStorage.getKeyBlock(proof.blockHeight + 1).blockHash;
 
         for (; i < proof.children.length; i++) {
             bytes32 child = proof.children[i];
-            require(header.checkParent(child), "Parent check failed");
+            if (!header.checkParent(child)) {
+                revert ParentCheckFailed();
+            }
             header = child.ref();
         }
-        require(header.workHash() == nextHash, "Next hash mismatch");
+        if (header.workHash() != nextHash) {
+            revert NextHashMismatch();
+        }
 
         // 3. Accumulated difficulty
         uint256 difficulty1 = blockStorage.getKeyBlock(proof.blockHeight + 1).accumulatedDifficulty;
         uint256 difficulty2 = blockStorage.getFirstKeyBlock().accumulatedDifficulty;
         uint256 accumulatedDifficulty = difficulty2 - difficulty1;
-        require(accumulatedDifficulty > target, "Insufficient accumulated difficulty");
+        if (accumulatedDifficulty <= target) {
+            revert InsufficientAccumulatedDifficulty();
+        }
 
         return true;
     }
