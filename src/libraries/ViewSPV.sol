@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.5.10;
+pragma solidity ^0.8.26;
 
 /**
  * @title ViewSPV
@@ -9,7 +9,6 @@ pragma solidity >=0.5.10;
  */
 import "./TypedMemView.sol";
 import {ViewBTC} from "./ViewBTC.sol";
-import {SafeMath} from "./SafeMath.sol";
 
 library ViewSPV {
     error EmptyMemView();
@@ -17,7 +16,6 @@ library ViewSPV {
     using TypedMemView for bytes;
     using TypedMemView for bytes29;
     using ViewBTC for bytes29;
-    using SafeMath for uint256;
 
     uint256 constant ERR_BAD_LENGTH = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
     uint256 constant ERR_INVALID_CHAIN = 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe;
@@ -140,7 +138,7 @@ library ViewSPV {
         }
     }
 
-    function ref(bytes32 b) internal pure returns(bytes29) {
+    function ref(bytes32 b) internal pure returns (bytes29) {
         return abi.encodePacked(b).ref(0);
     }
 }

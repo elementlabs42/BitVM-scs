@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import "./SafeMath.sol";
 import "./Endian.sol";
 import {TaprootHelper} from "./TaprootHelper.sol";
-import {BtcTxProof} from "../interfaces/IBtcBridge.sol";
 
 library Script {
-    using SafeMath for uint256;
+    error BlocksIsZero();
+    error OutOfRange();
+
     using TaprootHelper for bytes32;
 
     error ScriptBytesTooLong();
@@ -63,12 +63,29 @@ library Script {
     }
 
     function generateTimelockLeaf(bytes32 pubkey, uint32 blocks) internal pure returns (bytes memory) {
-        bytes memory script = abi.encodePacked(encodeBlocks(blocks), OP_CHECKSEQUENCEVERIFY, OP_DROP, PUB_KEY_LENGTH,pubkey, OP_CHECKSIG);
+        bytes memory script =
+            abi.encodePacked(encodeBlocks(blocks), OP_CHECKSEQUENCEVERIFY, OP_DROP, PUB_KEY_LENGTH, pubkey, OP_CHECKSIG);
         return script;
     }
 
-    function generateDepositScript(bytes32 nOfNPubkey, address evmAddress, bytes32 userPk) internal pure returns (bytes memory) {
-        bytes memory script = abi.encodePacked(OP_FALSE, OP_IF, ADDRESS_LENGTH, addressToString(evmAddress), OP_ENDIF, PUB_KEY_LENGTH, nOfNPubkey, OP_CHECKSIGVERIFY, PUB_KEY_LENGTH, userPk, OP_CHECKSIG);
+    function generateDepositScript(bytes32 nOfNPubkey, address evmAddress, bytes32 userPk)
+        internal
+        pure
+        returns (bytes memory)
+    {
+        bytes memory script = abi.encodePacked(
+            OP_FALSE,
+            OP_IF,
+            ADDRESS_LENGTH,
+            addressToString(evmAddress),
+            OP_ENDIF,
+            PUB_KEY_LENGTH,
+            nOfNPubkey,
+            OP_CHECKSIGVERIFY,
+            PUB_KEY_LENGTH,
+            userPk,
+            OP_CHECKSIG
+        );
         return script;
     }
 
@@ -76,7 +93,7 @@ library Script {
         script = abi.encodePacked(encodeData(pubKey), OP_CHECKSIG);
     }
 
-    function generateDepositTaproot(bytes32 nOfNPubkey, address evmAddress, bytes32 userPk, uint32 lockDuration)
+    function generateDepositTaprootAddress(bytes32 nOfNPubkey, address evmAddress, bytes32 userPk, uint32 lockDuration)
         internal
         pure
         returns (bytes32)
@@ -97,7 +114,7 @@ library Script {
         return abi.encodePacked(versionByte, hashLength, scriptHash);
     }
 
-    function equal(bytes memory a, bytes memory b) internal pure returns (bool) {
+    function equals(bytes memory a, bytes memory b) internal pure returns (bool) {
         if (a.length != b.length) {
             return false;
         }
@@ -109,8 +126,8 @@ library Script {
         bytes memory hexChars = "0123456789abcdef";
         bytes memory str = new bytes(2 + addressBytes.length * 2);
 
-        str[0] = '0';
-        str[1] = 'x';
+        str[0] = "0";
+        str[1] = "x";
         for (uint256 i = 0; i < addressBytes.length; i++) {
             str[2 + i * 2] = hexChars[uint8(addressBytes[i] >> 4)];
             str[3 + i * 2] = hexChars[uint8(addressBytes[i] & 0x0f)];
@@ -136,7 +153,7 @@ library Script {
 
     function encodeBlocks(uint32 blocks) internal pure returns (bytes memory) {
         if (blocks == 0) {
-            revert("Blocks must be greater than 0");
+            revert BlocksIsZero();
         } else if (blocks <= 16) {
             return abi.encodePacked(getSmallIntegerOpcode(blocks));
         } else if (blocks <= 0xFF) {
@@ -144,9 +161,20 @@ library Script {
         } else if (blocks <= 0xFFFF) {
             return abi.encodePacked(bytes1(0x02), bytes1(uint8(blocks & 0xFF)), bytes1(uint8((blocks >> 8) & 0xFF)));
         } else if (blocks <= 0xFFFFFF) {
-            return abi.encodePacked(bytes1(0x03), bytes1(uint8(blocks & 0xFF)), bytes1(uint8((blocks >> 8) & 0xFF)), bytes1(uint8((blocks >> 16) & 0xFF)));
+            return abi.encodePacked(
+                bytes1(0x03),
+                bytes1(uint8(blocks & 0xFF)),
+                bytes1(uint8((blocks >> 8) & 0xFF)),
+                bytes1(uint8((blocks >> 16) & 0xFF))
+            );
         } else {
-            return abi.encodePacked(bytes1(0x04), bytes1(uint8(blocks & 0xFF)), bytes1(uint8((blocks >> 8) & 0xFF)), bytes1(uint8((blocks >> 16) & 0xFF)), bytes1(uint8((blocks >> 24) & 0xFF)));
+            return abi.encodePacked(
+                bytes1(0x04),
+                bytes1(uint8(blocks & 0xFF)),
+                bytes1(uint8((blocks >> 8) & 0xFF)),
+                bytes1(uint8((blocks >> 16) & 0xFF)),
+                bytes1(uint8((blocks >> 24) & 0xFF))
+            );
         }
     }
 
@@ -167,6 +195,6 @@ library Script {
         if (value == 14) return OP_14;
         if (value == 15) return OP_15;
         if (value == 16) return OP_16;
-        revert("Value out of range for small integer opcode");
+        revert OutOfRange();
     }
 }

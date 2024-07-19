@@ -21,34 +21,42 @@ struct Outpoint {
     uint256 vOut;
 }
 
-struct InputPoint {
-   bytes32 prevTxID;
-   bytes4 prevTxIndex;
-   bytes scriptSig;
-   uint32 sequence;
+struct Input {
+    bytes32 prevTxID;
+    bytes4 prevTxIndex;
+    bytes scriptSig;
+    uint32 sequence;
 }
 
-struct OutputPoint {
-   uint64 value;
-   bytes scriptPubKey;
+struct Output {
+    uint64 value;
+    bytes scriptPubKey;
+}
+
+struct ProofParam {
+    bytes merkleProof;
+    bytes parents;
+    bytes children;
+    bytes rawTx;
+    uint256 blockIndex;
 }
 
 /**
  * @notice Proof that a transaction (rawTx) is in a given block.
  */
-struct BtcTxProof {
+struct ProofInfo {
     bytes4 version;
     bytes4 locktime;
     bytes32 txId;
     bytes32 merkleRoot;
-    uint256 index;
+    uint256 index; // tx index in block
     bytes32 header;
     bytes32[] parents;
     bytes32[] children;
-    uint256 blockIndex;
+    uint256 blockHeight;
     bytes rawVin;
     bytes rawVout;
-    bytes intermediateNodes;
+    bytes merkleProof;
 }
 
 enum PegOutStatus {
@@ -70,7 +78,7 @@ struct PegOutInfo {
 /**
  * @notice Manage and gatekeeping EBTC in transit during peg in/out phases.
  */
-interface IBtcBridge {
+interface IBridge {
     event PegOutInitiated(
         address indexed withdrawer,
         bytes destinationAddress,
@@ -79,10 +87,25 @@ interface IBtcBridge {
         bytes operatorPubkey
     );
     event PegOutClaimed(address indexed withdrawer, Outpoint sourceOutpoint, uint256 amount, bytes operatorPubkey);
-    event PegOutBurned(address indexed withdrawer, Outpoint sourceOutpoint, uint256 amount, bytes operatorPubkey);
+    event PegOutBurnt(address indexed withdrawer, Outpoint sourceOutpoint, uint256 amount, bytes operatorPubkey);
 
-    error InvalidSPVProof();
+    error PeggedInInvalid();
+    error InvalidVoutLength();
+    error InvalidScriptKey();
+    error InvalidVinLength();
+    error MismatchTransactionId();
+    error MismatchMultisigScript();
+    error InvalidVoutValue();
+    error SPVCheckFailed();
     error InvalidAmount();
+    error MerkleProofFailed();
+    error MerkleRootMismatch();
+    error DifficultyMismatch();
+    error ParentCheckFailed();
+    error PreviousHashMismatch();
+    error NextHashMismatch();
+    error InsufficientAccumulatedDifficulty();
+    error InvalidSPVProof();
     error PegOutNotFound();
     error PegOutInProgress();
     error PegOutAlreadyClaimed();

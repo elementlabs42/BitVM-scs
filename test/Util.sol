@@ -21,7 +21,7 @@ library Util {
         require(chunk.length > 0, "chunk length must be > 0");
         require(length % chunk.length == 0, "length must be a multiple of chunk length");
 
-        for(uint256 i; i < length / chunk.length; ++i) {
+        for (uint256 i; i < length / chunk.length; ++i) {
             ret = abi.encodePacked(ret, chunk);
         }
 
