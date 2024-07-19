@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import "./SafeMath.sol";
 import "./Endian.sol";
 import {TaprootHelper} from "./TaprootHelper.sol";
 import {BtcTxProof} from "../interfaces/IBridge.sol";
 
 library Script {
-    using SafeMath for uint256;
+    error BlocksIsZero();
+    error OutOfRange();
+
     using TaprootHelper for bytes32;
 
     error ScriptBytesTooLong();
@@ -153,7 +154,7 @@ library Script {
 
     function encodeBlocks(uint32 blocks) internal pure returns (bytes memory) {
         if (blocks == 0) {
-            revert("Blocks must be greater than 0");
+            revert BlocksIsZero();
         } else if (blocks <= 16) {
             return abi.encodePacked(getSmallIntegerOpcode(blocks));
         } else if (blocks <= 0xFF) {
@@ -195,6 +196,6 @@ library Script {
         if (value == 14) return OP_14;
         if (value == 15) return OP_15;
         if (value == 16) return OP_16;
-        revert("Value out of range for small integer opcode");
+        revert OutOfRange();
     }
 }

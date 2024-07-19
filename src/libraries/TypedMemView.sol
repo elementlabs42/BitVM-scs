@@ -1,10 +1,17 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.5.10;
+pragma solidity ^0.8.26;
 
-import {SafeMath} from "./SafeMath.sol";
 
 library TypedMemView {
-    using SafeMath for uint256;
+    error ValidityAssertionFailed();
+    error InvalidDataLength();
+    error OverranTheView(uint96 sliceLocation, uint96 sliceLength, uint256 indexOffset, uint256 indexLength);
+    error Sha2Failed();
+    error Hash160Failed();
+    error Hash256Failed();
+    error NullPointer();
+    error InvalidPointer();
+    error ViewCopyFailed();
 
     // Why does this exist?
     // the solidity `bytes memory` type has a few weaknesses.
@@ -104,7 +111,7 @@ library TypedMemView {
      * @return      second - The bottom 16 bytes
      */
     function encodeHex(uint256 _b) internal pure returns (uint256 first, uint256 second) {
-        for (uint8 i = 31; i > 15; i -= 1) {
+        for (uint8 i = 31; i > 15; --i) {
             uint8 _byte = uint8(_b >> (i * 8));
             first |= byteHex(_byte);
             if (i != 16) {
@@ -112,12 +119,12 @@ library TypedMemView {
             }
         }
 
-        // abusing underflow here =_=
-        for (uint8 i = 15; i < 255; i -= 1) {
+        // it is reverted  here deliberately
+        for (uint8 i = 15; i < 255; --i) {
             uint8 _byte = uint8(_b >> (i * 8));
             second |= byteHex(_byte);
             if (i != 0) {
-                second <<= 16;
+               second <<= 16;
             }
         }
     }
@@ -208,7 +215,9 @@ library TypedMemView {
      * @return          bytes29 - The validated view
      */
     function assertValid(bytes29 memView) internal pure returns (bytes29) {
-        require(isValid(memView), "Validity assertion failed");
+        if (!isValid(memView)) {
+            revert ValidityAssertionFailed();
+        }
         return memView;
     }
 
@@ -290,7 +299,7 @@ library TypedMemView {
      * @return          newView - The new view with the specified type, location and length
      */
     function build(uint256 _type, uint256 _loc, uint256 _len) internal pure returns (bytes29 newView) {
-        uint256 _end = _loc.add(_len);
+        uint256 _end = _loc + _len;
         assembly {
             // solium-disable-previous-line security/no-inline-assembly
             if gt(_end, mload(0x40)) { _end := 0 }
@@ -364,7 +373,7 @@ library TypedMemView {
      * @return          uint256 - The number of memory words
      */
     function words(bytes29 memView) internal pure returns (uint256) {
-        return uint256(len(memView)).add(31) / 32;
+        return (uint256(len(memView)) + 31) / 32;
     }
 
     /**
@@ -411,11 +420,11 @@ library TypedMemView {
         uint256 _loc = loc(memView);
 
         // Ensure it doesn't overrun the view
-        if (_loc.add(_index).add(_len) > end(memView)) {
+        if (_loc + _index + _len > end(memView)) {
             return NULL;
         }
 
-        _loc = _loc.add(_index);
+        _loc = _loc+ _index;
         return build(newType, _loc, _len);
     }
 
@@ -438,7 +447,7 @@ library TypedMemView {
      * @return          bytes29 - The new view
      */
     function postfix(bytes29 memView, uint256 _len, uint40 newType) internal pure returns (bytes29) {
-        return slice(memView, uint256(len(memView)).sub(_len), _len, newType);
+        return slice(memView, uint256(len(memView) - _len), _len, newType);
     }
 
     /**
@@ -485,10 +494,14 @@ library TypedMemView {
      */
     function index(bytes29 memView, uint256 _index, uint8 _bytes) internal pure returns (bytes32 result) {
         if (_bytes == 0) return bytes32(0);
-        if (_index.add(_bytes) > len(memView)) {
-            revert(indexErrOverrun(loc(memView), len(memView), _index, uint256(_bytes)));
+
+        if (_index + _bytes > len(memView)) {
+            revert OverranTheView(loc(memView), len(memView), _index, uint256(_bytes));
         }
-        require(_bytes <= 32, "TypedMemView/index - Attempted to index more than 32 bytes");
+        if (_bytes > 32) {
+            revert InvalidDataLength();
+        }
+
 
         uint8 bitLength = _bytes * 8;
         uint256 _loc = loc(memView);
@@ -564,7 +577,9 @@ library TypedMemView {
             res := staticcall(gas(), 2, _loc, _len, ptr, 0x20) // sha2 #1
             digest := mload(ptr)
         }
-        require(res, "sha2 OOG");
+        if (!res) {
+            revert Sha2Failed();
+        }
     }
 
     /**
@@ -583,7 +598,9 @@ library TypedMemView {
             res := and(res, staticcall(gas(), 3, ptr, 0x20, ptr, 0x20)) // rmd160
             digest := mload(add(ptr, 0xc)) // return value is 0-prefixed.
         }
-        require(res, "hash160 OOG");
+        if (!res) {
+            revert Hash160Failed();
+        }
     }
 
     /**
@@ -602,7 +619,9 @@ library TypedMemView {
             res := and(res, staticcall(gas(), 2, ptr, 0x20, ptr, 0x20)) // sha2 #2
             digest := mload(ptr)
         }
-        require(res, "hash256 OOG");
+        if (!res) {
+            revert Hash256Failed();
+        }
     }
 
     /**
@@ -659,8 +678,12 @@ library TypedMemView {
      * @return          written - the unsafe memory reference
      */
     function unsafeCopyTo(bytes29 memView, uint256 _newLoc) private view returns (bytes29 written) {
-        require(notNull(memView), "TypedMemView/copyTo - Null pointer deref");
-        require(isValid(memView), "TypedMemView/copyTo - Invalid pointer deref");
+        if (!notNull(memView)) {
+            revert NullPointer();
+        }
+        if (!isValid(memView)) {
+            revert InvalidPointer();
+        }
         uint256 _len = len(memView);
         uint256 _oldLoc = loc(memView);
 
@@ -675,7 +698,9 @@ library TypedMemView {
             // use the identity precompile to copy
             res := staticcall(gas(), 4, _oldLoc, _len, _newLoc, _len)
         }
-        require(res, "identity OOG");
+        if (!res) {
+            revert ViewCopyFailed();
+        }
         written = unsafeBuildUnchecked(typeOf(memView), _newLoc, _len);
     }
 

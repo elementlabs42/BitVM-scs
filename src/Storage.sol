@@ -71,7 +71,7 @@ contract Storage is IStorage {
         uint256 accumulatedDifficulty = storedBlocks[tipIndex].accumulatedDifficulty;
         uint256 reorgCount = tipIndex - index;
         for (uint256 i; i < headerCount; ++i) {
-            bytes memory header = data[Coder.BLOCK_HEADER_LENGTH * i:Coder.BLOCK_HEADER_LENGTH * (i + 1)];
+            bytes calldata header = data[Coder.BLOCK_HEADER_LENGTH * i:Coder.BLOCK_HEADER_LENGTH * (i + 1)];
             uint32 timestamp = checkBlock(header, ctx);
 
             if ((blockHeight + i) % blockStepDistance == initialBlockHeight % blockStepDistance) {
@@ -144,7 +144,10 @@ contract Storage is IStorage {
         if (blockHeight < initialBlockHeight) {
             revert BlockHeightTooLow(blockHeight);
         }
-        return (blockHeight - initialBlockHeight) / blockStepDistance;
+        
+        unchecked{
+            return (blockHeight - initialBlockHeight) / blockStepDistance;
+        }
     }
 
     function getFirstKeyBlock() public view returns (KeyBlock memory _block) {
