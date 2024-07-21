@@ -11,8 +11,6 @@ import "./TypedMemView.sol";
 import {ViewBTC} from "./ViewBTC.sol";
 
 library ViewSPV {
-    error EmptyMemView();
-
     using TypedMemView for bytes;
     using TypedMemView for bytes29;
     using ViewBTC for bytes29;
@@ -37,9 +35,6 @@ library ViewSPV {
     /// @param memView      a 29-byte view with a 5-byte type
     /// @param t            the expected type (e.g. BTCTypes.Outpoint, BTCTypes.TxIn, etc)
     modifier typeAssert(bytes29 memView, ViewBTC.BTCTypes t) {
-        if (uint256(bytes32(memView)) == 0) {
-            revert EmptyMemView();
-        }
         memView.assertType(uint40(t));
         _;
     }
@@ -53,7 +48,7 @@ library ViewSPV {
     /// @return                     true if fully valid, false otherwise
     function prove(bytes32 _txid, bytes32 _merkleRoot, bytes29 _intermediateNodes, uint256 _index)
         internal
-        pure
+        view
         typeAssert(_intermediateNodes, ViewBTC.BTCTypes.MerkleArray)
         returns (bool)
     {
