@@ -97,6 +97,8 @@ const MUTINYNET_API_BLOCK_TXIDS = `${MUTINYNET_API_URL}/blocks/%s/txids`
 //   block_height
 //   pos
 //   merkle[]
+// self
+//   {block info}
 // parents?[]
 //   {block info}
 // children?[]
@@ -215,8 +217,9 @@ const getParentsAndChildrenHashes = async (provider, proofInfo) => {
     const nextKeyBlockHeight = prevKeyBlockHeight + step
     console.log(`>>>  fetched parents and children for prevKeyBlockHeight:${prevKeyBlockHeight} nextKeyBlockHeight:${nextKeyBlockHeight}...`)
     const blockInfos = await getBlockInfos(provider, prevKeyBlockHeight, nextKeyBlockHeight)
+    proofInfo.self = blockInfos.find(b => b.height === blockHeight)
     proofInfo.parents = blockInfos.filter(b => b.height < blockHeight)
-    proofInfo.children = blockInfos.filter(b => b.height > blockHeight)    
+    proofInfo.children = blockInfos.filter(b => b.height > blockHeight)
   }
   return { parents: proofInfo.parents.map(b => b.id), children: proofInfo.children.map(b => b.id) }
 }

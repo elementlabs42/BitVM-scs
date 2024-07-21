@@ -48,7 +48,7 @@ library ViewSPV {
     /// @return                     true if fully valid, false otherwise
     function prove(bytes32 _txid, bytes32 _merkleRoot, bytes29 _intermediateNodes, uint256 _index)
         internal
-        pure
+        view
         typeAssert(_intermediateNodes, ViewBTC.BTCTypes.MerkleArray)
         returns (bool)
     {

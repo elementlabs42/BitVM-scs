@@ -465,14 +465,14 @@ library ViewBTC {
     /// @param _a        The first hash
     /// @param _b        The second hash
     /// @return          digest The double-sha256 of the concatenated hashes
-    function _merkleStep(bytes32 _a, bytes32 _b) internal pure returns (bytes32 digest) {
+    function _merkleStep(bytes32 _a, bytes32 _b) internal view returns (bytes32 digest) {
         assembly {
             // solium-disable-previous-line security/no-inline-assembly
             let ptr := mload(0x40)
             mstore(ptr, _a)
             mstore(add(ptr, 0x20), _b)
-            //pop(staticcall(gas, 2, ptr, 0x40, ptr, 0x20)) // sha2 #1
-            //pop(staticcall(gas, 2, ptr, 0x20, ptr, 0x20)) // sha2 #2
+            pop(staticcall(gas(), 2, ptr, 0x40, ptr, 0x20)) // sha2 #1
+            pop(staticcall(gas(), 2, ptr, 0x20, ptr, 0x20)) // sha2 #2
             digest := mload(ptr)
         }
     }
@@ -485,7 +485,7 @@ library ViewBTC {
     /// @return         true if valid, false if otherwise
     function checkMerkle(bytes32 _leaf, bytes29 _proof, bytes32 _root, uint256 _index)
         internal
-        pure
+        view
         typeAssert(_proof, BTCTypes.MerkleArray)
         returns (bool)
     {

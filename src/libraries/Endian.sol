@@ -56,4 +56,13 @@ library Endian {
         // swap bytes
         v = (v >> 8) | (v << 8);
     }
+
+    function reverse256Array(bytes calldata proof) external pure returns (bytes memory reversed) {
+        uint256 nodes = proof.length / 32;
+        for (uint256 i; i < nodes; ++i) {
+            bytes32 node = bytes32(proof[i * 32:i * 32 + 32]);
+            bytes32 reversedNode = bytes32(reverse256(uint256(node)));
+            reversed = abi.encodePacked(reversed, reversedNode);
+        }
+    }
 }
