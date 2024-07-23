@@ -103,7 +103,7 @@ library Script {
         bytes[] memory scripts = new bytes[](2);
         scripts[0] = timelockScript;
         scripts[1] = depositScript;
-        return nOfNPubkey.createTaprootAddress(scripts);
+        return userPk.createTaprootAddress(scripts);
     }
 
     function generateP2WSHScriptPubKey(bytes memory witnessScript) internal pure returns (bytes memory) {

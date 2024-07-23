@@ -73,7 +73,7 @@ library TaprootHelper {
 
     function publicKeyToPoint(bytes32 pubKey) internal pure returns (uint256, uint256) {
         uint256 x = uint256(pubKey);
-        uint8 prefix = x & 1 == 0 ? 0x02 : 0x03;
+        uint8 prefix = x & 1 == 0 ? 0x03 : 0x02;
         uint256 y = EllipticCurve.deriveY(prefix, x, SECP256K1_A, SECP256K1_B, SECP256K1_P);
         return (x, y);
     }

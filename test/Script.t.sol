@@ -24,11 +24,11 @@ contract ScriptTest is Test {
         // assertTrue(Script.equals(result, expected));
     }
 
-    function testScript_generateDepositTaprootAddress() public view {
+    function testScript_generateDepositTaprootAddress() public pure {
         address evmAddress = 0x0000000000000000000000000000000000000000;
         bytes32 userPk = 0xedf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301b;
         uint32 time = 4;
-        bytes32 expected = 0x04c49a30b0b5434ca94598089adc09d7c48cf1f21f2dd6cc7b11151779795ac4;
+        bytes32 expected = 0x4d4ed1067e0bfddc5f26396fe0452966cecaac26f298a38c342c6de7cefda9ea;
         bytes32 result = nOfNPubkey.generateDepositTaprootAddress(evmAddress, userPk, time);
         assertEq(expected, result);
     }
