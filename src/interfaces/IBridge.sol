@@ -34,11 +34,13 @@ struct Output {
 }
 
 struct ProofParam {
-    bytes merkleProof;
-    bytes parents;
-    bytes children;
+    bytes32[] merkleProof;
+    bytes32[] parents;
+    bytes32[] children;
     bytes rawTx;
-    uint256 blockIndex;
+    uint256 index;
+    uint256 blockHeight;
+    bytes32 blockHeader;
 }
 
 /**
@@ -56,7 +58,6 @@ struct ProofInfo {
     uint256 blockHeight;
     bytes rawVin;
     bytes rawVout;
-    bytes merkleProof;
 }
 
 enum PegOutStatus {

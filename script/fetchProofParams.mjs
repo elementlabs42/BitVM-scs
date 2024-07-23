@@ -273,6 +273,8 @@ const toCompactSize = (size) => {
 }
 
   // usage: `node script/fetchProofParams.mjs <provider> <step:initialHeight> <txId>`
+  // like for deposit and confirm:
+  //    679162210bf2d1a467d73356e5e82a3e4106e4d24472998f6d4de7d2ed2de9ae,2bd72f7379dbd73acc06a2810eb43f9f4146acf79ac58b2366c049eac9287977
   // provider: 1 for blockstream, 2 for mutinynet
   // output:  Field                       Size        Format
   //          merkle proof count          variable    compact size
@@ -306,6 +308,8 @@ const toCompactSize = (size) => {
     const merkleProof = await getTransactionMerkleProof(provider, proofInfo)
     const { parents, children } = await getParentsAndChildrenHashes(provider, proofInfo)
     fs.writeFileSync(file, JSON.stringify(proofInfo, null, 2) + '\n')
+
+    console.log(proofInfo, parents, children)
 
     let output = ''
     output += toCompactSize(merkleProof.merkle.length) + merkleProof.merkle.join('')

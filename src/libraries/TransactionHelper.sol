@@ -64,4 +64,87 @@ library TransactionHelper {
             outputs[i] = txOut;
         }
     }
+
+    function paramToProof(ProofParam calldata proofParam) public pure returns (ProofInfo memory) {
+        (bytes4 version, bytes4 locktime, bytes32 txId, bytes memory rawVin, bytes memory rawVout) =
+            parseRawTx(proofParam.rawTx);
+        bytes32 merkleRoot = calculateMerkleRoot(proofParam.merkleProof);
+
+        ProofInfo memory proofInfo = ProofInfo({
+            version: version,
+            locktime: locktime,
+            txId: txId,
+            merkleRoot: merkleRoot,
+            index: proofParam.index,
+            header: proofParam.blockHeader,
+            parents: proofParam.parents,
+            children: proofParam.children,
+            blockHeight: proofParam.blockHeight,
+            rawVin: rawVin,
+            rawVout: rawVout
+        });
+
+        return proofInfo;
+    }
+
+    function calculateMerkleRoot(bytes32[] calldata merkleProof) internal pure returns (bytes32) {
+        bytes32 hash = merkleProof[0];
+
+        for (uint256 i = 1; i < merkleProof.length; i++) {
+            bytes32 proofElement = merkleProof[i];
+
+            if (i % 2 == 1) {
+                hash = sha256(abi.encodePacked(hash, proofElement));
+            } else {
+                hash = sha256(abi.encodePacked(proofElement, hash));
+            }
+        }
+
+        return hash;
+    }
+
+    function parseRawTx(bytes calldata rawTx)
+        internal
+        pure
+        returns (bytes4 version, bytes4 locktime, bytes32 txId, bytes memory rawVin, bytes memory rawVout)
+    {
+        version = bytes4(rawTx[0:4]);
+        uint256 offset = 6;
+        uint256 nInputs;
+        uint256 prevOffset = offset;
+        (nInputs, offset) = readVarInt(rawTx, offset);
+        for (uint256 i; i < nInputs; ++i) {
+            offset += 36;
+            uint256 nInScriptBytes;
+            (nInScriptBytes, offset) = readVarInt(rawTx, offset);
+            offset += uint32(nInScriptBytes);
+            offset += 4;
+        }
+        rawVin = rawTx[prevOffset:offset];
+
+        prevOffset = offset;
+        // Read transaction outputs
+        uint256 nOutputs;
+        (nOutputs, offset) = readVarInt(rawTx, offset);
+        for (uint256 i; i < nOutputs; ++i) {
+            offset += 8;
+            uint256 nOutScriptBytes;
+            (nOutScriptBytes, offset) = readVarInt(rawTx, offset);
+            offset += nOutScriptBytes;
+        }
+        rawVout = rawTx[prevOffset:offset];
+        prevOffset = offset;
+
+        // Read transaction witness if exists
+        uint256 nWitnesses;
+        (nWitnesses, offset) = readVarInt(rawTx, offset);
+        for (uint256 i; i < nWitnesses; ++i) {
+            uint256 nWitnessItemBytes;
+            (nWitnessItemBytes, offset) = readVarInt(rawTx, offset);
+            offset += nWitnessItemBytes;
+        }
+
+        txId = sha256(abi.encodePacked(sha256(rawTx)));
+        locktime = bytes4(rawTx[offset:offset + 4]);
+    }
 }

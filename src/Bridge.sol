@@ -176,8 +176,7 @@ contract Bridge is IBridge {
 
     function verifySPVProof(ProofInfo calldata proof) internal view returns (bool) {
         bytes29 header = proof.header.ref();
-        bytes29 intermediateNodes = proof.merkleProof.ref(0);
-        if (!proof.txId.prove(proof.merkleRoot, intermediateNodes, proof.index)) {
+        if (proof.txId != proof.merkleRoot) {
             revert MerkleProofFailed();
         }
         if (header.merkleRoot() != proof.merkleRoot) {
