@@ -7,13 +7,13 @@ import {TaprootHelper} from "./TaprootHelper.sol";
 library Script {
     error BlocksIsZero();
     error OutOfRange();
+    error StringsInsufficientHexLength(uint256 value, uint256 length);
 
     using TaprootHelper for bytes32;
+    using {toChecksumHexString} for address;
 
     error ScriptBytesTooLong();
 
-    bytes1 constant PUB_KEY_LENGTH = 0x20;
-    bytes1 constant ADDRESS_LENGTH = 0x2a;
     bytes1 constant VERSION = 0x02;
     bytes1 constant OP_CHECKSIG = 0xAC;
     bytes1 constant OP_CHECKSEQUENCEVERIFY = 0xb2;
@@ -48,62 +48,60 @@ library Script {
     bytes1 constant OP_15 = 0x5F;
     bytes1 constant OP_16 = 0x60;
 
+    bytes16 private constant HEX_DIGITS = "0123456789abcdef";
+
     function generateScript(bytes memory script) internal pure returns (bytes memory) {
         uint8 scriptLength = uint8(script.length);
         return abi.encodePacked(scriptLength, VERSION, script);
     }
 
-    function generatePreSignScript(bytes32 nOfNPubkey) internal pure returns (bytes memory) {
-        bytes memory script = abi.encodePacked(nOfNPubkey, OP_CHECKSIG);
-        return generateScript(script);
+    function generatePreSignScript(bytes32 nOfNPubKey) internal pure returns (bytes memory) {
+        return generateScript(abi.encodePacked(nOfNPubKey, OP_CHECKSIG));
     }
 
-    function generatePreSignScriptAddress(bytes32 nOfNPubkey) internal pure returns (bytes memory) {
-        return generateP2WSHScriptPubKey(generatePreSignScript(nOfNPubkey));
+    function generatePreSignScriptAddress(bytes32 nOfNPubKey) internal pure returns (bytes memory) {
+        return generateP2WSHScriptPubKey(generatePreSignScript(nOfNPubKey));
     }
 
-    function generateTimelockLeaf(bytes32 pubkey, uint32 blocks) internal pure returns (bytes memory) {
-        bytes memory script =
-            abi.encodePacked(encodeBlocks(blocks), OP_CHECKSEQUENCEVERIFY, OP_DROP, PUB_KEY_LENGTH, pubkey, OP_CHECKSIG);
-        return script;
+    function generateTimelockLeaf(bytes32 pubKey, uint32 blocks) internal pure returns (bytes memory) {
+        return abi.encodePacked(
+            encodeBlocks(blocks), OP_CHECKSEQUENCEVERIFY, OP_DROP, encodeData(bytes.concat(pubKey)), OP_CHECKSIG
+        );
     }
 
-    function generateDepositScript(bytes32 nOfNPubkey, address evmAddress, bytes32 userPk)
+    function generateDepositScript(bytes32 nOfNPubKey, address evmAddress, bytes32 depositorPubKey)
         internal
         pure
         returns (bytes memory)
     {
-        bytes memory script = abi.encodePacked(
+        return abi.encodePacked(
             OP_FALSE,
             OP_IF,
-            ADDRESS_LENGTH,
-            addressToString(evmAddress),
+            encodeData(bytes(evmAddress.toChecksumHexString())),
             OP_ENDIF,
-            PUB_KEY_LENGTH,
-            nOfNPubkey,
+            encodeData(bytes.concat(nOfNPubKey)),
             OP_CHECKSIGVERIFY,
-            PUB_KEY_LENGTH,
-            userPk,
+            encodeData(bytes.concat(depositorPubKey)),
             OP_CHECKSIG
         );
-        return script;
     }
 
-    function generatePayToPubkeyScript(bytes memory pubKey) internal pure returns (bytes memory script) {
-        script = abi.encodePacked(encodeData(pubKey), OP_CHECKSIG);
+    function generatePayToPubkeyScript(bytes memory pubKey) internal pure returns (bytes memory) {
+        return abi.encodePacked(encodeData(pubKey), OP_CHECKSIG);
     }
 
-    function generateDepositTaprootAddress(bytes32 nOfNPubkey, address evmAddress, bytes32 userPk, uint32 lockDuration)
-        internal
-        pure
-        returns (bytes32)
-    {
-        bytes memory timelockScript = generateTimelockLeaf(userPk, lockDuration);
-        bytes memory depositScript = generateDepositScript(nOfNPubkey, evmAddress, userPk);
+    function generateDepositTaprootAddress(
+        bytes32 nOfNPubKey,
+        address evmAddress,
+        bytes32 depositorPubKey,
+        uint32 lockDuration
+    ) internal pure returns (bytes32) {
+        bytes memory timelockScript = generateTimelockLeaf(depositorPubKey, lockDuration);
+        bytes memory depositScript = generateDepositScript(nOfNPubKey, evmAddress, depositorPubKey);
         bytes[] memory scripts = new bytes[](2);
         scripts[0] = timelockScript;
         scripts[1] = depositScript;
-        return userPk.createTaprootAddress(scripts);
+        return depositorPubKey.createTaprootAddress(scripts);
     }
 
     function generateP2WSHScriptPubKey(bytes memory witnessScript) internal pure returns (bytes memory) {
@@ -121,19 +119,47 @@ library Script {
         return keccak256(a) == keccak256(b);
     }
 
-    function addressToString(address _address) public pure returns (string memory) {
-        bytes memory addressBytes = abi.encodePacked(_address);
-        bytes memory hexChars = "0123456789abcdef";
-        bytes memory str = new bytes(2 + addressBytes.length * 2);
+    /**
+     * @dev Converts an `address` with fixed length of 20 bytes to its checksummed ASCII `string` hexadecimal
+     * representation, according to EIP-55.
+     */
+    function toChecksumHexString(address addr) internal pure returns (string memory) {
+        bytes memory buffer = bytes(toHexString(uint256(uint160(addr)), 20));
 
-        str[0] = "0";
-        str[1] = "x";
-        for (uint256 i = 0; i < addressBytes.length; i++) {
-            str[2 + i * 2] = hexChars[uint8(addressBytes[i] >> 4)];
-            str[3 + i * 2] = hexChars[uint8(addressBytes[i] & 0x0f)];
+        // hash the hex part of buffer (skip length + 2 bytes, length 40)
+        uint256 hashValue;
+        // this is safe since buffer is 42 bytes long
+        assembly ("memory-safe") {
+            hashValue := shr(96, keccak256(add(buffer, 0x22), 40))
         }
 
-        return string(str);
+        for (uint256 i = 41; i > 1; --i) {
+            // possible values for buffer[i] are 48 (0) to 57 (9) and 97 (a) to 102 (f)
+            if (hashValue & 0xf > 7 && uint8(buffer[i]) > 96) {
+                // case shift by xoring with 0x20
+                buffer[i] ^= 0x20;
+            }
+            hashValue >>= 4;
+        }
+        return string(buffer);
+    }
+
+    /**
+     * @dev Converts a `uint256` to its ASCII `string` hexadecimal representation with fixed length.
+     */
+    function toHexString(uint256 value, uint256 length) internal pure returns (string memory) {
+        uint256 localValue = value;
+        bytes memory buffer = new bytes(2 * length + 2);
+        buffer[0] = "0";
+        buffer[1] = "x";
+        for (uint256 i = 2 * length + 1; i > 1; --i) {
+            buffer[i] = HEX_DIGITS[localValue & 0xf];
+            localValue >>= 4;
+        }
+        if (localValue != 0) {
+            revert StringsInsufficientHexLength(value, length);
+        }
+        return string(buffer);
     }
 
     function encodeData(bytes memory data) internal pure returns (bytes memory) {

@@ -8,29 +8,48 @@ import "./Util.sol";
 contract ScriptTest is Test {
     using Script for bytes32;
 
-    bytes32 nOfNPubkey = hex"d0f30e3182fa18e4975996dbaaa5bfb7d9b15c6d5b57f9f7e5f5e046829d62a4";
+    bytes32 nOfNPubKey = hex"d0f30e3182fa18e4975996dbaaa5bfb7d9b15c6d5b57f9f7e5f5e046829d62a4";
 
     function testScript_generatePreSignScript() public view {
         bytes memory expected = (hex"2102d0f30e3182fa18e4975996dbaaa5bfb7d9b15c6d5b57f9f7e5f5e046829d62a4ac");
-        bytes memory result = Script.generatePreSignScript(nOfNPubkey);
+        bytes memory result = Script.generatePreSignScript(nOfNPubKey);
         assertEq(expected, result);
         // assertTrue(Script.equals(result, expected));
     }
 
     function testScript_generatePreSignScriptAddress() public view {
         bytes memory expected = (hex"0020be87e5c1a6f9957f1adc7d4296635b6b3f0da03a3a7819f919a827feff19501d");
-        bytes memory result = Script.generatePreSignScriptAddress(nOfNPubkey);
+        bytes memory result = Script.generatePreSignScriptAddress(nOfNPubKey);
         assertEq(expected, result);
         // assertTrue(Script.equals(result, expected));
     }
 
-    function testScript_generateDepositTaprootAddress() public pure {
-        address evmAddress = 0x0000000000000000000000000000000000000000;
-        bytes32 userPk = 0xedf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301b;
-        uint32 time = 4;
-        bytes32 expected = 0x4d4ed1067e0bfddc5f26396fe0452966cecaac26f298a38c342c6de7cefda9ea;
-        bytes32 result = nOfNPubkey.generateDepositTaprootAddress(evmAddress, userPk, time);
-        assertEq(expected, result);
+    function testScript_generateDepositTaprootAddress() public view {
+        bytes32 userPubKey = 0xedf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301b;
+        {
+            address evmAddress = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+            uint32 time = 2;
+
+            bytes32 expected = 0x2f9c2de2b9630bb871200e9fb38700a0924da99a362d7472259b2e0f88403a3a;
+            bytes32 result = nOfNPubKey.generateDepositTaprootAddress(evmAddress, userPubKey, time);
+            assertEq(expected, result);
+        }
+        {
+            address evmAddress = 0x0000000000000000000000000000000000000000;
+            uint32 time = 2;
+
+            bytes32 expected = 0x6eda572bf2622327e74f1c450f51a4893741a5c7c712fa04bad7e805e6c5f45f;
+            bytes32 result = nOfNPubKey.generateDepositTaprootAddress(evmAddress, userPubKey, time);
+            assertEq(expected, result);
+        }
+        {
+            address evmAddress = 0x0000000000000000000000000000000000000000;
+            uint32 time = 4;
+
+            bytes32 expected = 0x4d4ed1067e0bfddc5f26396fe0452966cecaac26f298a38c342c6de7cefda9ea;
+            bytes32 result = nOfNPubKey.generateDepositTaprootAddress(evmAddress, userPubKey, time);
+            assertEq(expected, result);
+        }
     }
 
     function testScript_generatePayToPubKeyScript() public pure {

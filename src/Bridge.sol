@@ -31,7 +31,7 @@ contract Bridge is IBridge {
     /**
      * @dev back reference from an pegOut to the withdrawer
      */
-    mapping(bytes32 txId => mapping(uint256 vOut => address withdrawer)) withdrawers;
+    mapping(bytes32 txId => mapping(uint256 vOut => address withdrawer)) usedUtxos;
 
     mapping(bytes32 txId => bool) pegIns;
 
@@ -100,7 +100,7 @@ contract Bridge is IBridge {
         }
         if (
             pegOuts[msg.sender].status == PegOutStatus.PENDING
-                || withdrawers[sourceOutpoint.txId][sourceOutpoint.vOut] != address(0)
+                || usedUtxos[sourceOutpoint.txId][sourceOutpoint.vOut] != address(0)
         ) {
             revert PegOutInProgress();
         }
@@ -112,7 +112,7 @@ contract Bridge is IBridge {
             block.timestamp + PEG_OUT_MAX_PENDING_TIME,
             PegOutStatus.PENDING
         );
-        withdrawers[sourceOutpoint.txId][sourceOutpoint.vOut] = msg.sender;
+        usedUtxos[sourceOutpoint.txId][sourceOutpoint.vOut] = msg.sender;
 
         ebtc.transferFrom(msg.sender, address(this), amount);
         emit PegOutInitiated(msg.sender, destinationBitcoinAddress, sourceOutpoint, amount, operatorPubkey);
@@ -148,7 +148,8 @@ contract Bridge is IBridge {
             revert InvalidSPVProof();
         }
 
-        pegOuts[withdrawer].status = PegOutStatus.BURNT;
+        // pegOuts[withdrawer].status = PegOutStatus.BURNT;
+        delete pegOuts[withdrawer];
         ebtc.burn(address(this), info.amount);
         emit PegOutBurnt(withdrawer, info.sourceOutpoint, info.amount, info.operatorPubkey);
     }
@@ -168,7 +169,7 @@ contract Bridge is IBridge {
             revert PegOutInProgress();
         }
         pegOuts[msg.sender].status = PegOutStatus.CLAIMED;
-        delete withdrawers[info.sourceOutpoint.txId][info.sourceOutpoint.vOut];
+        delete usedUtxos[info.sourceOutpoint.txId][info.sourceOutpoint.vOut];
         ebtc.transfer(msg.sender, info.amount);
         emit PegOutClaimed(msg.sender, info.sourceOutpoint, info.amount, info.operatorPubkey);
     }
