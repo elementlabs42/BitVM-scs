@@ -131,6 +131,12 @@ contract Bridge is IBridge {
             revert PegOutAlreadyBurnt();
         }
 
+        // TODO this is not a safe proof
+        // 1. This can be a re-used transaction (replay attack). We'd minimally need a nonce.
+        // 2. There's no guarantee that this proof is for a TXN that corresponds to the peg out request
+        // 3. I think we can fix this by including and checking an inscription. The inscription should be created and emitted during the pegOut EVM call. The operator should include the inscription in the txn script. It should also double as a nonce. We could simply use an auto maticaly generated hash based on timestamp + dst address (not totally secure since it's predictable, esp if miners collaborate but it's probaby safe enough).
+        // 4. We may want to also make sure a pegOut txn does not get reused (not needed with the proper random nonce).
+
         Output[] memory outputs = proof.rawVout.parseVout();
         if (outputs.length != 1) {
             revert InvalidPegOutProofOutputsSize();
@@ -141,7 +147,7 @@ contract Bridge is IBridge {
         if (outputs[0].value != info.amount) {
             revert InvalidPegOutProofAmount();
         }
-        bytes32 txId = ViewSPV.calculateTxId(version, bytes29(proof.rawVin), bytes29(proof.rawVout), locktime);
+        bytes32 txId = ViewSPV.calculateTxId(version, bytes29(proof.rawVin), bytes29(proof.rawVout), locktime); // TODO is locktime correct here?
         if (proof.txId != txId) {
             revert InvalidPegOutProofTransactionId();
         }

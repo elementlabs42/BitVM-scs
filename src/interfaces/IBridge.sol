@@ -62,8 +62,8 @@ struct ProofInfo {
 enum PegOutStatus {
     VOID,
     PENDING,
-    CLAIMED,
-    BURNT
+    CLAIMED,  // TODO remove claimed status? We should just clear it when complete
+    BURNT  // TODO remove burnt status? We should just clear it when burnt
 }
 
 struct PegOutInfo {
