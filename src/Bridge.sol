@@ -50,7 +50,7 @@ contract Bridge is IBridge {
     function pegIn(address depositor, bytes32 depositorPubKey, ProofInfo calldata proof1, ProofInfo calldata proof2)
         external
     {
-        require(doesPegInExist(proof1.txId), "Pegged in invalid");
+        require(!doesPegInExist(proof1.txId), "Pegged in invalid"); // TODO: Why did we change from evm address to proof1.txId?
 
         Output[] memory vout1 = proof1.rawVout.parseVout();
         Input[] memory vin2 = proof2.rawVin.parseVin();
@@ -58,12 +58,13 @@ contract Bridge is IBridge {
 
         require(vout1.length == 1, "Invalid vout length");
 
-        bytes32 taproot = nOfNPubKey.generateDepositTaprootAddress(depositor, depositorPubKey, 1 days);
+        bytes32 taproot = nOfNPubKey.generateDepositTaprootAddress(depositor, depositorPubKey, 1 days); // TODO: consider hardcoded time lock in helper method as well
         require(vout1[0].scriptPubKey.equals(abi.encodePacked(taproot)), "Invalid script key");
 
-        bytes32 tx1Id = proof1.version.calculateTxId(proof1.rawVin.ref(0), proof1.rawVout.ref(0), proof1.locktime);
+        bytes32 tx1Id = proof1.version.calculateTxId(proof1.rawVin.ref(0), proof1.rawVout.ref(0), proof1.locktime); // TODO: Lock time should be hardcoded in the SC
 
         require(vin2.length == 1, "Invalid vin length");
+        // TODO: missing vout2 length check
         require(vin2[0].prevTxID == tx1Id, "Mismatch transaction id");
         bytes memory multisigScript = nOfNPubKey.generatePreSignScriptAddress();
         require(vout2[0].scriptPubKey.equals(multisigScript), "Mismatch multisig script");
@@ -72,7 +73,7 @@ contract Bridge is IBridge {
             revert InvalidVoutValue();
         }
 
-        bytes32 tx2Id = proof2.version.calculateTxId(proof2.rawVin.ref(0), proof2.rawVout.ref(0), proof2.locktime);
+        bytes32 tx2Id = proof2.version.calculateTxId(proof2.rawVin.ref(0), proof2.rawVout.ref(0), proof2.locktime); // TODO: Lock time should be hardcoded in SC contract
 
         if (tx1Id != proof1.txId) {
             revert MismatchTransactionId();
@@ -86,7 +87,7 @@ contract Bridge is IBridge {
 
         ebtc.mint(depositor, vout2[0].value);
 
-        pegIns[proof2.txId] = true;
+        pegIns[proof2.txId] = true; // TODO: Why are we using proof2.txid instead of proof1.txid?
     }
 
     function pegOut(
