@@ -65,7 +65,7 @@ contract Storage is IStorage {
         CheckBlockContext memory ctx = CheckBlockContext(
             previousKeyBlock.accumulatedDifficulty,
             previousKeyBlock.blockHash,
-            headerCount / Coder.RETARGET_PERIOD + 2, //
+            headerCount / Coder.RETARGET_PERIOD + 2,
             Coder.toTarget(previousKeyBlock.bits)
         );
         uint256 accumulatedDifficulty = storedBlocks[tipIndex].accumulatedDifficulty;
