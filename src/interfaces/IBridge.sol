@@ -40,7 +40,7 @@ struct ProofParam {
     bytes rawTx;
     uint256 index;
     uint256 blockHeight;
-    bytes32 blockHeader;
+    bytes blockHeader;
 }
 
 /**
@@ -52,7 +52,7 @@ struct ProofInfo {
     bytes32 txId;
     bytes32 merkleRoot;
     uint256 index; // tx index in block
-    bytes32 header;
+    bytes header;
     bytes32[] parents;
     bytes32[] children;
     uint256 blockHeight;

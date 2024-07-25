@@ -13,6 +13,7 @@ const BLOCKSTREAM_API_TX_HEX = `${BLOCKSTREAM_API_URL}/tx/%s/hex`
 const BLOCKSTREAM_API_TX_MERKLE_PROOF = `${BLOCKSTREAM_API_URL}/tx/%s/merkle-proof`
 const BLOCKSTREAM_API_BLOCKS = `${BLOCKSTREAM_API_URL}/blocks/%s`
 const BLOCKSTREAM_API_BLOCK_TXIDS = `${BLOCKSTREAM_API_URL}/blocks/%s/txids`
+const BLOCKSTREAM_API_BLOCK_HEADER = `${BLOCKSTREAM_API_URL}/block/%s/header`
 
 // https://www.mutinynet.com/docs/api/rest
 const MUTINYNET_BLOCK_CHUNK_SIZE = 10
@@ -22,6 +23,7 @@ const MUTINYNET_API_TX_HEX = `${MUTINYNET_API_URL}/tx/%s/hex`
 const MUTINYNET_API_TX_MERKLE_PROOF = `${MUTINYNET_API_URL}/tx/%s/merkle-proof`
 const MUTINYNET_API_BLOCKS = `${MUTINYNET_API_URL}/v1/blocks/%s`
 const MUTINYNET_API_BLOCK_TXIDS = `${MUTINYNET_API_URL}/blocks/%s/txids`
+const MUTINYNET_API_BLOCK_HEADER = `${MUTINYNET_API_URL}/block/%s/header`
 
 // blocksteam.info (same in mutinynet.com) block info
 // type BlockInfo = {
@@ -92,6 +94,7 @@ const MUTINYNET_API_BLOCK_TXIDS = `${MUTINYNET_API_URL}/blocks/%s/txids`
 // step
 // initial_height
 // block_index?
+// block_header?
 // rawTx?
 // merkle_proof?
 //   block_height
@@ -114,6 +117,7 @@ const getProvider = (providerId) => {
       return {
         baseUrl: BLOCKSTREAM_API_URL,
         blockChunkSize: BLOCKSTREAM_BLOCK_CHUNK_SIZE,
+        blockHeader: BLOCKSTREAM_API_BLOCK_HEADER,
         blocks: BLOCKSTREAM_API_BLOCKS,
         tx: BLOCKSTREAM_API_TRANSACTION,
         txHex: BLOCKSTREAM_API_TX_HEX,
@@ -124,6 +128,7 @@ const getProvider = (providerId) => {
       return {
         baseUrl: MUTINYNET_API_URL,
         blockChunkSize: MUTINYNET_BLOCK_CHUNK_SIZE,
+        blockHeader: MUTINYNET_API_BLOCK_HEADER,
         blocks: MUTINYNET_API_BLOCKS,
         tx: MUTINYNET_API_TRANSACTION,
         txHex: MUTINYNET_API_TX_HEX,
@@ -237,6 +242,20 @@ const getBlockInfos = async (provider, start, end) => {
   return blockInfos.flat().sort((a, b) => a.height - b.height).filter(b => b.height >= start)
 }
 
+const getBlockHeader = async (provider, proofInfo) => {
+  if (proofInfo.block_header) {
+    return proofInfo.block_header
+  } else {
+    const header = await curlWithRetry(util.format(provider.blockHeader, proofInfo.status.block_hash), (stdout) => {
+      if (stdout.length !== 160) {
+        return `block header ${stdout} length ${stdout.length} != 160`
+      }
+    })
+    proofInfo.block_header = header
+    return header
+  }
+}
+
 // Buffer in nodejs only supports up to 6 bytes
 // 0xffffffffffff + 1 will start to fail
 // console.log(toCompactSize(0x00), 0x00)
@@ -307,17 +326,31 @@ const toCompactSize = (size) => {
     const rawTx = await getTransactionHex(provider, proofInfo)
     const merkleProof = await getTransactionMerkleProof(provider, proofInfo)
     const { parents, children } = await getParentsAndChildrenHashes(provider, proofInfo)
+    const header = await getBlockHeader(provider, proofInfo)
     fs.writeFileSync(file, JSON.stringify(proofInfo, null, 2) + '\n')
 
-    console.log(proofInfo, parents, children)
+    console.log(merkleProof, parents, children, proofInfo.block_index, header, rawTx)
 
-    let output = ''
-    output += toCompactSize(merkleProof.merkle.length) + merkleProof.merkle.join('')
-    output += toCompactSize(parents.length) + parents.join('')
-    output += toCompactSize(children.length) + children.join('')
-    output += toCompactSize(proofInfo.block_index)
-    output += rawTx
-    console.log(output)
+    // console.log('>>> merkleProof')
+    // console.log(merkleProof.merkle.join(''))
+    // console.log('>>> parents')
+    // console.log(parents.join(''))
+    // console.log('>>> children')
+    // console.log(children.join(''))
+    // console.log('>>> block_index')
+    // console.log(proofInfo.block_index)
+    // console.log('>>> block header')
+    // console.log(header)
+    // console.log('>>> rawTx')
+    // console.log(rawTx)
+
+    // let output = ''
+    // output += toCompactSize(merkleProof.merkle.length) + merkleProof.merkle.join('')
+    // output += toCompactSize(parents.length) + parents.join('')
+    // output += toCompactSize(children.length) + children.join('')
+    // output += toCompactSize(proofInfo.block_index)
+    // output += rawTx
+    // console.log(output)
 
     console.log('>>> DONE')
   })()

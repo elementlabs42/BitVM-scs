@@ -2,7 +2,7 @@
 pragma solidity ^0.8.26;
 
 import "forge-std/Test.sol";
-import {Block} from "../../src/interfaces/IBridge.sol";
+import "../../src/interfaces/IBridge.sol";
 import "../../src/Storage.sol";
 import "../Util.sol";
 
@@ -27,6 +27,49 @@ contract StorageFixture is Test {
 
     function getNormalSetupInfo() public view returns (StorageSetupInfo memory) {
         return StorageSetupInfo(step00, height00, initHash00, bits00, time00, height00 + 1, headers00);
+    }
+
+    function getPegInProofParamNormal(uint256 index) public pure returns (ProofParam memory) {
+        ProofParam memory proofParam = ProofParam({
+            merkleProof: new bytes32[](3),
+            parents: new bytes32[](5),
+            children: new bytes32[](5),
+            rawTx: hex"",
+            index: 0,
+            blockHeight: 1285305,
+            blockHeader: hex"000001a800000020a51ea62908451cc02141e2fa48668348af572a8b54dcdbcd95ccef209702000034069dc3c29b0daeba1ab0f4ab76813b14707199b80817470e3ee8b79b0be5800f9aa066ae77031ead692600fae47b2bf036659c70c4054b01a2d4aa6836c756794b70b82eca1f0b"
+        });
+        if (index == 1) {
+            proofParam.rawTx =
+                hex"02000000000101a0acebcc5bcfcec39d93436032280c7978df668a063979bdfc244f0869d94dc60100000000ffffffff01888a0100000000002251202f9c2de2b9630bb871200e9fb38700a0924da99a362d7472259b2e0f88403a3a024730440220649cf4404ccf8fd5b5b366cd641a0b7bc0f4bf09374d6eddfb5e57914baac4de02201b877b33febe1a7ed68b4748044d025bbc42113852dff88d390bd4cac4b1003a01232102edf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301bac00000000";
+            proofParam.index = 2;
+            proofParam.merkleProof[0] = hex"45d5a7e9e4397c5191f941b0f7b7da8acea46002dfdd24ed0d19ecaa3b3ce9dd";
+        }
+        if (index == 2) {
+            proofParam.rawTx =
+                hex"02000000000101349fcebdf4968888022b7e318a40627e544e3ecbb7868f55151c6d1ecdba83c50000000000ffffffff01a086010000000000220020be87e5c1a6f9957f1adc7d4296635b6b3f0da03a3a7819f919a827feff19501d04412732032bd019e45037404674a49a2d668a26165141b274e15109c6f44af966a7ae7cefcf6d259c45af9481be64db59419e2ce9a2719ff3f24a687ac0e02453d80141e7a6f15b6e5396611bb2371ab257c4dbdab0349aaf8b0077f362fd18eef055000ff73fffbe09f36ed17b6ca029876c259888e721d64d801f18ba0012c13eaffa017200632a3078456565656545656565456545656545654565456565454545656565654565656565656565454565456820d0f30e3182fa18e4975996dbaaa5bfb7d9b15c6d5b57f9f7e5f5e046829d62a4ad20edf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301bac41c0edf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301b4e70000014cbdf016664e1755d273ac3093ef9d8c032add8a9df9e39910b5c8b00000000";
+            proofParam.index = 3;
+            proofParam.merkleProof[0] = hex"c583bacd1e6d1c15558f86b7cb3e4e547e62408a317e2b02888896f4bdce9f34";
+        }
+
+        proofParam.merkleProof[1] = hex"85c4dc70e117bfb54bc81c8a9e5a4cf239f9302aac2f07be6789aed1bf0b195c";
+        proofParam.merkleProof[2] = hex"a72b977c154cd5121f6400999420ce2c1f4a27bbb612f4fe772e988bb1169275";
+
+        // Populate parents
+        proofParam.parents[0] = hex"00000068a65ee145b6bc54f41f50281a927b01a060921a15a80662f9b9f70fca";
+        proofParam.parents[1] = hex"0000022074a733ecb126a4510faa93e6cc0da7696c79d835e23b8222d91921b9";
+        proofParam.parents[2] = hex"0000030effa92fe784b1ad7789047c573099a728a0688bb2b3de6a8319237058";
+        proofParam.parents[3] = hex"0000006536b29edeaad4fdd159a2121932f4c4edd9dc4b6ce4f00342c5863bfc";
+        proofParam.parents[4] = hex"0000029720efcc95cddbdc548b2a57af48836648fae24121c01c450829a61ea5";
+
+        // Populate children
+        proofParam.children[0] = hex"000001cd7cfebf38b8c7ba35113ce06e956e42cfc528afd77952bfe54c11f0db";
+        proofParam.children[1] = hex"00000236d57c9349d3dc9b676927011c33d78c015bff4c1acb37a9252caf3dd2";
+        proofParam.children[2] = hex"000001c980216ecc7fb96da0b8c937a73b45947b7a94570a03c00315ae33f615";
+        proofParam.children[3] = hex"00000069ec44aaeea1b385d6b7dc6145e18c3079e386f7da8470f50236fbb5dd";
+        proofParam.children[4] = hex"000001e47987e4a59dfec73605414977ad69446856276c75f6cfd418fa11fae3";
+
+        return proofParam;
     }
 
     uint256 step00 = DEFULT_STEP;

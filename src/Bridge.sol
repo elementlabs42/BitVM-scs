@@ -175,7 +175,7 @@ contract Bridge is IBridge {
     }
 
     function verifySPVProof(ProofInfo calldata proof) internal view returns (bool) {
-        bytes29 header = proof.header.ref();
+        bytes29 header = proof.header.ref(uint40(ViewBTC.BTCTypes.Header));
         if (proof.txId != proof.merkleRoot) {
             revert MerkleProofFailed();
         }
