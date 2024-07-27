@@ -123,9 +123,6 @@ contract Storage is IStorage {
 
     function getKeyBlock(uint256 blockHeight) external view override returns (KeyBlock memory _block) {
         uint256 index = heightToIndex(blockHeight);
-        if ((blockHeight - initialBlockHeight) % blockStepDistance != 0) {
-            revert BlockHeightInvalid(blockHeight);
-        }
         if (tipIndex < index) {
             revert BlockHeightTooHigh(blockHeight, tipIndex);
         }
@@ -150,7 +147,7 @@ contract Storage is IStorage {
         }
     }
 
-    function getFirstKeyBlock() public view returns (KeyBlock memory _block) {
+    function getFirstKeyBlock() external view returns (KeyBlock memory _block) {
         return storedBlocks[0];
     }
 }

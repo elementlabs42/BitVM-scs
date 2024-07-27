@@ -2,7 +2,6 @@
 pragma solidity ^0.8.26;
 
 import "./fixture/StorageFixture.sol";
-import "../src/EBTC.sol";
 import "../src/Bridge.sol";
 import "../src/libraries/TransactionHelper.sol";
 import "./Script.t.sol";
@@ -10,7 +9,9 @@ import "./Script.t.sol";
 contract PegInTest is StorageFixture {
     function testPegIn_buildStorage() public {
         StorageSetupInfo memory initNormal = getNormalSetupInfo();
-        IStorage _storage = IStorage(buildStorage(initNormal));
+        StorageSetupResult memory fixture = buildStorage(initNormal);
+
+        IStorage _storage = IStorage(fixture._storage);
         uint256 keyBlockCount = _storage.getKeyBlockCount();
         assertEq(keyBlockCount, headers00.length / Coder.BLOCK_HEADER_LENGTH / step00 + 1);
 
@@ -23,16 +24,12 @@ contract PegInTest is StorageFixture {
 
     function testPegIn_pegIn_normal() public {
         StorageSetupInfo memory initNormal = getNormalSetupInfo();
-        IStorage _storage = IStorage(buildStorage(initNormal));
+        StorageSetupResult memory fixture = buildStorage(initNormal);
 
         ProofParam memory proof1 = getPegInProofParamNormal(1);
         ProofParam memory proof2 = getPegInProofParamNormal(2);
 
-        EBTC ebtc = new EBTC(address(0));
-        bytes32 nOfNPubKey = hex"d0f30e3182fa18e4975996dbaaa5bfb7d9b15c6d5b57f9f7e5f5e046829d62a4";
-        Bridge bridge = new Bridge(ebtc, _storage, nOfNPubKey);
-        ebtc.setBridge(address(bridge));
-
+        Bridge bridge = Bridge(fixture.bridge);
         bridge.pegIn(
             0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
             hex"edf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301b",

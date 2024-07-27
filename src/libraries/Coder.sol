@@ -15,7 +15,7 @@ library Coder {
     uint256 public constant BLOCK_HEADER_LENGTH = 80;
     uint256 public constant MAX_TARGET = 0x00000000FFFF0000000000000000000000000000000000000000000000000000;
     uint256 public constant RETARGET_PERIOD = 2016;
-    uint256 public constant DIFFICULTY_DECIMALS = 6;
+    uint256 public constant DIFFICULTY_PRECISION = 10 ** 6;
 
     function decodeBlock(bytes calldata header) external pure returns (Block memory _block) {
         _block = decodeBlockPartial(header);
@@ -54,7 +54,7 @@ library Coder {
     }
 
     function toDifficulty(uint256 target) internal pure returns (uint256) {
-        return MAX_TARGET * 10 ** DIFFICULTY_DECIMALS / target;
+        return MAX_TARGET * DIFFICULTY_PRECISION / target;
     }
 
     function toTarget(bytes32 bits) internal pure returns (uint256) {
