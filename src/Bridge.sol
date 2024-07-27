@@ -56,28 +56,41 @@ contract Bridge is IBridge {
         ProofInfo memory proof1 = TransactionHelper.paramToProof(proofParam1);
         ProofInfo memory proof2 = TransactionHelper.paramToProof(proofParam2);
 
-        require(!isPegInExist(proof1.txId), "Pegged in invalid");
+        if (isPegInExist(proof1.txId)) {
+            revert PegInInvalid();
+        }
 
         Output[] memory vout1 = proof1.rawVout.parseVout();
         Input[] memory vin2 = proof2.rawVin.parseVin();
         Output[] memory vout2 = proof2.rawVout.parseVout();
 
-        require(vout1.length == 1, "Invalid vout length");
+        if(vout1.length != 1 || vout2.length != 1) {
+            revert InvalidVoutLength();
+        }
+
+        if(vin2.length != 1) {
+            revert InvalidVinLength();
+        }
 
         bytes32 taproot = nOfNPubKey.generateDepositTaprootAddress(depositor, depositorPubKey, 2);
-        require(vout1[0].scriptPubKey.equals(taproot.convertToScriptPubKey()), "Invalid script key");
+        if(!vout1[0].scriptPubKey.equals(taproot.convertToScriptPubKey())) {
+            revert InvalidScriptKey();
+        }
 
-        require(vin2.length == 1, "Invalid vin length");
-        require(vin2[0].prevTxID == proof1.txId, "Mismatch transaction id");
+        if (vin2[0].prevTxID != proof1.txId) {
+            revert MismatchTransactionId();
+        }
+
         bytes memory multisigScript = nOfNPubKey.generatePreSignScriptAddress();
-        require(vout2[0].scriptPubKey.equals(multisigScript), "Mismatch multisig script");
-
+        if (!vout2[0].scriptPubKey.equals(multisigScript)) {
+            revert MismatchMultisigScript();
+        }
         if (!isValidAmount(vout2[0].value)) {
             revert InvalidVoutValue();
         }
-
-        require(verifySPVProof(proof1), "Spv check failed");
-        require(verifySPVProof(proof2), "Spv check failed");
+        if (!verifySPVProof(proof1) || !verifySPVProof(proof2)) {
+            revert SpvCheckFailed();
+        }
 
         ebtc.mint(depositor, vout2[0].value);
 
@@ -171,9 +184,8 @@ contract Bridge is IBridge {
 
     function verifySPVProof(ProofInfo memory proof) internal view returns (bool) {
         bytes29 header = proof.header.ref(uint40(ViewBTC.BTCTypes.Header));
-        console.logBytes32(header.merkleRoot());
-        console.logBytes32(proof.merkleRoot);
-        if (header.merkleRoot() != proof.merkleRoot) {
+        bytes32 merkleRoot = ViewBTC.getMerkle(proof.txId, proof.merkleProof.ref(uint40(ViewBTC.BTCTypes.MerkleArray)), proof.index);
+        if (header.merkleRoot() != merkleRoot) {
             revert MerkleRootMismatch();
         }
         if (!header.checkWork(header.target())) {

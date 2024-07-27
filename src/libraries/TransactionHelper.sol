@@ -74,16 +74,16 @@ library TransactionHelper {
     function paramToProof(ProofParam calldata proofParam) public view returns (ProofInfo memory) {
         (bytes4 version, bytes4 locktime, bytes memory rawVin, bytes memory rawVout) =
             parseRawTx(proofParam.rawTx);
-        bytes32 merkleRoot = calculateMerkleRoot(proofParam.merkleProof);
 
         ProofInfo memory proofInfo = ProofInfo({
             version: version,
             locktime: locktime,
             txId: version.calculateTxId(
                 rawVin.ref(uint40(ViewBTC.BTCTypes.Vin)),
-                rawVout.ref(uint40(ViewBTC.BTCTypes.Vout)), locktime
+                rawVout.ref(uint40(ViewBTC.BTCTypes.Vout)),
+                locktime
             ),
-            merkleRoot: merkleRoot,
+            merkleProof: proofParam.merkleProof,
             index: proofParam.index,
             header: proofParam.blockHeader,
             parents: proofParam.parents,

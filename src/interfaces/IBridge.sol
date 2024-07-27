@@ -34,7 +34,7 @@ struct Output {
 }
 
 struct ProofParam {
-    bytes32[] merkleProof;
+    bytes merkleProof;
     bytes32[] parents;
     bytes32[] children;
     bytes rawTx;
@@ -49,8 +49,8 @@ struct ProofParam {
 struct ProofInfo {
     bytes4 version;
     bytes4 locktime;
+    bytes merkleProof;
     bytes32 txId;
-    bytes32 merkleRoot;
     uint256 index; // tx index in block
     bytes header;
     bytes32[] parents;
@@ -90,6 +90,8 @@ interface IBridge {
     event PegOutClaimed(address indexed withdrawer, Outpoint sourceOutpoint, uint256 amount, bytes operatorPubkey);
     event PegOutBurnt(address indexed withdrawer, Outpoint sourceOutpoint, uint256 amount, bytes operatorPubkey);
 
+    error PegInInvalid();
+    error SpvCheckFailed();
     error PeggedInInvalid();
     error InvalidVoutLength();
     error InvalidScriptKey();

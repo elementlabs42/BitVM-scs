@@ -510,6 +510,34 @@ library ViewBTC {
         return _current == _root;
     }
 
+    function getMerkle(bytes32 _leaf, bytes29 _proof, uint256 _index)
+    internal
+    view
+    typeAssert(_proof, BTCTypes.MerkleArray)
+    returns (bytes32)
+    {
+        uint256 nodes = _proof.len() / 32;
+        if (nodes == 0) {
+            return _leaf;
+        }
+
+        uint256 _idx = _index;
+        bytes32 _current = _leaf;
+
+        for (uint256 i; i < nodes; ++i) {
+            bytes32 _next = _proof.index(i * 32, 32);
+            if (_idx % 2 == 1) {
+                _current = _merkleStep(_next, _current);
+            } else {
+                _current = _merkleStep(_current, _next);
+            }
+            _idx >>= 1;
+        }
+
+        return _current;
+    }
+
+
     /// @notice                 performs the bitcoin difficulty retarget
     /// @dev                    implements the Bitcoin algorithm precisely
     /// @param _previousTarget  the target of the previous period
