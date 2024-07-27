@@ -57,6 +57,10 @@ library Endian {
         v = (v >> 8) | (v << 8);
     }
 
+    function reverseBytes(bytes32 input) internal pure returns (bytes32) {
+        return bytes32(reverse256(uint256(input)));
+    }
+
     function reverse256Array(bytes calldata proof) external pure returns (bytes memory reversed) {
         uint256 nodes = proof.length / 32;
         for (uint256 i; i < nodes; ++i) {

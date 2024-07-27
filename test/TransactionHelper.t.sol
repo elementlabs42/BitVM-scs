@@ -41,9 +41,9 @@ contract TransactionHelperTest is Test {
         assertEq(outputs[0].scriptPubKey, hex"0020be87e5c1a6f9957f1adc7d4296635b6b3f0da03a3a7819f919a827feff19501d");
     }
 
-    function testTransactionHelper_convertParam() public pure {
+    function testTransactionHelper_convertParam() public view {
         ProofParam memory proofParam = ProofParam({
-            merkleProof: new bytes32[](2),
+            merkleProof: new bytes32[](3),
             parents: new bytes32[](5),
             children: new bytes32[](5),
             rawTx: hex"020000000001016a2abbd075ce272dda9aa6c6b718ac778eed0cfbef567ff3ec5d794c18fc84ad0000000000ffffffff01888a0100000000002251206eda572bf2622327e74f1c450f51a4893741a5c7c712fa04bad7e805e6c5f45f02473044022035d96f53c3a0755ef6d38949eb401702e78edcedc68d3c056f417426ea94c2bb02207952f27fece7b1a318f9e935314ca301411f208ca6f777de76c0ec32e26a43ae01232102edf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301bac00000000",
@@ -53,7 +53,8 @@ contract TransactionHelperTest is Test {
         });
 
         proofParam.merkleProof[0] = hex"dc5f40b69d529e430c338aeb80d0df79103719e8547850bc617258ed6386d5d2";
-        proofParam.merkleProof[1] = hex"bc25149cb3a825c28182bd87022a75864764c0c31e93e36b3c707470104a9684";
+        proofParam.merkleProof[1] = hex"679162210bf2d1a467d73356e5e82a3e4106e4d24472998f6d4de7d2ed2de9ae";
+        proofParam.merkleProof[2] = hex"2bd72f7379dbd73acc06a2810eb43f9f4146acf79ac58b2366c049eac9287977";
 
         // Populate parents
         proofParam.parents[0] = hex"0000021eb7729da63ad9afc62fa0c5a5e870b3bf04456759dad15e37b8fe3559";
@@ -80,6 +81,7 @@ contract TransactionHelperTest is Test {
             proofInfo.rawVout,
             hex"01888a0100000000002251206eda572bf2622327e74f1c450f51a4893741a5c7c712fa04bad7e805e6c5f45f"
         );
+        assertEq(proofInfo.merkleRoot, hex"7b630456033f5c9fa253b538a30a4e6a3e40b5e51e00287afa6603eba36cb03b");
     }
 
     function bytesToHex(bytes memory buffer) internal pure returns (string memory) {

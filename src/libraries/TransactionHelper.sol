@@ -4,9 +4,15 @@ pragma experimental ABIEncoderV2;
 
 import "./Endian.sol";
 import "../interfaces/IBridge.sol";
+import "./ViewSPV.sol";
+import "./ViewBTC.sol";
+import "forge-std/console.sol";
 
 library TransactionHelper {
     error ScriptBytesTooLong();
+    using ViewSPV for bytes4;
+    using TypedMemView for bytes;
+    using Endian for bytes32;
 
     function readVarInt(bytes calldata buf, uint256 offset) public pure returns (uint256 val, uint256 newOffset) {
         uint8 pivot = uint8(buf[offset]);
@@ -65,15 +71,18 @@ library TransactionHelper {
         }
     }
 
-    function paramToProof(ProofParam calldata proofParam) public pure returns (ProofInfo memory) {
-        (bytes4 version, bytes4 locktime, bytes32 txId, bytes memory rawVin, bytes memory rawVout) =
+    function paramToProof(ProofParam calldata proofParam) public view returns (ProofInfo memory) {
+        (bytes4 version, bytes4 locktime, bytes memory rawVin, bytes memory rawVout) =
             parseRawTx(proofParam.rawTx);
         bytes32 merkleRoot = calculateMerkleRoot(proofParam.merkleProof);
 
         ProofInfo memory proofInfo = ProofInfo({
             version: version,
             locktime: locktime,
-            txId: txId,
+            txId: version.calculateTxId(
+                rawVin.ref(uint40(ViewBTC.BTCTypes.Vin)),
+                rawVout.ref(uint40(ViewBTC.BTCTypes.Vout)), locktime
+            ),
             merkleRoot: merkleRoot,
             index: proofParam.index,
             header: proofParam.blockHeader,
@@ -87,26 +96,45 @@ library TransactionHelper {
         return proofInfo;
     }
 
-    function calculateMerkleRoot(bytes32[] calldata merkleProof) internal pure returns (bytes32) {
-        bytes32 hash = merkleProof[0];
-
-        for (uint256 i = 1; i < merkleProof.length; i++) {
-            bytes32 proofElement = merkleProof[i];
-
-            if (i % 2 == 1) {
-                hash = sha256(abi.encodePacked(hash, proofElement));
-            } else {
-                hash = sha256(abi.encodePacked(proofElement, hash));
+    function calculateMerkleRoot(bytes32[] memory txIds) public pure returns (bytes32) {
+        while (txIds.length > 1) {
+            if (txIds.length % 2 == 1) {
+                // If odd number of elements, duplicate the last element
+                bytes32[] memory extendedTxIds = new bytes32[](txIds.length + 1);
+                for (uint256 i = 0; i < txIds.length; i++) {
+                    extendedTxIds[i] = txIds[i];
+                }
+                extendedTxIds[txIds.length] = txIds[txIds.length - 1];
+                txIds = extendedTxIds;
             }
+
+            uint256 newLength = txIds.length / 2;
+            bytes32[] memory tmp = new bytes32[](newLength);
+
+            for (uint256 i = 0; i < txIds.length; i += 2) {
+                tmp[i / 2] = hashPair(txIds[i], txIds[i + 1]).reverseBytes();
+            }
+
+            txIds = tmp;
         }
 
-        return hash;
+        return txIds[0];
+    }
+
+    function hashPair(bytes32 left, bytes32 right) internal pure returns (bytes32) {
+        bytes memory data = new bytes(64);
+
+        for (uint256 i = 0; i < 32; i++) {
+            data[i] = left[31 - i];
+            data[32 + i] = right[31 - i];
+        }
+        return sha256(abi.encodePacked(sha256(data)));
     }
 
     function parseRawTx(bytes calldata rawTx)
         internal
         pure
-        returns (bytes4 version, bytes4 locktime, bytes32 txId, bytes memory rawVin, bytes memory rawVout)
+        returns (bytes4 version, bytes4 locktime, bytes memory rawVin, bytes memory rawVout)
     {
         version = bytes4(rawTx[0:4]);
         uint256 offset = 6;
@@ -144,7 +172,6 @@ library TransactionHelper {
             offset += nWitnessItemBytes;
         }
 
-        txId = sha256(abi.encodePacked(sha256(rawTx)));
         locktime = bytes4(rawTx[offset:offset + 4]);
     }
 }

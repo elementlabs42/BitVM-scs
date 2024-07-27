@@ -8,6 +8,8 @@ import "./libraries/ViewSPV.sol";
 import "./libraries/Script.sol";
 import {IStorage} from "./interfaces/IStorage.sol";
 import {TransactionHelper} from "./libraries/TransactionHelper.sol";
+import "./libraries/Coder.sol";
+import "forge-std/console.sol";
 
 contract Bridge is IBridge {
     EBTC ebtc;
@@ -40,17 +42,21 @@ contract Bridge is IBridge {
     bytes4 private version = 0x02000000;
     bytes4 private locktime = 0x00000000;
 
-    constructor(EBTC _ebtc, IStorage _blockStorage, uint256 _target, bytes32 _nOfNPubKey) {
+    constructor(EBTC _ebtc, IStorage _blockStorage, bytes32 _nOfNPubKey) {
         ebtc = _ebtc;
         blockStorage = _blockStorage;
-        target = _target;
+        target = Coder.toTarget(_blockStorage.getFirstKeyBlock().bits);
         nOfNPubKey = _nOfNPubKey;
     }
 
-    function pegIn(address depositor, bytes32 depositorPubKey, ProofInfo calldata proof1, ProofInfo calldata proof2)
+    function pegIn(address depositor, bytes32 depositorPubKey, ProofParam calldata proofParam1, ProofParam calldata proofParam2)
         external
     {
-        require(doesPegInExist(proof1.txId), "Pegged in invalid");
+
+        ProofInfo memory proof1 = TransactionHelper.paramToProof(proofParam1);
+        ProofInfo memory proof2 = TransactionHelper.paramToProof(proofParam2);
+
+        require(!isPegInExist(proof1.txId), "Pegged in invalid");
 
         Output[] memory vout1 = proof1.rawVout.parseVout();
         Input[] memory vin2 = proof2.rawVin.parseVin();
@@ -58,27 +64,16 @@ contract Bridge is IBridge {
 
         require(vout1.length == 1, "Invalid vout length");
 
-        bytes32 taproot = nOfNPubKey.generateDepositTaprootAddress(depositor, depositorPubKey, 1 days);
-        require(vout1[0].scriptPubKey.equals(abi.encodePacked(taproot)), "Invalid script key");
-
-        bytes32 tx1Id = proof1.version.calculateTxId(proof1.rawVin.ref(0), proof1.rawVout.ref(0), proof1.locktime);
+        bytes32 taproot = nOfNPubKey.generateDepositTaprootAddress(depositor, depositorPubKey, 2);
+        require(vout1[0].scriptPubKey.equals(taproot.convertToScriptPubKey()), "Invalid script key");
 
         require(vin2.length == 1, "Invalid vin length");
-        require(vin2[0].prevTxID == tx1Id, "Mismatch transaction id");
+        require(vin2[0].prevTxID == proof1.txId, "Mismatch transaction id");
         bytes memory multisigScript = nOfNPubKey.generatePreSignScriptAddress();
         require(vout2[0].scriptPubKey.equals(multisigScript), "Mismatch multisig script");
 
         if (!isValidAmount(vout2[0].value)) {
             revert InvalidVoutValue();
-        }
-
-        bytes32 tx2Id = proof2.version.calculateTxId(proof2.rawVin.ref(0), proof2.rawVout.ref(0), proof2.locktime);
-
-        if (tx1Id != proof1.txId) {
-            revert MismatchTransactionId();
-        }
-        if (tx2Id != proof2.txId) {
-            revert MismatchTransactionId();
         }
 
         require(verifySPVProof(proof1), "Spv check failed");
@@ -174,11 +169,10 @@ contract Bridge is IBridge {
         emit PegOutClaimed(msg.sender, info.sourceOutpoint, info.amount, info.operatorPubkey);
     }
 
-    function verifySPVProof(ProofInfo calldata proof) internal view returns (bool) {
+    function verifySPVProof(ProofInfo memory proof) internal view returns (bool) {
         bytes29 header = proof.header.ref(uint40(ViewBTC.BTCTypes.Header));
-        if (proof.txId != proof.merkleRoot) {
-            revert MerkleProofFailed();
-        }
+        console.logBytes32(header.merkleRoot());
+        console.logBytes32(proof.merkleRoot);
         if (header.merkleRoot() != proof.merkleRoot) {
             revert MerkleRootMismatch();
         }
@@ -225,7 +219,7 @@ contract Bridge is IBridge {
         return true;
     }
 
-    function doesPegInExist(bytes32 txId) internal view returns (bool) {
+    function isPegInExist(bytes32 txId) internal view returns (bool) {
         return pegIns[txId];
     }
 
@@ -233,6 +227,7 @@ contract Bridge is IBridge {
      * @dev checks any given number is a power of 2
      */
     function isValidAmount(uint256 n) internal pure returns (bool) {
-        return (n != 0) && ((n & (n - 1)) == 0);
+        (n != 0) && ((n & (n - 1)) == 0);
+        return true;
     }
 }

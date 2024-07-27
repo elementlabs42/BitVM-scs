@@ -25,12 +25,12 @@ contract PegInTest is StorageFixture {
         StorageSetupInfo memory initNormal = getNormalSetupInfo();
         IStorage _storage = IStorage(buildStorage(initNormal));
 
-        ProofInfo memory proof1 = TransactionHelper.paramToProof(getPegInProofParamNormal(1));
-        ProofInfo memory proof2 = TransactionHelper.paramToProof(getPegInProofParamNormal(2));
+        ProofParam memory proof1 = getPegInProofParamNormal(1);
+        ProofParam memory proof2 = getPegInProofParamNormal(2);
 
         EBTC ebtc = new EBTC(address(0));
         bytes32 nOfNPubKey = hex"d0f30e3182fa18e4975996dbaaa5bfb7d9b15c6d5b57f9f7e5f5e046829d62a4";
-        Bridge bridge = new Bridge(ebtc, _storage, Coder.toTarget(bytes4(bits00)), nOfNPubKey);
+        Bridge bridge = new Bridge(ebtc, _storage, nOfNPubKey);
         ebtc.setBridge(address(bridge));
 
         bridge.pegIn(

@@ -112,6 +112,10 @@ library Script {
         return abi.encodePacked(versionByte, hashLength, scriptHash);
     }
 
+    function convertToScriptPubKey(bytes32 outputKey) public pure returns (bytes memory) {
+        return abi.encodePacked(bytes1(0x51), bytes1(0x20), outputKey);
+    }
+
     function equals(bytes memory a, bytes memory b) internal pure returns (bool) {
         if (a.length != b.length) {
             return false;
