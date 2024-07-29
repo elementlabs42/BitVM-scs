@@ -51,13 +51,10 @@ contract Bridge is IBridge {
     function pegIn(
         address depositor,
         bytes32 depositorPubKey,
-        ProofParam calldata proofParam1,
-        ProofParam calldata proofParam2
+        ProofInfo calldata proof1,
+        ProofInfo calldata proof2
     ) external {
-        ProofInfo memory proof1 = TransactionHelper.paramToProof(proofParam1);
-        ProofInfo memory proof2 = TransactionHelper.paramToProof(proofParam2);
-
-        if (isPegInExist(proof1.txId)) {
+         if (isPegInExist(proof1.txId)) {
             revert PegInInvalid();
         }
 
