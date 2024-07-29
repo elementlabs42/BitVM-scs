@@ -68,10 +68,10 @@ enum PegOutStatus {
 }
 
 struct PegOutInfo {
-    bytes destinationAddress;
+    string destinationAddress;
     Outpoint sourceOutpoint;
     uint256 amount;
-    bytes operatorPubkey;
+    bytes32 operatorPubkey;
     uint256 claimAfter;
     PegOutStatus status;
 }
@@ -82,13 +82,13 @@ struct PegOutInfo {
 interface IBridge {
     event PegOutInitiated(
         address indexed withdrawer,
-        bytes destinationAddress,
+        string destinationAddress,
         Outpoint sourceOutpoint,
         uint256 amount,
-        bytes operatorPubkey
+        bytes32 operatorPubkey
     );
-    event PegOutClaimed(address indexed withdrawer, Outpoint sourceOutpoint, uint256 amount, bytes operatorPubkey);
-    event PegOutBurnt(address indexed withdrawer, Outpoint sourceOutpoint, uint256 amount, bytes operatorPubkey);
+    event PegOutClaimed(address indexed withdrawer, Outpoint sourceOutpoint, uint256 amount, bytes32 operatorPubkey);
+    event PegOutBurnt(address indexed withdrawer, Outpoint sourceOutpoint, uint256 amount, bytes32 operatorPubkey);
 
     error PegInInvalid();
     error SpvCheckFailed();

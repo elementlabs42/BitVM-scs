@@ -20,7 +20,7 @@ const BLOCKSTREAM_API_BLOCK_HEADER = `${BLOCKSTREAM_API_URL}/block/%s/header`
 // GET /v1/blocks[/:startHeight]
 const MUTINYNET_BLOCK_CHUNK_SIZE = 10
 const MUTINYNET_API_URL = 'https://www.mutinynet.com/api'
-const MUTINYNET_API_BLOCKS = `${MUTINYNET_API_URL}/v1/blocks/`
+const MUTINYNET_API_BLOCKS = `${MUTINYNET_API_URL}/blocks/`
 const MUTINYNET_API_BLOCK_HEADER = `${MUTINYNET_API_URL}/block/%s/header`
 
 // blocksteam.info (same in mutinynet.com) block info

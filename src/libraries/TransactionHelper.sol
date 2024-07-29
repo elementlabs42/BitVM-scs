@@ -6,10 +6,10 @@ import "./Endian.sol";
 import "../interfaces/IBridge.sol";
 import "./ViewSPV.sol";
 import "./ViewBTC.sol";
-import "forge-std/console.sol";
 
 library TransactionHelper {
     error ScriptBytesTooLong();
+
     using ViewSPV for bytes4;
     using TypedMemView for bytes;
     using Endian for bytes32;
@@ -72,16 +72,13 @@ library TransactionHelper {
     }
 
     function paramToProof(ProofParam calldata proofParam) public view returns (ProofInfo memory) {
-        (bytes4 version, bytes4 locktime, bytes memory rawVin, bytes memory rawVout) =
-            parseRawTx(proofParam.rawTx);
+        (bytes4 version, bytes4 locktime, bytes memory rawVin, bytes memory rawVout) = parseRawTx(proofParam.rawTx);
 
         ProofInfo memory proofInfo = ProofInfo({
             version: version,
             locktime: locktime,
             txId: version.calculateTxId(
-                rawVin.ref(uint40(ViewBTC.BTCTypes.Vin)),
-                rawVout.ref(uint40(ViewBTC.BTCTypes.Vout)),
-                locktime
+                rawVin.ref(uint40(ViewBTC.BTCTypes.Vin)), rawVout.ref(uint40(ViewBTC.BTCTypes.Vout)), locktime
             ),
             merkleProof: proofParam.merkleProof,
             index: proofParam.index,

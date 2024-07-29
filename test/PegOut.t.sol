@@ -4,7 +4,7 @@ pragma solidity ^0.8.26;
 import "./fixture/StorageFixture.sol";
 import "../src/Bridge.sol";
 import "../src/libraries/TransactionHelper.sol";
-import "./Script.t.sol";
+import "./Util.sol";
 
 contract PegOutTest is StorageFixture {
     function testPegOut_buildStorage() public {
@@ -30,6 +30,16 @@ contract PegOutTest is StorageFixture {
         StorageSetupResult memory fixture = buildStorage(initNormal);
 
         Bridge bridge = Bridge(fixture.bridge);
-        // bridge.pegOut(destinationBitcoinAddress, sourceOutpoint, amount, operatorPubkey);
+        address withdrawer = fixture.withdrawer;
+        address operator = fixture.operator;
+        ProofInfo memory proof = TransactionHelper.paramToProof(getPegOutProofParamNormal());
+
+        string memory withdrawerAddr = Util.generateAddress(WITHDRAWER_PUBKEY, Util.P2PKH_TESTNET);
+        vm.startPrank(withdrawer);
+        bridge.pegOut(withdrawerAddr, Outpoint(hex"1234", 0), 100000, OPERATOR_PUBKEY);
+        vm.stopPrank();
+
+        vm.prank(operator);
+        bridge.burnEBTC(withdrawer, proof);
     }
 }

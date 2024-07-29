@@ -511,10 +511,10 @@ library ViewBTC {
     }
 
     function getMerkle(bytes32 _leaf, bytes29 _proof, uint256 _index)
-    internal
-    view
-    typeAssert(_proof, BTCTypes.MerkleArray)
-    returns (bytes32)
+        internal
+        view
+        typeAssert(_proof, BTCTypes.MerkleArray)
+        returns (bytes32)
     {
         uint256 nodes = _proof.len() / 32;
         if (nodes == 0) {
@@ -536,7 +536,6 @@ library ViewBTC {
 
         return _current;
     }
-
 
     /// @notice                 performs the bitcoin difficulty retarget
     /// @dev                    implements the Bitcoin algorithm precisely

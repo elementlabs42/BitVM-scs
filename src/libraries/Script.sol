@@ -3,6 +3,8 @@ pragma solidity ^0.8.26;
 
 import "./Endian.sol";
 import {TaprootHelper} from "./TaprootHelper.sol";
+import "./Base58.sol";
+import "./TypedMemView.sol";
 
 library Script {
     error BlocksIsZero();
@@ -11,6 +13,8 @@ library Script {
 
     using TaprootHelper for bytes32;
     using {toChecksumHexString} for address;
+    using TypedMemView for bytes;
+    using TypedMemView for bytes29;
 
     error ScriptBytesTooLong();
 
@@ -24,6 +28,7 @@ library Script {
     bytes1 constant OP_ENDIF = 0x68;
     bytes1 constant OP_DUP = 0x76;
     bytes1 constant OP_RIPEMD160 = 0xA6;
+    bytes1 constant OP_HASH160 = 0xA9;
     bytes1 constant OP_EQUALVERIFY = 0x88;
     bytes1 constant OP_EQUAL = 0x87;
     bytes1 constant OP_CHECKSIGVERIFY = 0xAD;
@@ -86,8 +91,9 @@ library Script {
         );
     }
 
-    function generatePayToPubkeyScript(bytes memory pubKey) internal pure returns (bytes memory) {
-        return abi.encodePacked(encodeData(pubKey), OP_CHECKSIG);
+    function generatePayToPubKeyHashScript(string memory addr) internal view returns (bytes memory) {
+        bytes memory pubKeyHash = toPubKeyHash(addr);
+        return abi.encodePacked(OP_DUP, OP_HASH160, encodeData(pubKeyHash), OP_EQUALVERIFY, OP_CHECKSIG);
     }
 
     function generateDepositTaprootAddress(
@@ -110,6 +116,12 @@ library Script {
         bytes1 versionByte = 0x00;
         bytes1 hashLength = 0x20;
         return abi.encodePacked(versionByte, hashLength, scriptHash);
+    }
+
+    function toPubKeyHash(string memory addr) internal view returns (bytes memory) {
+        bytes29 decoded = Base58.decodeFromString(addr).ref(0);
+        // first 1 bit for version, last 4 bits for checksum
+        return decoded.slice(1, decoded.len() - 5, 0).clone();
     }
 
     function convertToScriptPubKey(bytes32 outputKey) public pure returns (bytes memory) {

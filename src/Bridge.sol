@@ -9,7 +9,6 @@ import "./libraries/Script.sol";
 import {IStorage} from "./interfaces/IStorage.sol";
 import {TransactionHelper} from "./libraries/TransactionHelper.sol";
 import "./libraries/Coder.sol";
-import "forge-std/console.sol";
 
 contract Bridge is IBridge {
     EBTC ebtc;
@@ -49,10 +48,12 @@ contract Bridge is IBridge {
         nOfNPubKey = _nOfNPubKey;
     }
 
-    function pegIn(address depositor, bytes32 depositorPubKey, ProofParam calldata proofParam1, ProofParam calldata proofParam2)
-        external
-    {
-
+    function pegIn(
+        address depositor,
+        bytes32 depositorPubKey,
+        ProofParam calldata proofParam1,
+        ProofParam calldata proofParam2
+    ) external {
         ProofInfo memory proof1 = TransactionHelper.paramToProof(proofParam1);
         ProofInfo memory proof2 = TransactionHelper.paramToProof(proofParam2);
 
@@ -64,16 +65,16 @@ contract Bridge is IBridge {
         Input[] memory vin2 = proof2.rawVin.parseVin();
         Output[] memory vout2 = proof2.rawVout.parseVout();
 
-        if(vout1.length != 1 || vout2.length != 1) {
+        if (vout1.length != 1 || vout2.length != 1) {
             revert InvalidVoutLength();
         }
 
-        if(vin2.length != 1) {
+        if (vin2.length != 1) {
             revert InvalidVinLength();
         }
 
         bytes32 taproot = nOfNPubKey.generateDepositTaprootAddress(depositor, depositorPubKey, 2);
-        if(!vout1[0].scriptPubKey.equals(taproot.convertToScriptPubKey())) {
+        if (!vout1[0].scriptPubKey.equals(taproot.convertToScriptPubKey())) {
             revert InvalidScriptKey();
         }
 
@@ -98,10 +99,10 @@ contract Bridge is IBridge {
     }
 
     function pegOut(
-        bytes calldata destinationBitcoinAddress,
+        string calldata destinationBitcoinAddress,
         Outpoint calldata sourceOutpoint,
         uint256 amount,
-        bytes calldata operatorPubkey
+        bytes32 operatorPubkey
     ) external {
         if (!isValidAmount(amount)) {
             revert InvalidAmount();
@@ -142,7 +143,7 @@ contract Bridge is IBridge {
         if (outputs.length != 1) {
             revert InvalidPegOutProofOutputsSize();
         }
-        if (outputs[0].scriptPubKey.equals(Script.generatePayToPubkeyScript(info.destinationAddress))) {
+        if (!outputs[0].scriptPubKey.equals(Script.generatePayToPubKeyHashScript(info.destinationAddress))) {
             revert InvalidPegOutProofScriptPubKey();
         }
         if (outputs[0].value != info.amount) {
@@ -184,7 +185,8 @@ contract Bridge is IBridge {
 
     function verifySPVProof(ProofInfo memory proof) internal view returns (bool) {
         bytes29 header = proof.header.ref(uint40(ViewBTC.BTCTypes.Header));
-        bytes32 merkleRoot = ViewBTC.getMerkle(proof.txId, proof.merkleProof.ref(uint40(ViewBTC.BTCTypes.MerkleArray)), proof.index);
+        bytes32 merkleRoot =
+            ViewBTC.getMerkle(proof.txId, proof.merkleProof.ref(uint40(ViewBTC.BTCTypes.MerkleArray)), proof.index);
         if (header.merkleRoot() != merkleRoot) {
             revert MerkleRootMismatch();
         }
