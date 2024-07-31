@@ -26,13 +26,14 @@ contract PegOutTest is StorageFixture {
     }
 
     function testPegOut_pegOut_normal() public {
-        StorageSetupInfo memory initNormal = getNormalSetupInfo();
+        StorageSetupInfo memory initNormal = getPegOutSetupInfoNormal();
         StorageSetupResult memory fixture = buildStorage(initNormal);
 
         Bridge bridge = Bridge(fixture.bridge);
         address withdrawer = fixture.withdrawer;
         address operator = fixture.operator;
-        ProofInfo memory proof = TransactionHelper.paramToProof(getPegOutProofParamNormal());
+        ProofParam memory proofParam = getPegOutProofParamNormal();
+        ProofInfo memory proof = Util.paramToProof(proofParam, true);
 
         string memory withdrawerAddr = Util.generateAddress(WITHDRAWER_PUBKEY, Util.P2PKH_TESTNET);
         vm.warp(1722328130);

@@ -4,6 +4,7 @@ pragma solidity ^0.8.26;
 import "forge-std/Test.sol";
 import "../src/libraries/TransactionHelper.sol";
 import "../src/interfaces/IBridge.sol";
+import "./Util.sol";
 
 contract TransactionHelperTest is Test {
     function testTransactionHelper_parseVin() public pure {
@@ -66,7 +67,7 @@ contract TransactionHelperTest is Test {
         proofParam.children[3] = hex"00000356ea47b0d018d8cf2909f0d7f0db3139ad796c6728cfa9c9bad6037d08";
         proofParam.children[4] = hex"00000356ea47b0d018d8cf2909f0d7f0db3139ad796c6728cfa9c9bad6037d08";
 
-        ProofInfo memory proofInfo = TransactionHelper.paramToProof(proofParam);
+        ProofInfo memory proofInfo = Util.paramToProof(proofParam, false);
 
         // Verify the results
         assertEq(proofInfo.version, hex"02000000");

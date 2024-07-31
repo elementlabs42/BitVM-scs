@@ -3,8 +3,13 @@ pragma solidity ^0.8.26;
 
 import "../src/libraries/Base58.sol";
 import "../src/libraries/TaprootHelper.sol";
+import "../src/libraries/TransactionHelper.sol";
+import "../src/interfaces/IBridge.sol";
 
 library Util {
+    using ViewSPV for bytes4;
+    using TypedMemView for bytes;
+
     function slice(bytes memory data, uint256 start, uint256 length) public pure returns (bytes memory) {
         bytes memory ret = new bytes(length);
         for (uint256 i = start; i < length;) {
@@ -35,6 +40,41 @@ library Util {
             ret[i] = bytes32(slice(data, i * 32, 32));
         }
         return ret;
+    }
+
+    function reverseProofParams(ProofParam memory _proof) public pure returns (ProofParam memory) {
+        _proof.merkleProof = Endian.reverse256Array(_proof.merkleProof);
+        for (uint256 i; i < _proof.parents.length; ++i) {
+            _proof.parents[i] = bytes32(Endian.reverse256(uint256(_proof.parents[i])));
+        }
+        for (uint256 i; i < _proof.children.length; ++i) {
+            _proof.children[i] = bytes32(Endian.reverse256(uint256(_proof.children[i])));
+        }
+        return _proof;
+    }
+
+    function paramToProof(ProofParam calldata _proofParam, bool reverse) public view returns (ProofInfo memory) {
+        ProofParam memory proofParam = reverse ? reverseProofParams(_proofParam) : _proofParam;
+        (bytes4 version, bytes4 locktime, bytes memory rawVin, bytes memory rawVout) =
+            TransactionHelper.parseRawTx(proofParam.rawTx);
+
+        ProofInfo memory proofInfo = ProofInfo({
+            version: version,
+            locktime: locktime,
+            txId: version.calculateTxId(
+                rawVin.ref(uint40(ViewBTC.BTCTypes.Vin)), rawVout.ref(uint40(ViewBTC.BTCTypes.Vout)), locktime
+            ),
+            merkleProof: proofParam.merkleProof,
+            index: proofParam.index,
+            header: proofParam.blockHeader,
+            parents: proofParam.parents,
+            children: proofParam.children,
+            blockHeight: proofParam.blockHeight,
+            rawVin: rawVin,
+            rawVout: rawVout
+        });
+
+        return proofInfo;
     }
 
     bytes1 constant P2PKH_MAINNET = 0x00;

@@ -29,8 +29,8 @@ contract PegInTest is StorageFixture {
         ProofParam memory proofParam1 = getPegInProofParamNormal(1);
         ProofParam memory proofParam2 = getPegInProofParamNormal(2);
 
-        ProofInfo memory proof1 = TransactionHelper.paramToProof(proofParam1);
-        ProofInfo memory proof2 = TransactionHelper.paramToProof(proofParam2);
+        ProofInfo memory proof1 = Util.paramToProof(proofParam1, false);
+        ProofInfo memory proof2 = Util.paramToProof(proofParam2, false);
 
         Bridge bridge = Bridge(fixture.bridge);
         bridge.pegIn(

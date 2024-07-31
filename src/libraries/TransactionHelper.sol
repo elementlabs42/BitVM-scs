@@ -71,28 +71,6 @@ library TransactionHelper {
         }
     }
 
-    function paramToProof(ProofParam calldata proofParam) public view returns (ProofInfo memory) {
-        (bytes4 version, bytes4 locktime, bytes memory rawVin, bytes memory rawVout) = parseRawTx(proofParam.rawTx);
-
-        ProofInfo memory proofInfo = ProofInfo({
-            version: version,
-            locktime: locktime,
-            txId: version.calculateTxId(
-                rawVin.ref(uint40(ViewBTC.BTCTypes.Vin)), rawVout.ref(uint40(ViewBTC.BTCTypes.Vout)), locktime
-            ),
-            merkleProof: proofParam.merkleProof,
-            index: proofParam.index,
-            header: proofParam.blockHeader,
-            parents: proofParam.parents,
-            children: proofParam.children,
-            blockHeight: proofParam.blockHeight,
-            rawVin: rawVin,
-            rawVout: rawVout
-        });
-
-        return proofInfo;
-    }
-
     function calculateMerkleRoot(bytes32[] memory txIds) public pure returns (bytes32) {
         while (txIds.length > 1) {
             if (txIds.length % 2 == 1) {
@@ -129,7 +107,7 @@ library TransactionHelper {
     }
 
     function parseRawTx(bytes calldata rawTx)
-        internal
+        public
         pure
         returns (bytes4 version, bytes4 locktime, bytes memory rawVin, bytes memory rawVout)
     {
