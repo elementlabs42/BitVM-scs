@@ -48,13 +48,10 @@ contract Bridge is IBridge {
         nOfNPubKey = _nOfNPubKey;
     }
 
-    function pegIn(
-        address depositor,
-        bytes32 depositorPubKey,
-        ProofInfo calldata proof1,
-        ProofInfo calldata proof2
-    ) external {
-         if (isPegInExist(proof1.txId)) {
+    function pegIn(address depositor, bytes32 depositorPubKey, ProofInfo calldata proof1, ProofInfo calldata proof2)
+        external
+    {
+        if (isPegInExist(proof1.txId)) {
             revert PegInInvalid();
         }
 
@@ -111,12 +108,7 @@ contract Bridge is IBridge {
             revert PegOutInProgress();
         }
         pegOuts[msg.sender] = PegOutInfo(
-            destinationBitcoinAddress,
-            sourceOutpoint,
-            amount,
-            operatorPubkey,
-            block.timestamp + PEG_OUT_MAX_PENDING_TIME,
-            PegOutStatus.PENDING
+            destinationBitcoinAddress, sourceOutpoint, amount, operatorPubkey, block.timestamp, PegOutStatus.PENDING
         );
         usedUtxos[sourceOutpoint.txId][sourceOutpoint.vOut] = msg.sender;
 
@@ -140,13 +132,24 @@ contract Bridge is IBridge {
         if (outputs.length != 1) {
             revert InvalidPegOutProofOutputsSize();
         }
-        if (!outputs[0].scriptPubKey.equals(Script.generatePayToPubKeyHashScript(info.destinationAddress))) {
+        if (
+            !outputs[0].scriptPubKey.equals(
+                Script.generatePayToPubKeyHashWithInscriptionScript(
+                    info.destinationAddress, uint32(info.pegOutTime), withdrawer
+                ).generateP2WSHScriptPubKey()
+            )
+        ) {
             revert InvalidPegOutProofScriptPubKey();
         }
         if (outputs[0].value != info.amount) {
             revert InvalidPegOutProofAmount();
         }
-        bytes32 txId = ViewSPV.calculateTxId(version, bytes29(proof.rawVin), bytes29(proof.rawVout), locktime);
+        bytes32 txId = ViewSPV.calculateTxId(
+            version,
+            proof.rawVin.ref(uint40(ViewBTC.BTCTypes.Vin)),
+            proof.rawVout.ref(uint40(ViewBTC.BTCTypes.Vout)),
+            locktime
+        );
         if (proof.txId != txId) {
             revert InvalidPegOutProofTransactionId();
         }
@@ -171,7 +174,7 @@ contract Bridge is IBridge {
         if (info.status == PegOutStatus.BURNT) {
             revert PegOutAlreadyBurnt();
         }
-        if (info.claimAfter > block.timestamp) {
+        if (info.pegOutTime + PEG_OUT_MAX_PENDING_TIME > block.timestamp) {
             revert PegOutInProgress();
         }
         pegOuts[msg.sender].status = PegOutStatus.CLAIMED;

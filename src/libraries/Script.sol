@@ -91,9 +91,26 @@ library Script {
         );
     }
 
-    function generatePayToPubKeyHashScript(string memory addr) internal view returns (bytes memory) {
+    function generatePayToPubKeyHashWithInscriptionScript(string memory addr, uint32 timestamp, address evmAddress)
+        internal
+        view
+        returns (bytes memory)
+    {
         bytes memory pubKeyHash = toPubKeyHash(addr);
-        return abi.encodePacked(OP_DUP, OP_HASH160, encodeData(pubKeyHash), OP_EQUALVERIFY, OP_CHECKSIG);
+        bytes memory inscription =
+            abi.encodePacked(pubKeyHash, bytes4(timestamp), bytes(evmAddress.toChecksumHexString()));
+        bytes20 inscriptionHash = TaprootHelper.hash160(inscription);
+        return abi.encodePacked(
+            OP_FALSE,
+            OP_IF,
+            encodeData(abi.encodePacked(inscriptionHash)),
+            OP_ENDIF,
+            OP_DUP,
+            OP_HASH160,
+            encodeData(pubKeyHash),
+            OP_EQUALVERIFY,
+            OP_CHECKSIG
+        );
     }
 
     function generateDepositTaprootAddress(

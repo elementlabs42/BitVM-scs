@@ -35,6 +35,7 @@ contract PegOutTest is StorageFixture {
         ProofInfo memory proof = TransactionHelper.paramToProof(getPegOutProofParamNormal());
 
         string memory withdrawerAddr = Util.generateAddress(WITHDRAWER_PUBKEY, Util.P2PKH_TESTNET);
+        vm.warp(1722328130);
         vm.startPrank(withdrawer);
         bridge.pegOut(withdrawerAddr, Outpoint(hex"1234", 0), 100000, OPERATOR_PUBKEY);
         vm.stopPrank();

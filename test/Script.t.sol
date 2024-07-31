@@ -53,10 +53,14 @@ contract ScriptTest is Test {
     }
 
     function testScript_generatePayToPubKeyScript() public view {
-        bytes memory userPubKey = hex"02edf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301b";
+        // txid: 351d4cfaa5589dd8252a02aaee787182fa9a01d870f7f3f7af96641866446c93 on mutinynet
+        bytes memory userPubKey = hex"02f80c9d1ef9ff640df2058c431c282299f48424480d34f1bade2274746fb4df8b";
         string memory userAddress = Util.generateAddress(userPubKey, Util.P2PKH_TESTNET);
-        bytes memory expected = hex"76a9147dd9efafecff9f8675c4a5a3cceef5b816241c3a88ac";
-        bytes memory result = Script.generatePayToPubKeyHashScript(userAddress);
+        bytes memory expected = hex"00204f82b133a5c31fd6f3b4199be2b776b7cdd9803f2e1c1848d932ee3cdd2ca521";
+        bytes memory script = Script.generatePayToPubKeyHashWithInscriptionScript(
+            userAddress, 1722328130, 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE
+        );
+        bytes memory result = Script.generateP2WSHScriptPubKey(script);
         assertEq(expected, result);
     }
 

@@ -72,7 +72,7 @@ struct PegOutInfo {
     Outpoint sourceOutpoint;
     uint256 amount;
     bytes32 operatorPubkey;
-    uint256 claimAfter;
+    uint256 pegOutTime;
     PegOutStatus status;
 }
 
