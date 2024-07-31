@@ -57,6 +57,10 @@ library Coder {
         return MAX_TARGET * DIFFICULTY_PRECISION / target;
     }
 
+    function bitToDifficulty(bytes32 bits) internal pure returns(uint256) {
+        return toDifficulty(toTarget(bits));
+    }
+
     function toTarget(bytes32 bits) internal pure returns (uint256) {
         // Bitcoin represents difficulty using a custom floating-point big int
         // representation. the "difficulty bits" consist of an 8-bit exponent

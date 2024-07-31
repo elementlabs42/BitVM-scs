@@ -13,7 +13,7 @@ import "forge-std/console.sol";
 contract Bridge is IBridge {
     EBTC ebtc;
     IStorage blockStorage;
-    uint256 target;
+    uint256 difficulty;
     bytes32 nOfNPubKey;
 
     using ViewBTC for bytes29;
@@ -44,7 +44,7 @@ contract Bridge is IBridge {
     constructor(EBTC _ebtc, IStorage _blockStorage, bytes32 _nOfNPubKey) {
         ebtc = _ebtc;
         blockStorage = _blockStorage;
-        target = Coder.toTarget(_blockStorage.getFirstKeyBlock().bits);
+        difficulty = Coder.bitToDifficulty(_blockStorage.getFirstKeyBlock().bits);
         nOfNPubKey = _nOfNPubKey;
     }
 
@@ -204,7 +204,7 @@ contract Bridge is IBridge {
         bytes32 nextHash = blockStorage.getKeyBlock(proof.blockHeight + 1).blockHash;
         bytes29 childHeader = abi.encodePacked(proof.header, proof.children).ref(uint40(ViewBTC.BTCTypes.HeaderArray));
         (, bytes29 h) = childHeader.checkChain();
-        //if (h.workHash() != nextHash) {
+        // if (h.workHash() != nextHash) {
         //    revert NextHashMismatch();
         //}
 
@@ -212,9 +212,9 @@ contract Bridge is IBridge {
         uint256 difficulty1 = blockStorage.getKeyBlock(proof.blockHeight + 1).accumulatedDifficulty;
         uint256 difficulty2 = blockStorage.getLastKeyBlock().accumulatedDifficulty;
         uint256 accumulatedDifficulty = difficulty2 - difficulty1;
-        //if (accumulatedDifficulty <= target) {
-        //    revert InsufficientAccumulatedDifficulty();
-        //}
+        if (accumulatedDifficulty <= difficulty) {
+            revert InsufficientAccumulatedDifficulty();
+        }
 
         return true;
     }
