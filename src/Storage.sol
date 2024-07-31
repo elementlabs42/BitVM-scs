@@ -150,4 +150,8 @@ contract Storage is IStorage {
     function getFirstKeyBlock() external view returns (KeyBlock memory _block) {
         return storedBlocks[0];
     }
+
+    function getLastKeyBlock() external view returns (KeyBlock memory _block) {
+        return storedBlocks[storedBlocks.length - 1];
+    }
 }

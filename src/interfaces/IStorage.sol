@@ -34,4 +34,5 @@ interface IStorage {
     function getKeyBlockCount() external view returns (uint256);
 
     function getFirstKeyBlock() external view returns (KeyBlock memory _block);
+    function getLastKeyBlock() external view returns (KeyBlock memory _block);
 }
