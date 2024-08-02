@@ -19,13 +19,13 @@ contract Storage is IStorage {
      *      stored separately since chain can be shorter when reorg
      */
     uint256 private tipIndex;
-    Epoch[] private storedEpochs;
+    Epoch[] storedEpochs;
     /**
      * @dev index of last stored epoch, to represent length of storedEpochs
      *      it is also the number of times that chain has been retargeted up to the tip of storedBlocks
      *      stored separately since storedEpochs can be shorter when reorg
      */
-    uint256 private tipEpochIndex;
+    uint256 tipEpochIndex;
 
     /**
      * @param distance block height distance for every key blocks
@@ -129,7 +129,7 @@ contract Storage is IStorage {
         return _block.timestamp;
     }
 
-    function retargetIfNeeded(uint32 timestamp, uint256 height, CheckBlockContext memory ctx) internal {
+    function retargetIfNeeded(uint32 timestamp, uint256 height, CheckBlockContext memory ctx) internal virtual {
         if (height % Coder.EPOCH_BLOCK_COUNT == 0) {
             bytes4 newBits = Coder.retargetWithBits(ctx.prevEpoch.bits, ctx.prevEpoch.timestamp, ctx.prevBlockTimestamp);
             ctx.prevEpoch.bits = newBits;
@@ -139,10 +139,10 @@ contract Storage is IStorage {
             Epoch memory newEpoch = Epoch(newBits, timestamp);
             if (tipEpochIndex >= ctx.prevEpochIndex) {
                 storedEpochs[ctx.prevEpochIndex] = newEpoch;
-                emit ChainRetargeted(ctx.prevEpochIndex, height, ctx.prevEpoch.bits, true);
+                emit ChainRetargeted(ctx.prevEpochIndex, height, newBits, timestamp, true);
             } else {
                 storedEpochs.push(newEpoch);
-                emit ChainRetargeted(ctx.prevEpochIndex, height, ctx.prevEpoch.bits, false);
+                emit ChainRetargeted(ctx.prevEpochIndex, height, newBits, timestamp, false);
             }
             tipEpochIndex = ctx.prevEpochIndex;
         }

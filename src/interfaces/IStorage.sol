@@ -22,7 +22,7 @@ interface IStorage {
     }
 
     event KeyBlocksSubmitted(uint256 tip, uint256 total, uint256 reorg);
-    event ChainRetargeted(uint256 storedEpochsIndex, uint256 height, bytes4 newBits, bool isReorg);
+    event ChainRetargeted(uint256 storedEpochsIndex, uint256 height, bytes4 newBits, uint32 timestamp, bool isReorg);
 
     error BlockStepDistanceInvalid(uint256 inputDistance);
     error BlockCountInvalid(uint256 inputLength);

@@ -7,6 +7,7 @@ import {Block} from "../src/interfaces/IBridge.sol";
 import "../src/libraries/Coder.sol";
 import "./fixture/ConstantsFixture.sol";
 import "../src/Storage.sol";
+import "./mockup/StorageTestnet.sol";
 import "./Util.sol";
 
 contract StorageTest is Test, ConstantsFixture {
@@ -22,6 +23,8 @@ contract StorageTest is Test, ConstantsFixture {
             IStorage.KeyBlock({blockHash: blockHash832000, accumulatedDifficulty: 0, timestamp: 1708879379}),
             IStorage.Epoch({bits: bytes4(Endian.reverse32(386101681)), timestamp: 1708008110})
         );
+        vm.expectEmit(true, true, true, true, address(_storage));
+        emit IStorage.KeyBlocksSubmitted(832050, 50, 0);
         _storage.submit(block832001to832050, 832001);
 
         uint256 keyBlockCount = _storage.getKeyBlockCount();
@@ -98,6 +101,8 @@ contract StorageTest is Test, ConstantsFixture {
             IStorage.Epoch({bits: bytes4(Endian.reverse32(bits800330)), timestamp: epochTimestamp798336})
         );
         assertEq(1, _storage.getEpochCount());
+        vm.expectEmit(true, true, true, true, address(_storage));
+        emit IStorage.ChainRetargeted(1, 800352, bytes4(Endian.reverse32(bits800352)), timestamp800352, false);
         _storage.submit(block800331to800380, 800331);
         assertEq(2, _storage.getEpochCount());
 
@@ -112,6 +117,33 @@ contract StorageTest is Test, ConstantsFixture {
         assertEq(epoch1.timestamp, timestamp800352);
 
         IStorage.Epoch memory epoch0_1 = _storage.getEpoch(800351);
+        assertEq(epoch0.bits, epoch0_1.bits);
+    }
+
+    function testStorage_submit_testNetRetarget() public {
+        IStorage _storage = new StorageTestnet(
+            10,
+            1266000,
+            IStorage.KeyBlock({blockHash: blockHash1266000, accumulatedDifficulty: 0, timestamp: timestamp1266000}),
+            IStorage.Epoch({bits: bytes4(Endian.reverse32(bits1266000)), timestamp: epochTimestamp1264032})
+        );
+        assertEq(1, _storage.getEpochCount());
+        vm.expectEmit(true, true, true, true, address(_storage));
+        emit IStorage.ChainRetargeted(1, 1266048, bytes4(Endian.reverse32(bits1266048)), timestamp1266048, false);
+        _storage.submit(block1266001to1266080, 1266001);
+        assertEq(2, _storage.getEpochCount());
+
+        uint256 keyBlockCount = _storage.getKeyBlockCount();
+        assertEq(keyBlockCount, 9);
+
+        IStorage.Epoch memory epoch0 = _storage.getEpoch(1266000);
+        assertEq(epoch0.bits, bytes4(Endian.reverse32(bits1266000)));
+        assertEq(epoch0.timestamp, epochTimestamp1264032);
+        IStorage.Epoch memory epoch1 = _storage.getEpoch(1266048);
+        assertEq(epoch1.bits, bytes4(Endian.reverse32(bits1266048)));
+        assertEq(epoch1.timestamp, timestamp1266048);
+
+        IStorage.Epoch memory epoch0_1 = _storage.getEpoch(1266047);
         assertEq(epoch0.bits, epoch0_1.bits);
     }
 
