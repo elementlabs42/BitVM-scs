@@ -44,7 +44,7 @@ contract Bridge is IBridge {
     constructor(EBTC _ebtc, IStorage _blockStorage, bytes32 _nOfNPubKey) {
         ebtc = _ebtc;
         blockStorage = _blockStorage;
-        target = Coder.toTarget(_blockStorage.getFirstKeyBlock().bits);
+        target = 0xFFFFFFFF;
         nOfNPubKey = _nOfNPubKey;
     }
 

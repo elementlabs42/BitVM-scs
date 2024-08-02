@@ -536,34 +536,4 @@ library ViewBTC {
 
         return _current;
     }
-
-    /// @notice                 performs the bitcoin difficulty retarget
-    /// @dev                    implements the Bitcoin algorithm precisely
-    /// @param _previousTarget  the target of the previous period
-    /// @param _firstTimestamp  the timestamp of the first block in the difficulty period
-    /// @param _secondTimestamp the timestamp of the last block in the difficulty period
-    /// @return                 the new period's target threshold
-    function retargetAlgorithm(uint256 _previousTarget, uint256 _firstTimestamp, uint256 _secondTimestamp)
-        internal
-        pure
-        returns (uint256)
-    {
-        uint256 _elapsedTime = _secondTimestamp - _firstTimestamp;
-
-        // Normalize ratio to factor of 4 if very long or very short
-        if (_elapsedTime < RETARGET_PERIOD / 4) {
-            _elapsedTime = RETARGET_PERIOD / 4;
-        }
-        if (_elapsedTime > RETARGET_PERIOD * 4) {
-            _elapsedTime = RETARGET_PERIOD * 4;
-        }
-
-        /*
-            NB: high targets e.g. ffff0020 can cause overflows here
-                so we divide it by 256**2, then multiply by 256**2 later
-                we know the target is evenly divisible by 256**2, so this isn't an issue
-        */
-        uint256 _adjusted = _previousTarget / _elapsedTime * 65536;
-        return _adjusted / 65536 * RETARGET_PERIOD;
-    }
 }
