@@ -291,6 +291,27 @@ const toCompactSize = (size) => {
   }
 }
 
+const hex2bytes = (hex) => new Uint8Array(hex.match(/.{1,2}/g).map(b => parseInt(b, 16)))
+const bytes2hex = (bytes) => bytes.reduce((str, b) => str + b.toString(16).padStart(2, '0'), '')
+
+const reverseBytesNArray = (hex, n) => {
+  hex = hex.substring(2) == '0x' ? hex.substring(2) : hex
+  if (hex.length % n * 2 !== 0) {
+    throw new Error(`hex length must be multiple of ${n * 2}`)
+  }
+  
+  const bytes = hex2bytes(hex)
+  const bytes32 = new Uint8Array(n)
+  let output = ''
+  for (let i = 0; i <= bytes.length; ++i) {
+    bytes32[i % n] = bytes[i];
+    if (i % n === 0 && i > 0) {
+      output += bytes2hex(bytes32.reverse())
+    }
+  }
+  return output
+}
+
   // usage: `node script/fetchProofParams.mjs <provider> <step:initialHeight> <txId>`
   // like for deposit and confirm:
   //    679162210bf2d1a467d73356e5e82a3e4106e4d24472998f6d4de7d2ed2de9ae,2bd72f7379dbd73acc06a2810eb43f9f4146acf79ac58b2366c049eac9287977
@@ -331,19 +352,37 @@ const toCompactSize = (size) => {
 
     // console.log(merkleProof, parents, children, proofInfo.block_index, header, rawTx)
 
-    console.log('>>> merkleProof')
+    const blueUnderline = '\x1b[4;34m%s\x1b[0m'
+    console.log('>>>>>>>>>> Reversed byte order below, as seen in exploer <<<<<<<<<<<<')
+    console.log(util.format(blueUnderline, 'merkleProof'))
     console.log(merkleProof.merkle.join(''))
-    console.log('>>> parents')
+    console.log(util.format(blueUnderline, 'parents'))
     console.log(parents.join(''))
-    console.log('>>> children')
+    console.log(util.format(blueUnderline, 'children'))
     console.log(children.join(''))
-    console.log('>>> block_index')
+    console.log(util.format(blueUnderline, 'block_index'))
     console.log(proofInfo.block_index)
-    console.log('>>> block_height')
+    console.log(util.format(blueUnderline, 'block_height'))
     console.log(proofInfo.self.height)
-    console.log('>>> block header')
+    console.log(util.format(blueUnderline, 'block header'))
     console.log(header)
-    console.log('>>> rawTx')
+    console.log(util.format(blueUnderline, 'rawTx'))
+    console.log(rawTx)
+    console.log()
+    console.log('>>>>>>>>>> Natural byte order below, use them directly for calculations <<<<<<<<<<<<')
+    console.log(util.format(blueUnderline, 'merkleProof'))
+    console.log(reverseBytesNArray(merkleProof.merkle.join(''), 32))
+    console.log(util.format(blueUnderline, 'parents'))
+    console.log(reverseBytesNArray(parents.join(''), 32))
+    console.log(util.format(blueUnderline, 'children'))
+    console.log(reverseBytesNArray((children.join('')), 32))
+    console.log(util.format(blueUnderline, 'block_index'))
+    console.log(proofInfo.block_index)
+    console.log(util.format(blueUnderline, 'block_height'))
+    console.log(proofInfo.self.height)
+    console.log(util.format(blueUnderline, 'block header'))
+    console.log(header)
+    console.log(util.format(blueUnderline, 'rawTx'))
     console.log(rawTx)
 
     // let output = ''
