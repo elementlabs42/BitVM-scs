@@ -15,8 +15,7 @@ contract PegOutTest is StorageFixture {
         uint256 keyBlockCount = _storage.getKeyBlockCount();
         assertEq(keyBlockCount, headers01.length / Coder.BLOCK_HEADER_LENGTH / step01 + 1);
 
-        bytes4 expectedBits = bytes4(Endian.reverse32(bits01));
-        IStorage.KeyBlock memory expectedKeyBlock = IStorage.KeyBlock(keyHash01, 0, expectedBits, keyTime01);
+        IStorage.KeyBlock memory expectedKeyBlock = IStorage.KeyBlock(keyHash01, 0, keyTime01);
         IStorage.KeyBlock memory actualKeyBlock = _storage.getKeyBlock(keyHeight01);
         IStorage.KeyBlock memory actualKeyBlock2 = _storage.getKeyBlock(keyHeight01 + step01 - 1);
         assertEq(expectedKeyBlock.blockHash, actualKeyBlock.blockHash);

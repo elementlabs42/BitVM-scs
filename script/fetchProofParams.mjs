@@ -212,7 +212,7 @@ const getTransactionMerkleProof = async (provider, proofInfo) => {
 }
 
 const getParentsAndChildrenHashes = async (provider, proofInfo) => {
-  if (!(proofInfo.parents && proofInfo.children)) {
+  if (!(proofInfo.parents && proofInfo.children && proofInfo.self)) {
     const step = proofInfo.step
     const initialHeight = proofInfo.initial_height
     const blockHeight = proofInfo.status.block_height
@@ -226,7 +226,10 @@ const getParentsAndChildrenHashes = async (provider, proofInfo) => {
     proofInfo.parents = blockInfos.filter(b => b.height < blockHeight)
     proofInfo.children = blockInfos.filter(b => b.height > blockHeight)
   }
-  return { parents: proofInfo.parents.map(b => b.id), children: proofInfo.children.map(b => b.id) }
+  await getBlockHeaders(provider, proofInfo.parents)
+  await getBlockHeaders(provider, proofInfo.children)
+  proofInfo.self.header = (await getBlockHeaders(provider, [proofInfo.self]))[0]
+  return { parents: proofInfo.parents.map(b => b.header), children: proofInfo.children.map(b => b.header) }
 }
 
 const getBlockInfos = async (provider, start, end) => {
@@ -242,15 +245,35 @@ const getBlockInfos = async (provider, start, end) => {
   return blockInfos.flat().sort((a, b) => a.height - b.height).filter(b => b.height >= start)
 }
 
-const getBlockHeader = async (provider, proofInfo) => {
+const getBlockHeaders = async (provider, blockInfos) => {
+  const headers = await Promise.all(blockInfos.map(async (info, i) => {
+    if (info.header) {
+      return info.header
+    } else {
+      console.log(`>>> fetching block header for ${info.height} ...`)
+      const header = await getBlockHeader(provider, info.id)
+      console.log(`>>>  fetched block header for ${info.height} ${info.id}...`)
+      blockInfos[i].header = header
+      return header
+    }
+  }))
+  return headers
+}
+
+const getBlockHeader = async (provider, blockHash) => {
+  const header = await curlWithRetry(util.format(provider.blockHeader, blockHash), (stdout) => {
+    if (stdout.length !== 160) {
+      return `block header ${stdout} length ${stdout.length} != 160`
+    }
+  })
+  return header
+}
+
+const getProofTxnBlockHeader = async (provider, proofInfo) => {
   if (proofInfo.block_header) {
     return proofInfo.block_header
   } else {
-    const header = await curlWithRetry(util.format(provider.blockHeader, proofInfo.status.block_hash), (stdout) => {
-      if (stdout.length !== 160) {
-        return `block header ${stdout} length ${stdout.length} != 160`
-      }
-    })
+    const header = await getBlockHeader(provider, proofInfo.status.block_hash)
     proofInfo.block_header = header
     return header
   }
@@ -291,6 +314,27 @@ const toCompactSize = (size) => {
   }
 }
 
+const hex2bytes = (hex) => new Uint8Array(hex.match(/.{1,2}/g).map(b => parseInt(b, 16)))
+const bytes2hex = (bytes) => bytes.reduce((str, b) => str + b.toString(16).padStart(2, '0'), '')
+
+const reverseBytesNArray = (hex, n) => {
+  hex = hex.substring(2) == '0x' ? hex.substring(2) : hex
+  if (hex.length % n * 2 !== 0) {
+    throw new Error(`hex length must be multiple of ${n * 2}`)
+  }
+  
+  const bytes = hex2bytes(hex)
+  const bytes32 = new Uint8Array(n)
+  let output = ''
+  for (let i = 0; i <= bytes.length; ++i) {
+    bytes32[i % n] = bytes[i];
+    if (i % n === 0 && i > 0) {
+      output += bytes2hex(bytes32.reverse())
+    }
+  }
+  return output
+}
+
   // usage: `node script/fetchProofParams.mjs <provider> <step:initialHeight> <txId>`
   // like for deposit and confirm:
   //    679162210bf2d1a467d73356e5e82a3e4106e4d24472998f6d4de7d2ed2de9ae,2bd72f7379dbd73acc06a2810eb43f9f4146acf79ac58b2366c049eac9287977
@@ -326,24 +370,31 @@ const toCompactSize = (size) => {
     const rawTx = await getTransactionHex(provider, proofInfo)
     const merkleProof = await getTransactionMerkleProof(provider, proofInfo)
     const { parents, children } = await getParentsAndChildrenHashes(provider, proofInfo)
-    const header = await getBlockHeader(provider, proofInfo)
+    const header = await getProofTxnBlockHeader(provider, proofInfo)
     fs.writeFileSync(file, JSON.stringify(proofInfo, null, 2) + '\n')
 
     // console.log(merkleProof, parents, children, proofInfo.block_index, header, rawTx)
 
-    console.log('>>> merkleProof')
+    const blueUnderline = '\x1b[4;34m%s\x1b[0m'
+    console.log('>>>>>>>>>> Reversed byte order below, as seen in exploer <<<<<<<<<<<<')
+    console.log(util.format(blueUnderline, 'merkleProof'))
     console.log(merkleProof.merkle.join(''))
-    console.log('>>> parents')
+    console.log()
+    console.log('>>>>>>>>>> Natural byte order below, use them directly for calculations <<<<<<<<<<<<')
+    console.log(util.format(blueUnderline, 'merkleProof'))
+    console.log(reverseBytesNArray(merkleProof.merkle.join(''), 32))
+    console.log()
+    console.log(util.format(blueUnderline, 'parents'))
     console.log(parents.join(''))
-    console.log('>>> children')
+    console.log(util.format(blueUnderline, 'children'))
     console.log(children.join(''))
-    console.log('>>> block_index')
+    console.log(util.format(blueUnderline, 'block_index'))
     console.log(proofInfo.block_index)
-    console.log('>>> block_height')
+    console.log(util.format(blueUnderline, 'block_height'))
     console.log(proofInfo.self.height)
-    console.log('>>> block header')
+    console.log(util.format(blueUnderline, 'block header'))
     console.log(header)
-    console.log('>>> rawTx')
+    console.log(util.format(blueUnderline, 'rawTx'))
     console.log(rawTx)
 
     // let output = ''
