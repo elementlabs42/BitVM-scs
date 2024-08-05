@@ -132,4 +132,4 @@ library ViewSPV {
             _totalDifficulty += ViewBTC.toDiff(_target);
         }
     }
-  }
+}

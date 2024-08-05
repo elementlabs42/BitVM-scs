@@ -129,6 +129,14 @@ contract Storage is IStorage {
         _block = storedBlocks[index];
     }
 
+    function getNextKeyBlock(uint256 blockHeight) external view override returns (KeyBlock memory _block) {
+        uint256 index = heightToIndex(blockHeight);
+        if (tipIndex < index) {
+            revert BlockHeightTooHigh(blockHeight, tipIndex);
+        }
+        _block = storedBlocks[index + 1];
+    }
+
     function getKeyBlockCount() external view override returns (uint256) {
         return tipIndex + 1;
     }
