@@ -101,11 +101,13 @@ contract Bridge is IBridge {
         if (!isValidAmount(amount)) {
             revert InvalidAmount();
         }
-        if (
-            pegOuts[msg.sender].status == PegOutStatus.PENDING
-                || usedUtxos[sourceOutpoint.txId][sourceOutpoint.vOut] != address(0)
-        ) {
+        if (pegOuts[msg.sender].status == PegOutStatus.PENDING) {
             revert PegOutInProgress();
+        }
+        if (usedUtxos[sourceOutpoint.txId][sourceOutpoint.vOut] != address(0)) {
+            revert UtxoNotAvailable(
+                sourceOutpoint.txId, sourceOutpoint.vOut, usedUtxos[sourceOutpoint.txId][sourceOutpoint.vOut]
+            );
         }
         pegOuts[msg.sender] = PegOutInfo(
             destinationBitcoinAddress, sourceOutpoint, amount, operatorPubkey, block.timestamp, PegOutStatus.PENDING
@@ -120,12 +122,6 @@ contract Bridge is IBridge {
         PegOutInfo memory info = pegOuts[withdrawer];
         if (info.status == PegOutStatus.VOID) {
             revert PegOutNotFound();
-        }
-        if (info.status == PegOutStatus.CLAIMED) {
-            revert PegOutAlreadyClaimed();
-        }
-        if (info.status == PegOutStatus.BURNT) {
-            revert PegOutAlreadyBurnt();
         }
 
         Output[] memory outputs = proof.rawVout.parseVout();
@@ -157,7 +153,6 @@ contract Bridge is IBridge {
             revert InvalidSPVProof();
         }
 
-        // pegOuts[withdrawer].status = PegOutStatus.BURNT;
         delete pegOuts[withdrawer];
         ebtc.burn(address(this), info.amount);
         emit PegOutBurnt(withdrawer, info.sourceOutpoint, info.amount, info.operatorPubkey);
@@ -168,16 +163,10 @@ contract Bridge is IBridge {
         if (info.status == PegOutStatus.VOID) {
             revert PegOutNotFound();
         }
-        if (info.status == PegOutStatus.CLAIMED) {
-            revert PegOutAlreadyClaimed();
-        }
-        if (info.status == PegOutStatus.BURNT) {
-            revert PegOutAlreadyBurnt();
-        }
         if (info.pegOutTime + PEG_OUT_MAX_PENDING_TIME > block.timestamp) {
             revert PegOutInProgress();
         }
-        pegOuts[msg.sender].status = PegOutStatus.CLAIMED;
+        delete pegOuts[msg.sender];
         delete usedUtxos[info.sourceOutpoint.txId][info.sourceOutpoint.vOut];
         ebtc.transfer(msg.sender, info.amount);
         emit PegOutClaimed(msg.sender, info.sourceOutpoint, info.amount, info.operatorPubkey);

@@ -62,9 +62,7 @@ struct ProofInfo {
 
 enum PegOutStatus {
     VOID,
-    PENDING,
-    CLAIMED,
-    BURNT
+    PENDING
 }
 
 struct PegOutInfo {
@@ -92,16 +90,13 @@ interface IBridge {
 
     error PegInInvalid();
     error SpvCheckFailed();
-    error PeggedInInvalid();
     error InvalidVoutLength();
     error InvalidScriptKey();
     error InvalidVinLength();
     error MismatchTransactionId();
     error MismatchMultisigScript();
     error InvalidVoutValue();
-    error SPVCheckFailed();
     error InvalidAmount();
-    error MerkleProofFailed();
     error MerkleRootMismatch();
     error DifficultyMismatch();
     error ParentCheckFailed();
@@ -111,8 +106,7 @@ interface IBridge {
     error InvalidSPVProof();
     error PegOutNotFound();
     error PegOutInProgress();
-    error PegOutAlreadyClaimed();
-    error PegOutAlreadyBurnt();
+    error UtxoNotAvailable(bytes32 txId, uint256 vOut, address withdrawer);
     error InvalidPegOutProofOutputsSize();
     error InvalidPegOutProofScriptPubKey();
     error InvalidPegOutProofAmount();
