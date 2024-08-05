@@ -9,11 +9,12 @@ import "./libraries/Script.sol";
 import {IStorage} from "./interfaces/IStorage.sol";
 import {TransactionHelper} from "./libraries/TransactionHelper.sol";
 import "./libraries/Coder.sol";
+import "./interfaces/IStorage.sol";
 
 contract Bridge is IBridge {
     EBTC ebtc;
     IStorage blockStorage;
-    uint256 target;
+    uint256 difficulty;
     bytes32 nOfNPubKey;
 
     using ViewBTC for bytes29;
@@ -24,6 +25,7 @@ contract Bridge is IBridge {
     using Script for bytes;
     using TransactionHelper for bytes;
     using TypedMemView for bytes;
+    using TypedMemView for bytes29;
 
     /**
      * @dev withdrawer to pegOut
@@ -44,7 +46,7 @@ contract Bridge is IBridge {
     constructor(EBTC _ebtc, IStorage _blockStorage, bytes32 _nOfNPubKey) {
         ebtc = _ebtc;
         blockStorage = _blockStorage;
-        target = 0xFFFFFFFF;
+        difficulty = Coder.bitToDifficulty(_blockStorage.getFirstEpoch().bits);
         nOfNPubKey = _nOfNPubKey;
     }
 
@@ -184,38 +186,30 @@ contract Bridge is IBridge {
         }
 
         bytes32 prevHash = blockStorage.getKeyBlock(proof.blockHeight).blockHash;
-
-        uint256 i;
-
-        for (; i < proof.parents.length; i++) {
-            bytes32 parent = proof.parents[i];
-            if (!header.checkParent(parent)) {
-                revert ParentCheckFailed();
-            }
-            header = parent.ref();
-        }
-        if (header.workHash() != prevHash) {
+        bytes29 parentHeader = abi.encodePacked(proof.parents, proof.header).ref(uint40(ViewBTC.BTCTypes.HeaderArray));
+        parentHeader.checkChain();
+        if (
+            proof.parents.ref(uint40(ViewBTC.BTCTypes.HeaderArray)).indexHeaderArray(0).workHash()
+                != bytes32(Endian.reverse256(uint256(prevHash)))
+        ) {
             revert PreviousHashMismatch();
         }
 
-        bytes32 nextHash = blockStorage.getKeyBlock(proof.blockHeight + 1).blockHash;
-
-        for (; i < proof.children.length; i++) {
-            bytes32 child = proof.children[i];
-            if (!header.checkParent(child)) {
-                revert ParentCheckFailed();
-            }
-            header = child.ref();
-        }
-        if (header.workHash() != nextHash) {
+        bytes32 nextHash = blockStorage.getNextKeyBlock(proof.blockHeight).blockHash;
+        bytes29 childHeader = abi.encodePacked(proof.header, proof.children).ref(uint40(ViewBTC.BTCTypes.HeaderArray));
+        childHeader.checkChain();
+        if (
+            childHeader.indexHeaderArray(childHeader.len() / 80 - 1).workHash()
+                != bytes32(Endian.reverse256(uint256(nextHash)))
+        ) {
             revert NextHashMismatch();
         }
 
         // 3. Accumulated difficulty
-        uint256 difficulty1 = blockStorage.getKeyBlock(proof.blockHeight + 1).accumulatedDifficulty;
-        uint256 difficulty2 = blockStorage.getFirstKeyBlock().accumulatedDifficulty;
+        uint256 difficulty1 = blockStorage.getNextKeyBlock(proof.blockHeight).accumulatedDifficulty;
+        uint256 difficulty2 = blockStorage.getLastKeyBlock().accumulatedDifficulty;
         uint256 accumulatedDifficulty = difficulty2 - difficulty1;
-        if (accumulatedDifficulty <= target) {
+        if (accumulatedDifficulty <= difficulty) {
             revert InsufficientAccumulatedDifficulty();
         }
 

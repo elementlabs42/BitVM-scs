@@ -37,9 +37,12 @@ interface IStorage {
 
     function submit(bytes calldata data, uint256 blockHeight) external;
     function getKeyBlock(uint256 blockHeight) external view returns (KeyBlock memory _block);
+    function getNextKeyBlock(uint256 blockHeight) external view returns (KeyBlock memory _block);
+    function getFirstKeyBlock() external view returns (KeyBlock memory _block);
+    function getLastKeyBlock() external view returns (KeyBlock memory _block);
     function getKeyBlockCount() external view returns (uint256);
+
     function getEpoch(uint256 blockHeight) external view returns (Epoch memory _epoch);
     function getEpochCount() external view returns (uint256);
-
-    function getFirstKeyBlock() external view returns (KeyBlock memory _block);
+    function getFirstEpoch() external view returns (Epoch memory _epoch);
 }

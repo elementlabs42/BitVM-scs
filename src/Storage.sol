@@ -156,6 +156,15 @@ contract Storage is IStorage {
         _block = storedBlocks[index];
     }
 
+    function getNextKeyBlock(uint256 blockHeight) external view override returns (KeyBlock memory _block) {
+        uint256 index = heightToIndex(blockHeight);
+        uint256 nextIndex = index + 1;
+        if (tipIndex < nextIndex) {
+            revert BlockHeightTooHigh(blockHeight);
+        }
+        _block = storedBlocks[nextIndex];
+    }
+
     function getKeyBlockCount() external view override returns (uint256) {
         return tipIndex + 1;
     }
@@ -199,5 +208,9 @@ contract Storage is IStorage {
 
     function getLastKeyBlock() external view returns (KeyBlock memory _block) {
         return storedBlocks[tipIndex];
+    }
+
+    function getFirstEpoch() external view override returns (Epoch memory _epoch) {
+        return storedEpochs[0];
     }
 }

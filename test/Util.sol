@@ -44,12 +44,6 @@ library Util {
 
     function reverseProofParams(ProofParam memory _proof) public pure returns (ProofParam memory) {
         _proof.merkleProof = Endian.reverse256Array(_proof.merkleProof);
-        for (uint256 i; i < _proof.parents.length; ++i) {
-            _proof.parents[i] = bytes32(Endian.reverse256(uint256(_proof.parents[i])));
-        }
-        for (uint256 i; i < _proof.children.length; ++i) {
-            _proof.children[i] = bytes32(Endian.reverse256(uint256(_proof.children[i])));
-        }
         return _proof;
     }
 

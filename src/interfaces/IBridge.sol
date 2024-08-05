@@ -35,8 +35,8 @@ struct Output {
 
 struct ProofParam {
     bytes merkleProof;
-    bytes32[] parents;
-    bytes32[] children;
+    bytes parents;
+    bytes children;
     bytes rawTx;
     uint256 index;
     uint256 blockHeight;
@@ -53,8 +53,8 @@ struct ProofInfo {
     bytes32 txId;
     uint256 index; // tx index in block
     bytes header;
-    bytes32[] parents;
-    bytes32[] children;
+    bytes parents;
+    bytes children;
     uint256 blockHeight;
     bytes rawVin;
     bytes rawVout;

@@ -57,6 +57,10 @@ library Coder {
         return MAX_TARGET * DIFFICULTY_PRECISION / target;
     }
 
+    function bitToDifficulty(bytes32 bits) internal pure returns (uint256) {
+        return toDifficulty(toTarget(bits));
+    }
+
     /**
      * @dev @param bits is in reversed order as seen in a block header
      */

@@ -114,26 +114,22 @@ library ViewSPV {
         internal
         view
         typeAssert(_headers, ViewBTC.BTCTypes.HeaderArray)
-        returns (uint256 _totalDifficulty)
+        returns (uint256 _totalDifficulty, bytes29 _header)
     {
         bytes32 _digest;
         uint256 _headerCount = _headers.len() / 80;
         for (uint256 i; i < _headerCount; ++i) {
-            bytes29 _header = _headers.indexHeaderArray(i);
+            _header = _headers.indexHeaderArray(i);
             if (i != 0) {
-                if (!checkParent(_header, _digest)) return ERR_INVALID_CHAIN;
+                if (!checkParent(_header, _digest)) return (ERR_INVALID_CHAIN, 0x0);
             }
             _digest = _header.workHash();
             uint256 _work = TypedMemView.reverseUint256(uint256(_digest));
             uint256 _target = _header.target();
 
-            if (_work > _target) return ERR_LOW_WORK;
+            if (_work > _target) return (ERR_LOW_WORK, 0x0);
 
             _totalDifficulty += ViewBTC.toDiff(_target);
         }
-    }
-
-    function ref(bytes32 b) internal pure returns (bytes29) {
-        return abi.encodePacked(b).ref(0);
     }
 }
