@@ -28,7 +28,7 @@ contract PegOutTest is StorageFixture {
         StorageSetupInfo memory initNormal = getPegOutSetupInfoNormal();
         StorageSetupResult memory fixture = buildStorage(initNormal);
 
-        Bridge bridge = Bridge(fixture.bridge);
+        BridgeTestnet bridge = BridgeTestnet(fixture.bridge);
         address withdrawer = fixture.withdrawer;
         address operator = fixture.operator;
         ProofParam memory proofParam = getPegOutProofParamNormal();

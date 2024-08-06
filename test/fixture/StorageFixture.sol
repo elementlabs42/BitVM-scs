@@ -3,9 +3,9 @@ pragma solidity ^0.8.26;
 
 import "forge-std/Test.sol";
 import "../../src/EBTC.sol";
-import "../../src/Bridge.sol";
 import "../../src/Storage.sol";
 import "../Util.sol";
+import "../mockup/BridgeTestnet.sol";
 
 struct StorageSetupInfo {
     uint256 step;
@@ -56,7 +56,7 @@ contract StorageFixture is Test {
 
         vm.startPrank(owner);
         EBTC ebtc = new EBTC(address(0));
-        Bridge bridge = new Bridge(ebtc, _storage, N_OF_N_PUBKEY);
+        BridgeTestnet bridge = new BridgeTestnet(ebtc, _storage, N_OF_N_PUBKEY);
         ebtc.setBridge(address(bridge));
         vm.stopPrank();
 

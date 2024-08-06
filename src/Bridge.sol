@@ -10,14 +10,15 @@ import {IStorage} from "./interfaces/IStorage.sol";
 import {TransactionHelper} from "./libraries/TransactionHelper.sol";
 import "./libraries/Coder.sol";
 import "./interfaces/IStorage.sol";
+import "forge-std/console.sol";
 
 contract Bridge is IBridge {
     EBTC ebtc;
     IStorage blockStorage;
     bytes32 nOfNPubKey;
 
-    // difficult from block 1285330(1126) and 2016 blocks two weeks
-    uint256 private constant DIFFICULTY_THRESHOLD = 2270016;
+    uint256 public immutable difficultyThreshold;
+
     using ViewBTC for bytes29;
     using ViewSPV for bytes32;
     using ViewSPV for bytes29;
@@ -48,6 +49,8 @@ contract Bridge is IBridge {
         ebtc = _ebtc;
         blockStorage = _blockStorage;
         nOfNPubKey = _nOfNPubKey;
+        // difficult from block 855614(90666502495565) and 2016 blocks two weeks
+        difficultyThreshold = 182783669031059040;
     }
 
     function pegIn(address depositor, bytes32 depositorPubKey, ProofInfo calldata proof1, ProofInfo calldata proof2)
@@ -209,7 +212,7 @@ contract Bridge is IBridge {
         uint256 difficulty1 = blockStorage.getNextKeyBlock(proof.blockHeight).accumulatedDifficulty;
         uint256 difficulty2 = blockStorage.getLastKeyBlock().accumulatedDifficulty;
         uint256 accumulatedDifficulty = difficulty2 - difficulty1;
-        if (accumulatedDifficulty <= DIFFICULTY_THRESHOLD) {
+        if (accumulatedDifficulty <= difficultyThreshold) {
             revert InsufficientAccumulatedDifficulty();
         }
 
