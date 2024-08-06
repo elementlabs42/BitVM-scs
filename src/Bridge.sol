@@ -14,9 +14,10 @@ import "./interfaces/IStorage.sol";
 contract Bridge is IBridge {
     EBTC ebtc;
     IStorage blockStorage;
-    uint256 difficulty;
     bytes32 nOfNPubKey;
 
+    // difficult from block 1285330(1126) and 2016 blocks two weeks
+    uint256 private constant DIFFICULTY_THRESHOLD = 2270016;
     using ViewBTC for bytes29;
     using ViewSPV for bytes32;
     using ViewSPV for bytes29;
@@ -46,7 +47,6 @@ contract Bridge is IBridge {
     constructor(EBTC _ebtc, IStorage _blockStorage, bytes32 _nOfNPubKey) {
         ebtc = _ebtc;
         blockStorage = _blockStorage;
-        difficulty = Coder.bitToDifficulty(_blockStorage.getFirstEpoch().bits);
         nOfNPubKey = _nOfNPubKey;
     }
 
@@ -209,7 +209,7 @@ contract Bridge is IBridge {
         uint256 difficulty1 = blockStorage.getNextKeyBlock(proof.blockHeight).accumulatedDifficulty;
         uint256 difficulty2 = blockStorage.getLastKeyBlock().accumulatedDifficulty;
         uint256 accumulatedDifficulty = difficulty2 - difficulty1;
-        if (accumulatedDifficulty <= difficulty) {
+        if (accumulatedDifficulty <= DIFFICULTY_THRESHOLD) {
             revert InsufficientAccumulatedDifficulty();
         }
 

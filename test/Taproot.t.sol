@@ -14,7 +14,7 @@ contract TaprootTest is Test {
             TaprootHelper.createTaprootAddress(
                 0x1036a7ed8d24eac9057e114f22342ebf20c16d37f0d25cfd2c900bf401ec09c9, scripts
             ),
-            0x86c903b56b05a5acb1f66c3b950c7bd32a453a015ae6cc79451044cb31214b15
+            0x6e45f10a20f5b5622e6673ffac5bdc080625d86a59a948c7bcd10e0b06f6f280
         );
     }
 }
