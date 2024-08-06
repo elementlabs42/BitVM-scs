@@ -18,4 +18,5 @@ docs/
 .env
 
 # Script output
-blocks-*-*.json
+blocks-*.json
+proof-*.json

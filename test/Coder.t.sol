@@ -3,7 +3,7 @@ pragma solidity ^0.8.26;
 
 import "forge-std/Test.sol";
 
-import {Block} from "../src/interfaces/IBtcBridge.sol";
+import {Block} from "../src/interfaces/IBridge.sol";
 import "../src/libraries/Coder.sol";
 import "./fixture/ConstantsFixture.sol";
 
@@ -41,7 +41,7 @@ contract CoderTest is Test, ConstantsFixture {
         assertTrue(uint256(_hash) < target);
 
         uint256 difficulty = Coder.toDifficulty(target);
-        assertEq(difficulty, 31251101365711);
+        assertEq(difficulty, 31251101365711121697);
     }
 
     function testCoder_Bits() public pure {

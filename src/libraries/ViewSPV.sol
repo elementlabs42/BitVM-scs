@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.5.10;
+pragma solidity ^0.8.26;
 
 /**
  * @title ViewSPV
@@ -9,13 +9,11 @@ pragma solidity >=0.5.10;
  */
 import "./TypedMemView.sol";
 import {ViewBTC} from "./ViewBTC.sol";
-import {SafeMath} from "./SafeMath.sol";
 
 library ViewSPV {
     using TypedMemView for bytes;
     using TypedMemView for bytes29;
     using ViewBTC for bytes29;
-    using SafeMath for uint256;
 
     uint256 constant ERR_BAD_LENGTH = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
     uint256 constant ERR_INVALID_CHAIN = 0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe;
@@ -50,7 +48,7 @@ library ViewSPV {
     /// @return                     true if fully valid, false otherwise
     function prove(bytes32 _txid, bytes32 _merkleRoot, bytes29 _intermediateNodes, uint256 _index)
         internal
-        pure
+        view
         typeAssert(_intermediateNodes, ViewBTC.BTCTypes.MerkleArray)
         returns (bool)
     {
@@ -116,26 +114,22 @@ library ViewSPV {
         internal
         view
         typeAssert(_headers, ViewBTC.BTCTypes.HeaderArray)
-        returns (uint256 _totalDifficulty)
+        returns (uint256 _totalDifficulty, bytes29 _header)
     {
         bytes32 _digest;
         uint256 _headerCount = _headers.len() / 80;
         for (uint256 i; i < _headerCount; ++i) {
-            bytes29 _header = _headers.indexHeaderArray(i);
+            _header = _headers.indexHeaderArray(i);
             if (i != 0) {
-                if (!checkParent(_header, _digest)) return ERR_INVALID_CHAIN;
+                if (!checkParent(_header, _digest)) return (ERR_INVALID_CHAIN, 0x0);
             }
             _digest = _header.workHash();
             uint256 _work = TypedMemView.reverseUint256(uint256(_digest));
             uint256 _target = _header.target();
 
-            if (_work > _target) return ERR_LOW_WORK;
+            if (_work > _target) return (ERR_LOW_WORK, 0x0);
 
             _totalDifficulty += ViewBTC.toDiff(_target);
         }
-    }
-
-    function ref(bytes32 b) internal pure returns(bytes29) {
-        return abi.encodePacked(b).ref(0);
     }
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.5.10;
+pragma solidity ^0.8.26;
 
 /**
  * @title BitcoinSPV
@@ -7,12 +7,13 @@ pragma solidity >=0.5.10;
 /**
  * @author Summa (https://summa.one)
  */
-import {SafeMath} from "./SafeMath.sol";
 import "./TypedMemView.sol";
 
 library ViewBTC {
+    error VinReadOverrun();
+    error VoutReadOverrun();
+
     using TypedMemView for bytes29;
-    using SafeMath for uint256;
 
     // The target at minimum Difficulty. Also the target of the genesis block
     uint256 public constant DIFF1_TARGET = 0xffff0000000000000000000000000000000000000000000000000000;
@@ -154,16 +155,18 @@ library ViewBTC {
     function indexVin(bytes29 _vin, uint256 _index) internal pure typeAssert(_vin, BTCTypes.Vin) returns (bytes29) {
         uint256 _nIns = uint256(indexCompactInt(_vin, 0));
         uint256 _viewLen = _vin.len();
-        require(_index < _nIns, "Vin read overrun");
+        if (_index >= _nIns) {
+            revert VinReadOverrun();
+        }
 
         uint256 _offset = uint256(compactIntLength(uint64(_nIns)));
         bytes29 _remaining;
         for (uint256 _i; _i < _index; ++_i) {
-            _remaining = _vin.postfix(_viewLen.sub(_offset), uint40(BTCTypes.IntermediateTxIns));
+            _remaining = _vin.postfix(_viewLen - _offset, uint40(BTCTypes.IntermediateTxIns));
             _offset += inputLength(_remaining);
         }
 
-        _remaining = _vin.postfix(_viewLen.sub(_offset), uint40(BTCTypes.IntermediateTxIns));
+        _remaining = _vin.postfix(_viewLen - _offset, uint40(BTCTypes.IntermediateTxIns));
         uint256 _len = inputLength(_remaining);
         return _vin.slice(_offset, _len, uint40(BTCTypes.TxIn));
     }
@@ -215,7 +218,9 @@ library ViewBTC {
     {
         uint256 _nOuts = uint256(indexCompactInt(_vout, 0));
         uint256 _viewLen = _vout.len();
-        require(_index < _nOuts, "Vout read overrun");
+        if (_index >= _nOuts) {
+            revert VoutReadOverrun();
+        }
 
         uint256 _offset = uint256(compactIntLength(uint64(_nOuts)));
         bytes29 _remaining;
@@ -371,7 +376,7 @@ library ViewBTC {
         typeAssert(_arr, BTCTypes.HeaderArray)
         returns (bytes29)
     {
-        uint256 _start = index.mul(80);
+        uint256 _start = index * 80;
         return _arr.slice(_start, 80, uint40(BTCTypes.Header));
     }
 
@@ -409,15 +414,15 @@ library ViewBTC {
     /// @return         the target
     function target(bytes29 _header) internal pure typeAssert(_header, BTCTypes.Header) returns (uint256) {
         uint256 _mantissa = _header.indexLEUint(72, 3);
-        uint256 _exponent = _header.indexUint(75, 1).sub(3);
-        return _mantissa.mul(256 ** _exponent);
+        uint256 _exponent = _header.indexUint(75, 1) - 3;
+        return _mantissa * (256 ** _exponent);
     }
 
     /// @notice         calculates the difficulty from a target
     /// @param _target  the target
     /// @return         the difficulty
     function toDiff(uint256 _target) internal pure returns (uint256) {
-        return DIFF1_TARGET.div(_target);
+        return DIFF1_TARGET / _target;
     }
 
     /// @notice         extracts the difficulty from the header
@@ -460,14 +465,14 @@ library ViewBTC {
     /// @param _a        The first hash
     /// @param _b        The second hash
     /// @return          digest The double-sha256 of the concatenated hashes
-    function _merkleStep(bytes32 _a, bytes32 _b) internal pure returns (bytes32 digest) {
+    function _merkleStep(bytes32 _a, bytes32 _b) internal view returns (bytes32 digest) {
         assembly {
             // solium-disable-previous-line security/no-inline-assembly
             let ptr := mload(0x40)
             mstore(ptr, _a)
             mstore(add(ptr, 0x20), _b)
-            //pop(staticcall(gas, 2, ptr, 0x40, ptr, 0x20)) // sha2 #1
-            //pop(staticcall(gas, 2, ptr, 0x20, ptr, 0x20)) // sha2 #2
+            pop(staticcall(gas(), 2, ptr, 0x40, ptr, 0x20)) // sha2 #1
+            pop(staticcall(gas(), 2, ptr, 0x20, ptr, 0x20)) // sha2 #2
             digest := mload(ptr)
         }
     }
@@ -480,7 +485,7 @@ library ViewBTC {
     /// @return         true if valid, false if otherwise
     function checkMerkle(bytes32 _leaf, bytes29 _proof, bytes32 _root, uint256 _index)
         internal
-        pure
+        view
         typeAssert(_proof, BTCTypes.MerkleArray)
         returns (bool)
     {
@@ -505,33 +510,30 @@ library ViewBTC {
         return _current == _root;
     }
 
-    /// @notice                 performs the bitcoin difficulty retarget
-    /// @dev                    implements the Bitcoin algorithm precisely
-    /// @param _previousTarget  the target of the previous period
-    /// @param _firstTimestamp  the timestamp of the first block in the difficulty period
-    /// @param _secondTimestamp the timestamp of the last block in the difficulty period
-    /// @return                 the new period's target threshold
-    function retargetAlgorithm(uint256 _previousTarget, uint256 _firstTimestamp, uint256 _secondTimestamp)
+    function getMerkle(bytes32 _leaf, bytes29 _proof, uint256 _index)
         internal
-        pure
-        returns (uint256)
+        view
+        typeAssert(_proof, BTCTypes.MerkleArray)
+        returns (bytes32)
     {
-        uint256 _elapsedTime = _secondTimestamp.sub(_firstTimestamp);
-
-        // Normalize ratio to factor of 4 if very long or very short
-        if (_elapsedTime < RETARGET_PERIOD.div(4)) {
-            _elapsedTime = RETARGET_PERIOD.div(4);
-        }
-        if (_elapsedTime > RETARGET_PERIOD.mul(4)) {
-            _elapsedTime = RETARGET_PERIOD.mul(4);
+        uint256 nodes = _proof.len() / 32;
+        if (nodes == 0) {
+            return _leaf;
         }
 
-        /*
-            NB: high targets e.g. ffff0020 can cause overflows here
-                so we divide it by 256**2, then multiply by 256**2 later
-                we know the target is evenly divisible by 256**2, so this isn't an issue
-        */
-        uint256 _adjusted = _previousTarget.div(65536).mul(_elapsedTime);
-        return _adjusted.div(RETARGET_PERIOD).mul(65536);
+        uint256 _idx = _index;
+        bytes32 _current = _leaf;
+
+        for (uint256 i; i < nodes; ++i) {
+            bytes32 _next = _proof.index(i * 32, 32);
+            if (_idx % 2 == 1) {
+                _current = _merkleStep(_next, _current);
+            } else {
+                _current = _merkleStep(_current, _next);
+            }
+            _idx >>= 1;
+        }
+
+        return _current;
     }
 }

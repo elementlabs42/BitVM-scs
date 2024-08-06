@@ -2,11 +2,9 @@
 pragma solidity ^0.8.26;
 pragma experimental ABIEncoderV2;
 
-import "./SafeMath.sol";
 import "./EllipticCurve.sol";
 
 library TaprootHelper {
-    using SafeMath for uint256;
     using EllipticCurve for uint256;
 
     uint256 private constant SECP256K1_P = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;
@@ -65,7 +63,7 @@ library TaprootHelper {
         (uint256 gx, uint256 gy) = EllipticCurve.ecMul(tweakInt, SECP256K1_GX, SECP256K1_GY, SECP256K1_A, SECP256K1_P);
 
         // Compute Q = P + H(P|c)G
-        (uint256 qx, ) = EllipticCurve.ecAdd(px, py, gx, gy, SECP256K1_A, SECP256K1_P);
+        (uint256 qx,) = EllipticCurve.ecAdd(px, py, gx, gy, SECP256K1_A, SECP256K1_P);
 
         // Convert the resulting point back to bytes32
         bytes32 outputKey = bytes32(qx);
@@ -75,7 +73,7 @@ library TaprootHelper {
 
     function publicKeyToPoint(bytes32 pubKey) internal pure returns (uint256, uint256) {
         uint256 x = uint256(pubKey);
-        uint8 prefix = x & 1 == 0 ? 0x02 : 0x03;
+        uint8 prefix = x & 1 == 0 ? 0x03 : 0x02;
         uint256 y = EllipticCurve.deriveY(prefix, x, SECP256K1_A, SECP256K1_B, SECP256K1_P);
         return (x, y);
     }
