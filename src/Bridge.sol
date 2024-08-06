@@ -10,7 +10,6 @@ import {IStorage} from "./interfaces/IStorage.sol";
 import {TransactionHelper} from "./libraries/TransactionHelper.sol";
 import "./libraries/Coder.sol";
 import "./interfaces/IStorage.sol";
-import "forge-std/console.sol";
 
 contract Bridge is IBridge {
     EBTC ebtc;

@@ -28,7 +28,7 @@ contract PegOutTest is StorageFixture {
         StorageSetupInfo memory initNormal = getPegOutSetupInfoNormal();
         StorageSetupResult memory fixture = buildStorage(initNormal);
 
-        BridgeTestnet bridge = BridgeTestnet(fixture.bridge);
+        Bridge bridge = Bridge(fixture.bridge);
         address withdrawer = fixture.withdrawer;
         address operator = fixture.operator;
         ProofParam memory proofParam = getPegOutProofParamNormal();
@@ -41,6 +41,31 @@ contract PegOutTest is StorageFixture {
         vm.stopPrank();
 
         vm.prank(operator);
+        bridge.burnEBTC(withdrawer, proof);
+    }
+
+    function testPegOut_pegOut_insufficientAccumulatedDifficulty() public {
+        StorageSetupInfo memory initNormal = getPegOutSetupInfoNormal();
+        ProofParam memory proofParam = getPegOutProofParamNormal();
+        uint256 nextKeyBlockIndex = (proofParam.blockHeight - initNormal.height) / initNormal.step + 1;
+        uint256 nextKeyBlockHeight = initNormal.step * nextKeyBlockIndex + initNormal.height;
+        uint256 insufficientStorageLength = (nextKeyBlockHeight - initNormal.height) * Coder.BLOCK_HEADER_LENGTH;
+        initNormal.headers = Util.slice(initNormal.headers, 0, insufficientStorageLength);
+        StorageSetupResult memory fixture = buildStorage(initNormal);
+
+        Bridge bridge = Bridge(fixture.bridge);
+        address withdrawer = fixture.withdrawer;
+        address operator = fixture.operator;
+        ProofInfo memory proof = Util.paramToProof(proofParam, true);
+
+        string memory withdrawerAddr = Util.generateAddress(WITHDRAWER_PUBKEY, Util.P2PKH_TESTNET);
+        vm.warp(1722328130);
+        vm.startPrank(withdrawer);
+        bridge.pegOut(withdrawerAddr, Outpoint(hex"1234", 0), 100000, OPERATOR_PUBKEY);
+        vm.stopPrank();
+
+        vm.prank(operator);
+        vm.expectRevert(abi.encodeWithSelector(IBridge.InsufficientAccumulatedDifficulty.selector));
         bridge.burnEBTC(withdrawer, proof);
     }
 }

@@ -31,7 +31,7 @@ contract PegInTest is StorageFixture {
         ProofInfo memory proof1 = Util.paramToProof(proofParam1, false);
         ProofInfo memory proof2 = Util.paramToProof(proofParam2, false);
 
-        BridgeTestnet bridge = BridgeTestnet(fixture.bridge);
+        Bridge bridge = Bridge(fixture.bridge);
         bridge.pegIn(
             0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
             hex"edf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301b",

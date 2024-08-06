@@ -188,6 +188,18 @@ contract Storage is IStorage {
         return tipEpochIndex + 1;
     }
 
+    function getFirstKeyBlock() external view returns (KeyBlock memory _block) {
+        return storedBlocks[0];
+    }
+
+    function getLastKeyBlock() external view returns (KeyBlock memory _block) {
+        return storedBlocks[tipIndex];
+    }
+
+    function getFirstEpoch() external view override returns (Epoch memory _epoch) {
+        return storedEpochs[0];
+    }
+
     function indexToHeight(uint256 index) internal view returns (uint256) {
         return initialBlockHeight + index * blockStepDistance;
     }
@@ -200,17 +212,5 @@ contract Storage is IStorage {
         unchecked {
             return (blockHeight - initialBlockHeight) / blockStepDistance;
         }
-    }
-
-    function getFirstKeyBlock() external view returns (KeyBlock memory _block) {
-        return storedBlocks[0];
-    }
-
-    function getLastKeyBlock() external view returns (KeyBlock memory _block) {
-        return storedBlocks[tipIndex];
-    }
-
-    function getFirstEpoch() external view override returns (Epoch memory _epoch) {
-        return storedEpochs[0];
     }
 }
