@@ -22,7 +22,8 @@
         "children": "",
         "index": 0,
         "blockHeight": 0,
-        "blockHeader": ""
+        "blockHeader": "",
+        "rawTx": ""
       },
       "proof2": {
         "merkleProof": "",
@@ -30,7 +31,8 @@
         "children": "",
         "index": 0,
         "blockHeight": 0,
-        "blockHeader": ""
+        "blockHeader": "",
+        "rawTx": ""
       }
     }
   },
