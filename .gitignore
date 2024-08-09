@@ -20,3 +20,4 @@ docs/
 # Script output
 blocks-*.json
 proof-*.json
+test-data.json

@@ -128,7 +128,6 @@ contract Bridge is IBridge {
             revert PegOutNotFound();
         }
 
-        // Output[] memory outputs = proof.rawVout.parseVout();
         bytes29 vout = proof.rawVout.ref(uint40(ViewBTC.BTCTypes.Vout));
         if (vout.voutCount() != 1) {
             revert InvalidPegOutProofOutputsSize();
