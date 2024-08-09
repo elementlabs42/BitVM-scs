@@ -21,6 +21,8 @@ library ViewBTC {
     uint256 public constant RETARGET_PERIOD = 2 * 7 * 24 * 60 * 60; // 2 weeks in seconds
     uint256 public constant RETARGET_PERIOD_BLOCKS = 2016; // 2 weeks in blocks
 
+    uint256 public constant OP_1 = 0x51;
+
     enum BTCTypes {
         Unknown, // 0x0
         CompactInt, // 0x1
@@ -42,7 +44,8 @@ library ViewBTC {
         HeaderArray, // 0x11
         MerkleNode, // 0x12
         MerkleStep, // 0x13
-        MerkleArray // 0x14
+        MerkleArray, // 0x14
+        TR // 0x15 - the 32-byte payload digest, segwit v1
 
     }
 
@@ -148,12 +151,16 @@ library ViewBTC {
         return uint256(compactIntLength(scriptLength)) + uint256(scriptLength) + 36 + 4;
     }
 
+    function vinCount(bytes29 _vin) internal pure typeAssert(_vin, BTCTypes.Vin) returns (uint256) {
+        return uint256(indexCompactInt(_vin, 0));
+    }
+
     /// @notice         extracts the input at a specified index
     /// @param _vin     the vin
     /// @param _index   the index of the desired input
     /// @return         the desired input
     function indexVin(bytes29 _vin, uint256 _index) internal pure typeAssert(_vin, BTCTypes.Vin) returns (bytes29) {
-        uint256 _nIns = uint256(indexCompactInt(_vin, 0));
+        uint256 _nIns = vinCount(_vin);
         uint256 _viewLen = _vin.len();
         if (_index >= _nIns) {
             revert VinReadOverrun();
@@ -193,6 +200,19 @@ library ViewBTC {
         return _output.slice(8, compactIntLength(scriptLength) + scriptLength, uint40(BTCTypes.ScriptPubkey));
     }
 
+    /// @notice             extracts the scriptPubkey without the length from an output
+    /// @param _output      the output
+    /// @return             the scriptPubkey bytes
+    function scriptPubkeyWithoutLength(bytes29 _output)
+        internal
+        view
+        typeAssert(_output, BTCTypes.TxOut)
+        returns (bytes memory)
+    {
+        uint64 scriptLength = indexCompactInt(_output, 8);
+        return _output.slice(8 + compactIntLength(scriptLength), scriptLength, uint40(BTCTypes.ScriptPubkey)).clone();
+    }
+
     /// @notice             determines the length of the first output in an array of outputs
     /// @param _outputs     the vout without its length prefix
     /// @return             the output length
@@ -206,6 +226,10 @@ library ViewBTC {
         return uint256(compactIntLength(scriptLength)) + uint256(scriptLength) + 8;
     }
 
+    function voutCount(bytes29 _vout) internal pure typeAssert(_vout, BTCTypes.Vout) returns (uint256) {
+        return uint256(indexCompactInt(_vout, 0));
+    }
+
     /// @notice         extracts the output at a specified index
     /// @param _vout    the vout
     /// @param _index   the index of the desired output
@@ -216,7 +240,7 @@ library ViewBTC {
         typeAssert(_vout, BTCTypes.Vout)
         returns (bytes29)
     {
-        uint256 _nOuts = uint256(indexCompactInt(_vout, 0));
+        uint256 _nOuts = voutCount(_vout);
         uint256 _viewLen = _vout.len();
         if (_index >= _nOuts) {
             revert VoutReadOverrun();
@@ -275,6 +299,15 @@ library ViewBTC {
             }
             uint40 newType = uint40(_payloadLen == 0x20 ? BTCTypes.WSH : BTCTypes.WPKH);
             return _spk.slice(3, _payloadLen, newType);
+        }
+
+        // Witness v1
+        if (_spk.indexUint(1, 1) == OP_1) {
+            uint256 _payloadLen = _spk.indexUint(2, 1);
+            if (_bodyLength != 0x22 || _payloadLen != _bodyLength - 2) {
+                return TypedMemView.nullView();
+            }
+            return _spk.slice(3, _payloadLen, uint40(BTCTypes.TR));
         }
 
         return TypedMemView.nullView();

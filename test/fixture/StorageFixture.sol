@@ -4,7 +4,7 @@ pragma solidity ^0.8.26;
 import "forge-std/Test.sol";
 import "../../src/EBTC.sol";
 import "../../src/Storage.sol";
-import "../Util.sol";
+import "../utils/Util.sol";
 import "../mockup/BridgeTestnet.sol";
 
 struct StorageSetupInfo {
@@ -30,7 +30,7 @@ struct StorageSetupResult {
 }
 
 contract StorageFixture is Test {
-    uint256 constant DEFULT_STEP = 10;
+    uint256 constant DEFAULT_STEP = 10;
     bytes32 constant N_OF_N_PUBKEY = 0xd0f30e3182fa18e4975996dbaaa5bfb7d9b15c6d5b57f9f7e5f5e046829d62a4;
     bytes32 constant OPERATOR_PUBKEY = 0x58f54b8ba6af3f25b9bafaaf881060eafb761c6579c22eab31161d29e387bcc0;
     bytes constant WITHDRAWER_PUBKEY = hex"02f80c9d1ef9ff640df2058c431c282299f48424480d34f1bade2274746fb4df8b";
@@ -127,7 +127,7 @@ contract StorageFixture is Test {
         });
     }
 
-    uint256 step00 = DEFULT_STEP;
+    uint256 step00 = DEFAULT_STEP;
     uint256 height00 = 1285280;
     uint32 bits00 = 503543726;
     uint32 time00 = 1721800455;
@@ -139,7 +139,7 @@ contract StorageFixture is Test {
     bytes32 constant keyHash00 = hex"000002211692c33bd6d2e47ba7c02d12b7312c2f136f81911d0524708ab0fea8";
     uint32 keyTime00 = 1721800762;
 
-    uint256 step01 = DEFULT_STEP;
+    uint256 step01 = DEFAULT_STEP;
     uint256 height01 = 1303440;
     uint32 bits01 = 503543726;
     uint32 time01 = 1722363723;

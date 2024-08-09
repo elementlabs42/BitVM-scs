@@ -2,14 +2,12 @@
 pragma solidity ^0.8.26;
 
 import "./interfaces/IBridge.sol";
-import "./EBTC.sol";
+import "./interfaces/IStorage.sol";
 import "./libraries/ViewBTC.sol";
 import "./libraries/ViewSPV.sol";
 import "./libraries/Script.sol";
-import {IStorage} from "./interfaces/IStorage.sol";
-import {TransactionHelper} from "./libraries/TransactionHelper.sol";
 import "./libraries/Coder.sol";
-import "./interfaces/IStorage.sol";
+import "./EBTC.sol";
 
 contract Bridge is IBridge {
     EBTC ebtc;
@@ -24,7 +22,6 @@ contract Bridge is IBridge {
     using ViewSPV for bytes4;
     using Script for bytes32;
     using Script for bytes;
-    using TransactionHelper for bytes;
     using TypedMemView for bytes;
     using TypedMemView for bytes29;
 
@@ -59,39 +56,42 @@ contract Bridge is IBridge {
             revert PegInInvalid();
         }
 
-        Output[] memory vout1 = proof1.rawVout.parseVout();
-        Input[] memory vin2 = proof2.rawVin.parseVin();
-        Output[] memory vout2 = proof2.rawVout.parseVout();
-
-        if (vout1.length != 1 || vout2.length != 1) {
+        bytes29 vout1 = proof1.rawVout.ref(uint40(ViewBTC.BTCTypes.Vout));
+        bytes29 vout2 = proof2.rawVout.ref(uint40(ViewBTC.BTCTypes.Vout));
+        bytes29 vin2 = proof2.rawVin.ref(uint40(ViewBTC.BTCTypes.Vin));
+        if (vout1.voutCount() != 1 || vout2.voutCount() != 1) {
             revert InvalidVoutLength();
         }
 
-        if (vin2.length != 1) {
+        if (vin2.vinCount() != 1) {
             revert InvalidVinLength();
         }
 
+        bytes29 txOut1 = vout1.indexVout(0);
+        bytes29 txOut2 = vout2.indexVout(0);
+        bytes29 txIn2 = vin2.indexVin(0);
         bytes32 taproot = nOfNPubKey.generateDepositTaprootAddress(depositor, depositorPubKey, 2);
-        if (!vout1[0].scriptPubKey.equals(taproot.convertToScriptPubKey())) {
+        if (!txOut1.scriptPubkeyWithoutLength().equals(taproot.convertToScriptPubKey())) {
             revert InvalidScriptKey();
         }
 
-        if (vin2[0].prevTxID != proof1.txId) {
+        if (txIn2.outpoint().txidLE() != proof1.txId) {
             revert MismatchTransactionId();
         }
 
         bytes memory multisigScript = nOfNPubKey.generatePreSignScriptAddress();
-        if (!vout2[0].scriptPubKey.equals(multisigScript)) {
+        if (!txOut2.scriptPubkeyWithoutLength().equals(multisigScript)) {
             revert MismatchMultisigScript();
         }
-        if (!isValidAmount(vout2[0].value)) {
+        uint64 txOut2Value = txOut2.value();
+        if (!isValidAmount(txOut2Value)) {
             revert InvalidVoutValue();
         }
         if (!verifySPVProof(proof1) || !verifySPVProof(proof2)) {
             revert SpvCheckFailed();
         }
 
-        ebtc.mint(depositor, vout2[0].value);
+        ebtc.mint(depositor, txOut2Value);
 
         pegIns[proof2.txId] = true;
     }
@@ -128,12 +128,15 @@ contract Bridge is IBridge {
             revert PegOutNotFound();
         }
 
-        Output[] memory outputs = proof.rawVout.parseVout();
-        if (outputs.length != 1) {
+        // Output[] memory outputs = proof.rawVout.parseVout();
+        bytes29 vout = proof.rawVout.ref(uint40(ViewBTC.BTCTypes.Vout));
+        if (vout.voutCount() != 1) {
             revert InvalidPegOutProofOutputsSize();
         }
+
+        bytes29 txOut = vout.indexVout(0);
         if (
-            !outputs[0].scriptPubKey.equals(
+            !txOut.scriptPubkeyWithoutLength().equals(
                 Script.generatePayToPubKeyHashWithInscriptionScript(
                     info.destinationAddress, uint32(info.pegOutTime), withdrawer
                 ).generateP2WSHScriptPubKey()
@@ -141,7 +144,7 @@ contract Bridge is IBridge {
         ) {
             revert InvalidPegOutProofScriptPubKey();
         }
-        if (outputs[0].value != info.amount) {
+        if (txOut.value() != info.amount) {
             revert InvalidPegOutProofAmount();
         }
         bytes32 txId = ViewSPV.calculateTxId(

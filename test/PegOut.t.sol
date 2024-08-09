@@ -3,8 +3,7 @@ pragma solidity ^0.8.26;
 
 import "./fixture/StorageFixture.sol";
 import "../src/Bridge.sol";
-import "../src/libraries/TransactionHelper.sol";
-import "./Util.sol";
+import "./utils/Util.sol";
 
 contract PegOutTest is StorageFixture {
     function testPegOut_buildStorage() public {

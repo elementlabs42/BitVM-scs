@@ -4,7 +4,7 @@ pragma experimental ABIEncoderV2;
 
 import "./EllipticCurve.sol";
 
-library TaprootHelper {
+library Taproot {
     using EllipticCurve for uint256;
 
     uint256 private constant SECP256K1_P = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;
@@ -42,10 +42,6 @@ library TaprootHelper {
         } else {
             return abi.encodePacked(uint8(0xff), uint64(data.length), data);
         }
-    }
-
-    function hash160(bytes memory data) internal pure returns (bytes20) {
-        return ripemd160(abi.encodePacked(sha256(data)));
     }
 
     function createTaprootAddress(bytes32 n_of_n_pubkey, bytes[] memory scripts) public pure returns (bytes32) {

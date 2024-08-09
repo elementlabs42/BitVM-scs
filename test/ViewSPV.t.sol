@@ -7,7 +7,7 @@ import {Block} from "../src/interfaces/IBridge.sol";
 import "../src/libraries/ViewSPV.sol";
 import "../src/libraries/Endian.sol";
 import "./fixture/ConstantsFixture.sol";
-import "./Util.sol";
+import "./utils/Util.sol";
 
 contract ViewSPVTest is Test, ConstantsFixture {
     using TypedMemView for bytes;
