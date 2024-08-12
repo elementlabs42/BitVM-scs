@@ -41,20 +41,21 @@ export const toCompactSize = (size) => {
 export const hex2bytes = (hex) => new Uint8Array(hex.match(/.{1,2}/g).map(b => parseInt(b, 16)))
 export const bytes2hex = (bytes) => bytes.reduce((str, b) => str + b.toString(16).padStart(2, '0'), '')
 
+
 export const reverseBytesNArray = (hex, n) => {
-  hex = hex.substring(2) == '0x' ? hex.substring(2) : hex
-  if (hex.length % n * 2 !== 0) {
-    throw new Error(`hex length must be multiple of ${n * 2}`)
+  hex = hex.startsWith('0x') ? hex.substring(2) : hex;
+  if (hex.length % (n * 2) !== 0) {
+    throw new Error(`hex length must be multiple of ${n * 2}`);
   }
 
-  const bytes = hex2bytes(hex)
-  const bytes32 = new Uint8Array(n)
-  let output = ''
-  for (let i = 0; i <= bytes.length; ++i) {
-    bytes32[i % n] = bytes[i];
-    if (i % n === 0 && i > 0) {
-      output += bytes2hex(bytes32.reverse())
+  const bytes = hex2bytes(hex);
+  let output = '';
+  for (let i = 0; i < bytes.length; i += n) {
+    const bytes32 = new Uint8Array(n);
+    for (let j = 0; j < n; j++) {
+      bytes32[j] = bytes[i + j];
     }
+    output += bytes2hex(Array.from(bytes32).reverse());
   }
-  return output
-}
+  return output;
+};

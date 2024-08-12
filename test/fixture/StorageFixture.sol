@@ -83,32 +83,46 @@ contract StorageFixture is Test {
         return StorageSetupInfo(step00, height00, initHash00, bits00, time00, epochTime00, height00 + 1, headers00);
     }
 
-    function getPegInProofParamNormal(uint256 index) public pure returns (ProofParam memory) {
-        ProofParam memory proofParam = ProofParam({
-            merkleProof: hex"",
-            parents: hex"000000203522295e50871186bc2a4f81cc91b7b32b6bb45de1053601df32c61cda020000e6c973ecb929543b45663b1ea9ff56c36e643ed5f4f011bd29c37b48d0fc241b6f99a066ae77031ea3c8720000000020ca0ff7b9f96206a8151a9260a0017b921a28501ff454bcb645e15ea66800000033355516495a530cd5b4d22effb3a223f9df52ce516d32fd3db9971cda4317ed8e99a066ae77031e2c98590100000020b92119d922823be235d8796c69a70dcce693aa0f51a426b1ec33a774200200003d558ad9484106896c64d226af10bff5a43c44fb3818e169853908bf36244338b099a066ae77031e2109df000000002058702319836adeb3b28b68a028a79930577c048977adb184e72fa9ff0e030000f5a5cf66cf80038cff122b9834daefe0bb1b41a0e021e6392367042f1e1f547ed199a066ae77031ef4f6330000000020fc3b86c54203f0e46c4bdcd9edc4f4321912a259d1fdd4aade9eb236650000003c9c7b610fc9166c84fb6048223d0a09a41c8e8c3ebe479c4c33407e31b3f777f099a066ae77031e8d525300",
-            children: hex"00000020661d90dc5b0860f1cfb2284d16caa55cb95a22ce79d1de466f938e3586000000d2a634f792b577a08afb499ab2810951b368b45924143b4a261431260ae8089f2e9aa066ae77031ea5131c0000000020dbf0114ce5bf5279d7af28c5cf426e956ee03c1135bac7b838bffe7ccd010000442a7ba5c43e330067da7a971b13c9efe865ddba232585a53b3d296ad6f3675f4c9aa066ae77031e81db1d0000000020d23daf2c25a937cb1a4cff5b018cd7331c012769679bdcd349937cd53602000081477c0028014562868b1619f753bae5c72a08bbb4e488651f34b06a6e62f6516a9aa066ae77031e3e4b03000000002015f633ae1503c0030a57947a7b94453ba737c9b8a06db97fcc6e2180c9010000617a79ea1c976605699a7426b8929c01aad8714a6c4e0a33621f8d93baa7f59f899aa066ae77031ee9bb4f0000000020ddb5fb3602f57084daf786e379308ce14561dcb7d685b3a1eeaa44ec69000000c0de0d516bd487ae845b5601b4bc6576f15256723567a78c0aa33b3e930c3422a89aa066ae77031e5b6d9b00",
-            rawTx: hex"",
-            index: 0,
-            blockHeight: 1285305,
-            blockHeader: hex"00000020a51ea62908451cc02141e2fa48668348af572a8b54dcdbcd95ccef209702000034069dc3c29b0daeba1ab0f4ab76813b14707199b80817470e3ee8b79b0be5800f9aa066ae77031ead692600"
-        });
-        if (index == 1) {
-            proofParam.rawTx =
-                hex"02000000000101a0acebcc5bcfcec39d93436032280c7978df668a063979bdfc244f0869d94dc60100000000ffffffff01888a0100000000002251202f9c2de2b9630bb871200e9fb38700a0924da99a362d7472259b2e0f88403a3a024730440220649cf4404ccf8fd5b5b366cd641a0b7bc0f4bf09374d6eddfb5e57914baac4de02201b877b33febe1a7ed68b4748044d025bbc42113852dff88d390bd4cac4b1003a01232102edf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301bac00000000";
-            proofParam.index = 2;
-            proofParam.merkleProof =
-                hex"dde93c3baaec190ded24dddf0260a4ce8adab7f7b041f991517c39e4e9a7d5455c190bbfd1ae8967be072fac2a30f939f24c5a9e8a1cc84bb5bf17e170dcc485759216b18b982e77fef412b6bb274a1f2cce20949900641f12d54c157c972ba7";
-        }
-        if (index == 2) {
-            proofParam.rawTx =
-                hex"02000000000101349fcebdf4968888022b7e318a40627e544e3ecbb7868f55151c6d1ecdba83c50000000000ffffffff01a086010000000000220020be87e5c1a6f9957f1adc7d4296635b6b3f0da03a3a7819f919a827feff19501d04412732032bd019e45037404674a49a2d668a26165141b274e15109c6f44af966a7ae7cefcf6d259c45af9481be64db59419e2ce9a2719ff3f24a687ac0e02453d80141e7a6f15b6e5396611bb2371ab257c4dbdab0349aaf8b0077f362fd18eef055000ff73fffbe09f36ed17b6ca029876c259888e721d64d801f18ba0012c13eaffa017200632a3078456565656545656565456545656545654565456565454545656565654565656565656565454565456820d0f30e3182fa18e4975996dbaaa5bfb7d9b15c6d5b57f9f7e5f5e046829d62a4ad20edf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301bac41c0edf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301b4e70000014cbdf016664e1755d273ac3093ef9d8c032add8a9df9e39910b5c8b00000000";
-            proofParam.index = 3;
-            proofParam.merkleProof =
-                hex"349fcebdf4968888022b7e318a40627e544e3ecbb7868f55151c6d1ecdba83c55c190bbfd1ae8967be072fac2a30f939f24c5a9e8a1cc84bb5bf17e170dcc485759216b18b982e77fef412b6bb274a1f2cce20949900641f12d54c157c972ba7";
-        }
+    function getPegInProofParamNormal() public view returns (ProofParam memory, ProofParam memory) {
+        string memory json = vm.readFile("test/fixture/test-data.json");
 
-        return proofParam;
+        // Decode the individual fields
+        bytes memory merkleProof = abi.decode(vm.parseJson(json, ".pegIn.verification.proof1.merkleProof"), (bytes));
+        bytes memory parents = abi.decode(vm.parseJson(json, ".pegIn.verification.proof1.parents"), (bytes));
+        bytes memory children = abi.decode(vm.parseJson(json, ".pegIn.verification.proof1.children"), (bytes));
+        bytes memory rawTx = abi.decode(vm.parseJson(json, ".pegIn.verification.proof1.rawTx"), (bytes));
+        uint256 index = abi.decode(vm.parseJson(json, ".pegIn.verification.proof1.index"), (uint256));
+        uint256 blockHeight = abi.decode(vm.parseJson(json, ".pegIn.verification.proof1.blockHeight"), (uint256));
+        bytes memory blockHeader = abi.decode(vm.parseJson(json, ".pegIn.verification.proof1.blockHeader"), (bytes));
+
+        ProofParam memory proofParam1 = ProofParam({
+            merkleProof: merkleProof,
+            parents: parents,
+            children: children,
+            rawTx: rawTx,
+            index: index,
+            blockHeight: blockHeight,
+            blockHeader: blockHeader
+        });
+
+        merkleProof = abi.decode(vm.parseJson(json, ".pegIn.verification.proof2.merkleProof"), (bytes));
+        parents = abi.decode(vm.parseJson(json, ".pegIn.verification.proof2.parents"), (bytes));
+        children = abi.decode(vm.parseJson(json, ".pegIn.verification.proof2.children"), (bytes));
+        rawTx = abi.decode(vm.parseJson(json, ".pegIn.verification.proof2.rawTx"), (bytes));
+        index = abi.decode(vm.parseJson(json, ".pegIn.verification.proof2.index"), (uint256));
+        blockHeight = abi.decode(vm.parseJson(json, ".pegIn.verification.proof2.blockHeight"), (uint256));
+        blockHeader = abi.decode(vm.parseJson(json, ".pegIn.verification.proof2.blockHeader"), (bytes));
+
+        ProofParam memory proofParam2 = ProofParam({
+            merkleProof: merkleProof,
+            parents: parents,
+            children: children,
+            rawTx: rawTx,
+            index: index,
+            blockHeight: blockHeight,
+            blockHeader: blockHeader
+        });
+        return (proofParam1, proofParam2);
     }
 
     function getPegOutSetupInfoNormal() internal view returns (StorageSetupInfo memory setupInfo) {

@@ -51,23 +51,25 @@ import { getBlockInfoByHeight, getTransactionInfo } from './lib/api.mjs'
       epochTimestamp: epochStartBlock.timestamp,
     }
 
+    console.log(proof1Result.merkleProof.merkle.join(''))
+
     testData.pegIn.verification.proof1 = {
-      merkleProof: reverseBytesNArray(proof1Result.merkleProof.merkle.join(''), 32),
-      parents: proof1Result.parents.join(''),
-      children: proof1Result.children.join(''),
+      merkleProof: `0x${reverseBytesNArray(proof1Result.merkleProof.merkle.join(''), 32)}`,
+      parents: `0x${proof1Result.parents.join('')}`,
+      children: `0x${proof1Result.children.join('')}`,
       index: proof1Result.proofInfo.block_index,
       blockHeight: proof1Result.proofInfo.self.height,
-      blockHeader: proof1Result.header,
-      rawTx: proof1Result.rawTx,
+      blockHeader: `0x${proof1Result.header}`,
+      rawTx: `0x${proof1Result.rawTx}`,
     }
     testData.pegIn.verification.proof2 = {
-      merkleProof: reverseBytesNArray(proof2Result.merkleProof.merkle.join(''), 32),
-      parents: proof2Result.parents.join(''),
-      children: proof2Result.children.join(''),
+      merkleProof: `0x${reverseBytesNArray(proof2Result.merkleProof.merkle.join(''), 32)}`,
+      parents: `0x${proof2Result.parents.join('')}`,
+      children: `0x${proof2Result.children.join('')}`,
       index: proof2Result.proofInfo.block_index,
       blockHeight: proof2Result.proofInfo.self.height,
-      blockHeader: proof2Result.header,
-      rawTx: proof2Result.rawTx,
+      blockHeader: `0x${proof2Result.header}`,
+      rawTx: `0x${proof2Result.rawTx}`,
     }
     fs.writeFileSync(TEST_DATA_FILE, JSON.stringify(testData, null, 2) + '\n')
 
