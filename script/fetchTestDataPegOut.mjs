@@ -46,13 +46,13 @@ import { getBlockInfoByHeight, getTransactionInfo } from './lib/api.mjs'
     }
 
     testData.pegOut.verification.proof = {
-      merkleProof: reverseBytesNArray(proofResult.merkleProof.merkle.join(''), 32),
-      parents: proofResult.parents.join(''),
-      children: proofResult.children.join(''),
+      merkleProof: `0x${reverseBytesNArray(proofResult.merkleProof.merkle.join(''), 32)}`,
+      parents: `0x${proofResult.parents.join('')}`,
+      children: `0x${proofResult.children.join('')}`,
       index: proofResult.proofInfo.block_index,
       blockHeight: proofResult.proofInfo.self.height,
-      blockHeader: proofResult.header,
-      rawTx: proofResult.rawTx,
+      blockHeader: `0x${proofResult.header}`,
+      rawTx: `0x${proofResult.rawTx}`,
     }
 
     testData.pegOut.withdrawer = SHARED_DATA.withdrawerEvmAddress

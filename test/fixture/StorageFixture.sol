@@ -42,6 +42,9 @@ contract StorageFixture is Test {
     address submitter = vm.addr(5);
 
     function buildStorage(StorageSetupInfo memory params) public returns (StorageSetupResult memory) {
+        string memory json = vm.readFile("test/fixture/test-data.json");
+        address withdrawer = abi.decode(vm.parseJson(json, ".pegOut.withdrawer"), (address));
+
         vm.deal(owner, 100 ether);
 
         vm.prank(owner);
@@ -80,7 +83,19 @@ contract StorageFixture is Test {
     }
 
     function getNormalSetupInfo() public view returns (StorageSetupInfo memory) {
-        return StorageSetupInfo(step00, height00, initHash00, bits00, time00, epochTime00, height00 + 1, headers00);
+        string memory json = vm.readFile("test/fixture/test-data.json");
+
+        uint256 step = abi.decode(vm.parseJson(json, ".pegIn.storage.constrcutor.step"), (uint256));
+        uint256 height = abi.decode(vm.parseJson(json, ".pegIn.storage.constrcutor.height"), (uint256));
+        bytes32 blockHash = bytes32(abi.decode(vm.parseJson(json, ".pegIn.storage.constrcutor.hash"), (bytes)));
+
+        uint32 timestamp = uint32(abi.decode(vm.parseJson(json, ".pegIn.storage.constrcutor.timestamp"), (uint256)));
+        uint32 bits = uint32(abi.decode(vm.parseJson(json, ".pegIn.storage.constrcutor.bits"), (uint256)));
+        uint32 epochTimestamp =
+            uint32(abi.decode(vm.parseJson(json, ".pegIn.storage.constrcutor.epochTimestamp"), (uint256)));
+        bytes memory headers = abi.decode(vm.parseJson(json, ".pegIn.storage.submit[0].headers"), (bytes));
+
+        return StorageSetupInfo(step, height, blockHash, bits, timestamp, epochTimestamp, height + 1, headers);
     }
 
     function getPegInProofParamNormal() public view returns (ProofParam memory, ProofParam memory) {
@@ -126,19 +141,43 @@ contract StorageFixture is Test {
     }
 
     function getPegOutSetupInfoNormal() internal view returns (StorageSetupInfo memory setupInfo) {
-        return StorageSetupInfo(step01, height01, initHash01, bits01, time01, epochTime01, height01 + 1, headers01);
+        string memory json = vm.readFile("test/fixture/test-data.json");
+
+        uint256 step = abi.decode(vm.parseJson(json, ".pegOut.storage.constrcutor.step"), (uint256));
+        uint256 height = abi.decode(vm.parseJson(json, ".pegOut.storage.constrcutor.height"), (uint256));
+        bytes32 blockHash = bytes32(abi.decode(vm.parseJson(json, ".pegOut.storage.constrcutor.hash"), (bytes)));
+
+        uint32 timestamp = uint32(abi.decode(vm.parseJson(json, ".pegOut.storage.constrcutor.timestamp"), (uint256)));
+        uint32 bits = uint32(abi.decode(vm.parseJson(json, ".pegOut.storage.constrcutor.bits"), (uint256)));
+        uint32 epochTimestamp =
+            uint32(abi.decode(vm.parseJson(json, ".pegOut.storage.constrcutor.epochTimestamp"), (uint256)));
+        bytes memory headers = abi.decode(vm.parseJson(json, ".pegOut.storage.submit[0].headers"), (bytes));
+
+        return StorageSetupInfo(step, height, blockHash, bits, timestamp, epochTimestamp, height + 1, headers);
     }
 
     function getPegOutProofParamNormal() internal pure returns (ProofParam memory proofParam) {
-        proofParam = ProofParam({
-            merkleProof: hex"351d4cfaa5589dd8252a02aaee787182fa9a01d870f7f3f7af96641866446c93aa32f83f9ff4face19f04d06ab609f055d390ef6c28f48888774fa7c441ddfbb",
-            parents: hex"000000203eab760167ddcd77ef29f43074f9bd3ef5add10a47a62c9ecfb5580e3d0300008483dfdf267b8b2dab7961514ab3d42f3aa5f18a2a703f840bc92233b73521d7b531a966ae77031e408d1f00000000208415f586c5d6a7d386e2f23f22f0f2cfadbd90d1fa5b9de6101f4efc9500000037947e20f31e8c5160fc51265f1f15d83df22374b8285eaaedb3ba7122876391d431a966ae77031eda834700000000204e997ce9cba84b85a4e6b4d5b100c6b3127a9134f2a2d9ece4db4a87660000006db83b950f5541b01d3afb7b2c3df0faf87465dc56391e7846d44f5125678614f331a966ae77031e442d04000000002060a25773a309b22988e3a76fdf9fe0e076c9a174dcef7d3f43ffb2b0060000002c57a887a1a11761c4a72522806529f91ac508370c48ccf1edf329011ede8e9f1132a966ae77031ec4ff4b00000000204a95f73baff97675c20738cad0fe588ea9ac5de6a36ff251c8cc03796e0300004c20067d46e39c630765027cadf52980e8dfaad25244753f742460812a3dcc2f3032a966ae77031ef4b79800",
-            children: hex"000000202117f766c60d99c5709218f1d6fda3e7ba14d40a4e21cf3eeaf12af4e8000000b42f3678064766e281fd8f462e7b5f6522ba76c82f5ea5a3d9c6851bf43df0e16e32a966ae77031e355fa2000000002076c2088550eb273a25e5ad506601b1d0cca6ff6d4b09f7a904632aee21000000abe7dcc5b5f6117e0b9d993abb68677cd373b3dcf2841aa16e3c5191763db73d8e32a966ae77031e2fa2520000000020a8f6b2b6868136e25a70f4d769cf4767af300ddc419df161d24393bdf4000000aa712119556ccf994172e94b31f9398121215e770edd0aa4b8fbedcabe32fdebad32a966ae77031e49e083000000002082eb4d8cd756431c169d4f9ddbedcc0c9e9c81743b7c8123f688473c9402000047d21d4539ca9e5bd3e0eaa6bb7fb274cee50fe99fdf9a1b515c7fee8b482fa8cd32a966ae77031e6ef5090000000020904ecb656f2f0d342e89108ccb3eaae71c3537b9eb9ca39da5902b325e0100009163d677f8e57898ed68a1a3e667dbccb4970f6cc57c81cf722bfd0131216ebceb32a966ae77031eab10dd00",
-            rawTx: hex"0200000000010161cdef4644c1c75cd06513c12cd22f6f32b9bcf9eba92fabf94d54b66e0bd30a0000000000ffffffff01a0860100000000002200204f82b133a5c31fd6f3b4199be2b776b7cdd9803f2e1c1848d932ee3cdd2ca52102483045022100f61ec11aa91b94a79ca47ed9afd82b7fbf11d97743a0b8acfc0e6cf921103ff602201857f9377b48c13f6a6bc0ebb84569e9769ebca5d7449593234613ecb433b2140123210358f54b8ba6af3f25b9bafaaf881060eafb761c6579c22eab31161d29e387bcc0ac00000000",
-            index: 2,
-            blockHeight: 1303465,
-            blockHeader: hex"000000202cf2c16aa1cc70e8e2f1dca54bcf769881b810becba97fe3e184d25f810200001a63b3e0ad804284e988850b96a74afb053bba07abb5c2b1589dd92ee0f663bf5032a966ae77031eb18f0600"
+        string memory json = vm.readFile("test/fixture/test-data.json");
+
+        // Decode the individual fields
+        bytes memory merkleProof = abi.decode(vm.parseJson(json, ".pegOut.verification.proof.merkleProof"), (bytes));
+        bytes memory parents = abi.decode(vm.parseJson(json, ".pegOut.verification.proof.parents"), (bytes));
+        bytes memory children = abi.decode(vm.parseJson(json, ".pegOut.verification.proof.children"), (bytes));
+        bytes memory rawTx = abi.decode(vm.parseJson(json, ".pegOut.verification.proof.rawTx"), (bytes));
+        uint256 index = abi.decode(vm.parseJson(json, ".pegOut.verification.proof.index"), (uint256));
+        uint256 blockHeight = abi.decode(vm.parseJson(json, ".pegOut.verification.proof.blockHeight"), (uint256));
+        bytes memory blockHeader = abi.decode(vm.parseJson(json, ".pegOut.verification.proof.blockHeader"), (bytes));
+
+        ProofParam memory proofParam = ProofParam({
+            merkleProof: merkleProof,
+            parents: parents,
+            children: children,
+            rawTx: rawTx,
+            index: index,
+            blockHeight: blockHeight,
+            blockHeader: blockHeader
         });
+        return proofParam;
     }
 
     uint256 step00 = DEFAULT_STEP;
