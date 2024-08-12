@@ -59,7 +59,8 @@
         "children": "",
         "index": 0,
         "blockHeight": 0,
-        "blockHeader": ""
+        "blockHeader": "",
+        "rawTx": ""
       }
     },
     "withdrawer": "",

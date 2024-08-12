@@ -1,15 +1,10 @@
 import fs from 'fs'
-import path from 'path'
-import { fileURLToPath } from 'url';
 import assert from 'assert'
-import { DEFAULT_STEP, DEFAULT_BLOCK_COUNT } from './lib/helper.mjs'
+import { DEFAULT_STEP, DEFAULT_BLOCK_COUNT, TEST_DATA_FILE } from './lib/helper.mjs'
 import { initializaeTestData, processProofInfo, processBlockInfos } from './lib/helper.mjs'
 import { getProvider } from './lib/provider.mjs'
 import { reverseBytesNArray, BLOCK_HEADER_BYTES, EPOCH_BLOCK_COUNT } from './lib/coder.mjs'
 import { getBlockInfoByHeight, getTransactionInfo } from './lib/api.mjs'
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const TEST_DATA_FILE = path.join(__dirname, '../test/fixture/test-data.json')
 
   // usage: `node script/fetchTestDataPegIn.mjs <provider> <depositTxId> <confirmTxId>`
   ; (async () => {

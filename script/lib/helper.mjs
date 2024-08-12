@@ -9,6 +9,13 @@ export const DEFAULT_BLOCK_COUNT = 10
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TEST_DATA_SAMPLE_FILE = path.join(__dirname, '../../test/fixture/test-data.sample.json')
+export const TEST_DATA_FILE = path.join(__dirname, '../../test/fixture/test-data.json')
+
+export const SHARED_DATA = {
+  withdrawerEvmAddress: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+  pegOutValue: 102400,
+  pegOutTimestamp: 1722328130,
+}
 
 export function initializaeTestData() {
   return JSON.parse(fs.readFileSync(TEST_DATA_SAMPLE_FILE, 'utf-8'))
