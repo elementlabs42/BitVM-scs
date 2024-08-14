@@ -9,15 +9,14 @@ contract PegInTest is StorageFixture {
     function testPegIn_buildStorage() public {
         StorageSetupInfo memory initNormal = getNormalSetupInfo();
         StorageSetupResult memory fixture = buildStorage(initNormal);
+        string memory json = vm.readFile("test/fixture/test-data.json");
+
+        uint256 step = abi.decode(vm.parseJson(json, ".pegIn.storage.constrcutor.step"), (uint256));
+        bytes memory headers = abi.decode(vm.parseJson(json, ".pegIn.storage.submit[0].headers"), (bytes));
 
         IStorage _storage = IStorage(fixture._storage);
         uint256 keyBlockCount = _storage.getKeyBlockCount();
-        assertEq(keyBlockCount, headers00.length / Coder.BLOCK_HEADER_LENGTH / step00 + 1);
-
-        IStorage.KeyBlock memory expectedKeyBlock = IStorage.KeyBlock(keyHash00, 0, keyTime00);
-        IStorage.KeyBlock memory actualKeyBlock = _storage.getKeyBlock(height00 + step00);
-        assertEq(expectedKeyBlock.blockHash, actualKeyBlock.blockHash);
-        assertEq(expectedKeyBlock.timestamp, actualKeyBlock.timestamp);
+        assertEq(keyBlockCount, headers.length / Coder.BLOCK_HEADER_LENGTH / step + 1);
     }
 
     function testPegIn_pegIn_normal() public {

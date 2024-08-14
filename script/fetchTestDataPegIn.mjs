@@ -41,17 +41,15 @@ import { getBlockInfoByHeight, getTransactionInfo } from './lib/api.mjs'
     }
     const epochStartHeight = Math.floor(blockResult.blockInfos[0].height / EPOCH_BLOCK_COUNT) * EPOCH_BLOCK_COUNT
     const epochStartBlock = await getBlockInfoByHeight(provider, epochStartHeight)
-    testData.pegIn.storage.submit = [{ headers: headersString }]
+    testData.pegIn.storage.submit = [{ headers: `0x${headersString}` }]
     testData.pegIn.storage.constrcutor = {
       step: DEFAULT_STEP,
       height: blockResult.blockInfos[0].height,
-      hash: blockResult.blockInfos[0].id,
+      hash: `0x${blockResult.blockInfos[0].id}`,
       timestamp: blockResult.blockInfos[0].timestamp,
       bits: blockResult.blockInfos[0].bits,
       epochTimestamp: epochStartBlock.timestamp,
     }
-
-    console.log(proof1Result.merkleProof.merkle.join(''))
 
     testData.pegIn.verification.proof1 = {
       merkleProof: `0x${reverseBytesNArray(proof1Result.merkleProof.merkle.join(''), 32)}`,

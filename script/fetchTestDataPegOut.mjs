@@ -35,11 +35,11 @@ import { getBlockInfoByHeight, getTransactionInfo } from './lib/api.mjs'
     }
     const epochStartHeight = Math.floor(blockResult.blockInfos[0].height / EPOCH_BLOCK_COUNT) * EPOCH_BLOCK_COUNT
     const epochStartBlock = await getBlockInfoByHeight(provider, epochStartHeight)
-    testData.pegOut.storage.submit = [{ headers: headersString }]
+    testData.pegOut.storage.submit = [{ headers: `0x${headersString}` }]
     testData.pegOut.storage.constrcutor = {
       step: DEFAULT_STEP,
       height: blockResult.blockInfos[0].height,
-      hash: blockResult.blockInfos[0].id,
+      hash: `0x${blockResult.blockInfos[0].id}`,
       timestamp: blockResult.blockInfos[0].timestamp,
       bits: blockResult.blockInfos[0].bits,
       epochTimestamp: epochStartBlock.timestamp,

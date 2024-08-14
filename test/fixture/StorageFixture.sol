@@ -87,8 +87,7 @@ contract StorageFixture is Test {
 
         uint256 step = abi.decode(vm.parseJson(json, ".pegIn.storage.constrcutor.step"), (uint256));
         uint256 height = abi.decode(vm.parseJson(json, ".pegIn.storage.constrcutor.height"), (uint256));
-        bytes32 blockHash = bytes32(abi.decode(vm.parseJson(json, ".pegIn.storage.constrcutor.hash"), (bytes)));
-
+        bytes32 blockHash = bytes32(abi.decode(vm.parseJson(json, ".pegIn.storage.constrcutor.hash"), (bytes32)));
         uint32 timestamp = uint32(abi.decode(vm.parseJson(json, ".pegIn.storage.constrcutor.timestamp"), (uint256)));
         uint32 bits = uint32(abi.decode(vm.parseJson(json, ".pegIn.storage.constrcutor.bits"), (uint256)));
         uint32 epochTimestamp =
@@ -145,7 +144,7 @@ contract StorageFixture is Test {
 
         uint256 step = abi.decode(vm.parseJson(json, ".pegOut.storage.constrcutor.step"), (uint256));
         uint256 height = abi.decode(vm.parseJson(json, ".pegOut.storage.constrcutor.height"), (uint256));
-        bytes32 blockHash = bytes32(abi.decode(vm.parseJson(json, ".pegOut.storage.constrcutor.hash"), (bytes)));
+        bytes32 blockHash = bytes32(abi.decode(vm.parseJson(json, ".pegOut.storage.constrcutor.hash"), (bytes32)));
 
         uint32 timestamp = uint32(abi.decode(vm.parseJson(json, ".pegOut.storage.constrcutor.timestamp"), (uint256)));
         uint32 bits = uint32(abi.decode(vm.parseJson(json, ".pegOut.storage.constrcutor.bits"), (uint256)));
@@ -156,7 +155,7 @@ contract StorageFixture is Test {
         return StorageSetupInfo(step, height, blockHash, bits, timestamp, epochTimestamp, height + 1, headers);
     }
 
-    function getPegOutProofParamNormal() internal pure returns (ProofParam memory proofParam) {
+    function getPegOutProofParamNormal() internal view returns (ProofParam memory proofParam) {
         string memory json = vm.readFile("test/fixture/test-data.json");
 
         // Decode the individual fields
