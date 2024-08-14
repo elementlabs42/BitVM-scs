@@ -228,7 +228,6 @@ contract Bridge is IBridge {
      * @dev checks any given number is a power of 2
      */
     function isValidAmount(uint256 n) internal pure returns (bool) {
-        (n != 0) && ((n & (n - 1)) == 0);
-        return true;
+        return (n != 0) && ((n & (n - 1)) == 0);
     }
 }

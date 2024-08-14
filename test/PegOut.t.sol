@@ -24,6 +24,8 @@ contract PegOutTest is StorageFixture {
         StorageSetupResult memory fixture = buildStorage(initNormal);
         string memory json = vm.readFile("test/fixture/test-data.json");
         uint32 pegoutTimestamp = uint32(abi.decode(vm.parseJson(json, ".pegOut.pegOutTimestamp"), (uint256)));
+        uint256 pegoutAmount = uint32(abi.decode(vm.parseJson(json, ".pegOut.amount"), (uint256)));
+
         Bridge bridge = Bridge(fixture.bridge);
         address withdrawer = fixture.withdrawer;
         address operator = fixture.operator;
@@ -33,7 +35,7 @@ contract PegOutTest is StorageFixture {
         string memory withdrawerAddr = Util.generateAddress(WITHDRAWER_PUBKEY, Util.P2PKH_TESTNET);
         vm.warp(pegoutTimestamp);
         vm.startPrank(withdrawer);
-        bridge.pegOut(withdrawerAddr, Outpoint(hex"1234", 0), 100000, OPERATOR_PUBKEY);
+        bridge.pegOut(withdrawerAddr, Outpoint(hex"1234", 0), pegoutAmount, OPERATOR_PUBKEY);
         vm.stopPrank();
 
         vm.prank(operator);
@@ -55,10 +57,11 @@ contract PegOutTest is StorageFixture {
         ProofInfo memory proof = Util.paramToProof(proofParam, false);
         string memory json = vm.readFile("test/fixture/test-data.json");
         uint32 pegoutTimestamp = uint32(abi.decode(vm.parseJson(json, ".pegOut.pegOutTimestamp"), (uint256)));
+        uint256 pegoutAmount = uint32(abi.decode(vm.parseJson(json, ".pegOut.amount"), (uint256)));
         string memory withdrawerAddr = Util.generateAddress(WITHDRAWER_PUBKEY, Util.P2PKH_TESTNET);
         vm.warp(pegoutTimestamp);
         vm.startPrank(withdrawer);
-        bridge.pegOut(withdrawerAddr, Outpoint(hex"1234", 0), 100000, OPERATOR_PUBKEY);
+        bridge.pegOut(withdrawerAddr, Outpoint(hex"1234", 0), pegoutAmount, OPERATOR_PUBKEY);
         vm.stopPrank();
 
         vm.prank(operator);
