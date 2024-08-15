@@ -12,6 +12,7 @@ const TEST_DATA_SAMPLE_FILE = path.join(__dirname, '../../test/fixture/test-data
 export const TEST_DATA_FILE = path.join(__dirname, '../../test/fixture/test-data.json')
 
 export const SHARED_DATA = {
+  depositorEvmAddress: '0xDDdDddDdDdddDDddDDddDDDDdDdDDdDDdDDDDDDd',
   withdrawerEvmAddress: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
   pegOutValue: 131072,
   pegOutTimestamp: 1722328130,

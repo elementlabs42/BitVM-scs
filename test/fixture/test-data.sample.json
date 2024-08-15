@@ -34,7 +34,8 @@
         "blockHeader": "",
         "rawTx": ""
       }
-    }
+    },
+    "depositor": ""
   },
   "pegOut": {
     "storage": {

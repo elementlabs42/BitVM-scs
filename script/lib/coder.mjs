@@ -43,19 +43,19 @@ export const bytes2hex = (bytes) => bytes.reduce((str, b) => str + b.toString(16
 
 
 export const reverseBytesNArray = (hex, n) => {
-  hex = hex.startsWith('0x') ? hex.substring(2) : hex;
+  hex = hex.startsWith('0x') ? hex.substring(2) : hex
   if (hex.length % (n * 2) !== 0) {
-    throw new Error(`hex length must be multiple of ${n * 2}`);
+    throw new Error(`hex length must be multiple of ${n * 2}`)
   }
 
-  const bytes = hex2bytes(hex);
-  let output = '';
+  const bytes = hex2bytes(hex)
+  let output = ''
   for (let i = 0; i < bytes.length; i += n) {
-    const bytes32 = new Uint8Array(n);
+    const bytes32 = new Uint8Array(n)
     for (let j = 0; j < n; j++) {
-      bytes32[j] = bytes[i + j];
+      bytes32[j] = bytes[i + j]
     }
-    output += bytes2hex(Array.from(bytes32).reverse());
+    output += bytes2hex(Array.from(bytes32).reverse())
   }
-  return output;
-};
+  return output
+}

@@ -10,21 +10,22 @@ contract PegOutTest is StorageFixture {
         StorageSetupInfo memory initNormal = getPegOutSetupInfoNormal();
         StorageSetupResult memory fixture = buildStorage(initNormal);
 
-        string memory json = vm.readFile("test/fixture/test-data.json");
-        uint256 step = abi.decode(vm.parseJson(json, ".pegOut.storage.constrcutor.step"), (uint256));
-        bytes memory headers = abi.decode(vm.parseJson(json, ".pegOut.storage.submit[0].headers"), (bytes));
-
         IStorage _storage = IStorage(fixture._storage);
         uint256 keyBlockCount = _storage.getKeyBlockCount();
-        assertEq(keyBlockCount, headers.length / Coder.BLOCK_HEADER_LENGTH / step + 1);
+        assertEq(keyBlockCount, headers01.length / Coder.BLOCK_HEADER_LENGTH / step01 + 1);
+
+        IStorage.KeyBlock memory expectedKeyBlock = IStorage.KeyBlock(keyHash01, 0, keyTime01);
+        IStorage.KeyBlock memory actualKeyBlock = _storage.getKeyBlock(keyHeight01);
+        IStorage.KeyBlock memory actualKeyBlock2 = _storage.getKeyBlock(keyHeight01 + step01 - 1);
+        assertEq(expectedKeyBlock.blockHash, actualKeyBlock.blockHash);
+        assertEq(expectedKeyBlock.timestamp, actualKeyBlock.timestamp);
+        assertEq(expectedKeyBlock.blockHash, actualKeyBlock2.blockHash);
+        assertEq(expectedKeyBlock.timestamp, actualKeyBlock2.timestamp);
     }
 
     function testPegOut_pegOut_normal() public {
         StorageSetupInfo memory initNormal = getPegOutSetupInfoNormal();
         StorageSetupResult memory fixture = buildStorage(initNormal);
-        string memory json = vm.readFile("test/fixture/test-data.json");
-        uint32 pegoutTimestamp = uint32(abi.decode(vm.parseJson(json, ".pegOut.pegOutTimestamp"), (uint256)));
-        uint256 pegoutAmount = uint32(abi.decode(vm.parseJson(json, ".pegOut.amount"), (uint256)));
 
         Bridge bridge = Bridge(fixture.bridge);
         address withdrawer = fixture.withdrawer;
@@ -33,9 +34,9 @@ contract PegOutTest is StorageFixture {
         ProofInfo memory proof = Util.paramToProof(proofParam, false);
 
         string memory withdrawerAddr = Util.generateAddress(WITHDRAWER_PUBKEY, Util.P2PKH_TESTNET);
-        vm.warp(pegoutTimestamp);
+        vm.warp(1722328130);
         vm.startPrank(withdrawer);
-        bridge.pegOut(withdrawerAddr, Outpoint(hex"1234", 0), pegoutAmount, OPERATOR_PUBKEY);
+        bridge.pegOut(withdrawerAddr, Outpoint(hex"1234", 0), 131072, OPERATOR_PUBKEY);
         vm.stopPrank();
 
         vm.prank(operator);
@@ -55,17 +56,39 @@ contract PegOutTest is StorageFixture {
         address withdrawer = fixture.withdrawer;
         address operator = fixture.operator;
         ProofInfo memory proof = Util.paramToProof(proofParam, false);
-        string memory json = vm.readFile("test/fixture/test-data.json");
-        uint32 pegoutTimestamp = uint32(abi.decode(vm.parseJson(json, ".pegOut.pegOutTimestamp"), (uint256)));
-        uint256 pegoutAmount = uint32(abi.decode(vm.parseJson(json, ".pegOut.amount"), (uint256)));
+
         string memory withdrawerAddr = Util.generateAddress(WITHDRAWER_PUBKEY, Util.P2PKH_TESTNET);
-        vm.warp(pegoutTimestamp);
+        vm.warp(1722328130);
         vm.startPrank(withdrawer);
-        bridge.pegOut(withdrawerAddr, Outpoint(hex"1234", 0), pegoutAmount, OPERATOR_PUBKEY);
+        bridge.pegOut(withdrawerAddr, Outpoint(hex"1234", 0), 131072, OPERATOR_PUBKEY);
         vm.stopPrank();
 
         vm.prank(operator);
         vm.expectRevert(abi.encodeWithSelector(IBridge.InsufficientAccumulatedDifficulty.selector));
+        bridge.burnEBTC(withdrawer, proof);
+    }
+
+    function testPegOut_pegOut_file() public {
+        if (!data.valid()) {
+            console.log("Invalid Data file");
+            return;
+        }
+
+        StorageSetupResult memory fixture = buildStorageFromDataFile(data._storage(data.pegOutStorageKey()));
+
+        Bridge bridge = Bridge(fixture.bridge);
+        address withdrawer = fixture.withdrawer;
+        address operator = fixture.operator;
+        ProofParam memory proofParam = data.proof(data.pegOutProofKey());
+        ProofInfo memory proof = Util.paramToProof(proofParam, false);
+
+        string memory withdrawerAddr = Util.generateAddress(WITHDRAWER_PUBKEY, Util.P2PKH_TESTNET);
+        vm.warp(data.pegOutTimestamp());
+        vm.startPrank(withdrawer);
+        bridge.pegOut(withdrawerAddr, Outpoint(hex"1234", 0), data.pegOutAmount(), OPERATOR_PUBKEY);
+        vm.stopPrank();
+
+        vm.prank(operator);
         bridge.burnEBTC(withdrawer, proof);
     }
 }

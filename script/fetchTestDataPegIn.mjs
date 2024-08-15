@@ -1,6 +1,6 @@
 import fs from 'fs'
 import assert from 'assert'
-import { DEFAULT_STEP, DEFAULT_BLOCK_COUNT, TEST_DATA_FILE } from './lib/helper.mjs'
+import { DEFAULT_STEP, DEFAULT_BLOCK_COUNT, TEST_DATA_FILE, SHARED_DATA } from './lib/helper.mjs'
 import { initializaeTestData, processProofInfo, processBlockInfos } from './lib/helper.mjs'
 import { getProvider } from './lib/provider.mjs'
 import { reverseBytesNArray, BLOCK_HEADER_BYTES, EPOCH_BLOCK_COUNT } from './lib/coder.mjs'
@@ -69,6 +69,8 @@ import { getBlockInfoByHeight, getTransactionInfo } from './lib/api.mjs'
       blockHeader: `0x${proof2Result.header}`,
       rawTx: `0x${proof2Result.rawTx}`,
     }
+
+    testData.pegIn.depositor = SHARED_DATA.depositorEvmAddress
     fs.writeFileSync(TEST_DATA_FILE, JSON.stringify(testData, null, 2) + '\n')
 
     console.log('>>> DONE')
