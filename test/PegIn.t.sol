@@ -2,7 +2,6 @@
 pragma solidity ^0.8.26;
 
 import "./fixture/StorageFixture.sol";
-import "../src/libraries/TransactionHelper.sol";
 import "./mockup/BridgeTestnet.sol";
 import "./Script.t.sol";
 
@@ -32,12 +31,25 @@ contract PegInTest is StorageFixture {
         ProofInfo memory proof2 = Util.paramToProof(proofParam2, false);
 
         Bridge bridge = Bridge(fixture.bridge);
-        bridge.pegIn(
-            0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
-            hex"edf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301b",
-            proof1,
-            proof2
-        );
+        bridge.pegIn(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE, DEPOSITOR_PUBKEY, proof1, proof2);
+        assertEq(true, true);
+    }
+
+    function testPegIn_pegIn_file() public {
+        if (!data.valid()) {
+            console.log("Invalid Data file");
+            return;
+        }
+        StorageSetupResult memory fixture = buildStorageFromDataFile(data._storage(data.pegInStorageKey()));
+
+        ProofParam memory proofParam1 = data.proof(data.pegInProofKey("1"));
+        ProofParam memory proofParam2 = data.proof(data.pegInProofKey("2"));
+
+        ProofInfo memory proof1 = Util.paramToProof(proofParam1, false);
+        ProofInfo memory proof2 = Util.paramToProof(proofParam2, false);
+
+        Bridge bridge = Bridge(fixture.bridge);
+        bridge.pegIn(data.depositor(), DEPOSITOR_PUBKEY, proof1, proof2);
         assertEq(true, true);
     }
 }

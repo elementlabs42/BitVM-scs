@@ -3,8 +3,7 @@ pragma solidity ^0.8.26;
 
 import "./fixture/StorageFixture.sol";
 import "../src/Bridge.sol";
-import "../src/libraries/TransactionHelper.sol";
-import "./Util.sol";
+import "./utils/Util.sol";
 
 contract PegOutTest is StorageFixture {
     function testPegOut_buildStorage() public {
@@ -32,12 +31,12 @@ contract PegOutTest is StorageFixture {
         address withdrawer = fixture.withdrawer;
         address operator = fixture.operator;
         ProofParam memory proofParam = getPegOutProofParamNormal();
-        ProofInfo memory proof = Util.paramToProof(proofParam, true);
+        ProofInfo memory proof = Util.paramToProof(proofParam, false);
 
         string memory withdrawerAddr = Util.generateAddress(WITHDRAWER_PUBKEY, Util.P2PKH_TESTNET);
         vm.warp(1722328130);
         vm.startPrank(withdrawer);
-        bridge.pegOut(withdrawerAddr, Outpoint(hex"1234", 0), 100000, OPERATOR_PUBKEY);
+        bridge.pegOut(withdrawerAddr, Outpoint(hex"1234", 0), 131072, OPERATOR_PUBKEY);
         vm.stopPrank();
 
         vm.prank(operator);
@@ -56,16 +55,40 @@ contract PegOutTest is StorageFixture {
         Bridge bridge = Bridge(fixture.bridge);
         address withdrawer = fixture.withdrawer;
         address operator = fixture.operator;
-        ProofInfo memory proof = Util.paramToProof(proofParam, true);
+        ProofInfo memory proof = Util.paramToProof(proofParam, false);
 
         string memory withdrawerAddr = Util.generateAddress(WITHDRAWER_PUBKEY, Util.P2PKH_TESTNET);
         vm.warp(1722328130);
         vm.startPrank(withdrawer);
-        bridge.pegOut(withdrawerAddr, Outpoint(hex"1234", 0), 100000, OPERATOR_PUBKEY);
+        bridge.pegOut(withdrawerAddr, Outpoint(hex"1234", 0), 131072, OPERATOR_PUBKEY);
         vm.stopPrank();
 
         vm.prank(operator);
         vm.expectRevert(abi.encodeWithSelector(IBridge.InsufficientAccumulatedDifficulty.selector));
+        bridge.burnEBTC(withdrawer, proof);
+    }
+
+    function testPegOut_pegOut_file() public {
+        if (!data.valid()) {
+            console.log("Invalid Data file");
+            return;
+        }
+
+        StorageSetupResult memory fixture = buildStorageFromDataFile(data._storage(data.pegOutStorageKey()));
+
+        Bridge bridge = Bridge(fixture.bridge);
+        address withdrawer = fixture.withdrawer;
+        address operator = fixture.operator;
+        ProofParam memory proofParam = data.proof(data.pegOutProofKey());
+        ProofInfo memory proof = Util.paramToProof(proofParam, false);
+
+        string memory withdrawerAddr = Util.generateAddress(WITHDRAWER_PUBKEY, Util.P2PKH_TESTNET);
+        vm.warp(data.pegOutTimestamp());
+        vm.startPrank(withdrawer);
+        bridge.pegOut(withdrawerAddr, Outpoint(hex"1234", 0), data.pegOutAmount(), OPERATOR_PUBKEY);
+        vm.stopPrank();
+
+        vm.prank(operator);
         bridge.burnEBTC(withdrawer, proof);
     }
 }

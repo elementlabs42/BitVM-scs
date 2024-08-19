@@ -3,7 +3,7 @@ pragma solidity ^0.8.26;
 
 import "forge-std/Test.sol";
 import "../src/libraries/Script.sol";
-import "./Util.sol";
+import "./utils/Util.sol";
 
 contract ScriptTest is Test {
     using Script for bytes32;
@@ -88,5 +88,19 @@ contract ScriptTest is Test {
         // uint32 data4Length = 65568; //uint32(0xFFFF + 1 + data.length);
         // bytes memory data4 = Util.fill(data4Length, data);
         // assertEq(abi.encodePacked(Script.OP_PUSHDATA4, Endian.reverse32(data4Length), data4), Script.encodeData(data4));
+    }
+
+    function testScript_encodeNumber() public pure {
+        assertEq(abi.encodePacked(bytes1(uint8(2 + 0x50))), Script.encodeNumber(2));
+        assertEq(abi.encodePacked(bytes1(uint8(1)), bytes1(uint8(17))), Script.encodeNumber(17));
+        assertEq(abi.encodePacked(bytes1(uint8(1)), bytes1(0xff)), Script.encodeNumber(0xff));
+        assertEq(abi.encodePacked(bytes1(uint8(2)), bytes2(0x0001)), Script.encodeNumber(0xff + 1));
+        assertEq(abi.encodePacked(bytes1(uint8(2)), bytes2(0xffff)), Script.encodeNumber(0xffff));
+        assertEq(abi.encodePacked(bytes1(uint8(3)), bytes3(0x000001)), Script.encodeNumber(0xffff + 1));
+        assertEq(abi.encodePacked(bytes1(uint8(3)), bytes3(0xffffff)), Script.encodeNumber(0xffffff));
+        assertEq(abi.encodePacked(bytes1(uint8(3)), bytes3(0x3f39d2)), Script.encodeNumber(13777215));
+        assertEq(abi.encodePacked(bytes1(uint8(4)), bytes4(0x00000001)), Script.encodeNumber(0xffffff + 1));
+        assertEq(abi.encodePacked(bytes1(uint8(4)), bytes4(0xfc0353f9)), Script.encodeNumber(4182967292));
+        assertEq(abi.encodePacked(bytes1(uint8(4)), bytes4(0xffffffff)), Script.encodeNumber(0xffffffff));
     }
 }

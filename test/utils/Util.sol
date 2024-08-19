@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import "../src/libraries/Base58.sol";
-import "../src/libraries/TaprootHelper.sol";
-import "../src/libraries/TransactionHelper.sol";
-import "../src/interfaces/IBridge.sol";
+import "../../src/interfaces/IBridge.sol";
+import "../../src/libraries/Base58.sol";
+import "../../src/libraries/Endian.sol";
+import "../../src/libraries/Script.sol";
+import "../../src/libraries/ViewSPV.sol";
+import "../../src/libraries/TypedMemView.sol";
+import "./TransactionHelper.sol";
 
 library Util {
     using ViewSPV for bytes4;
@@ -77,7 +80,7 @@ library Util {
     bytes1 constant P2SH_TESTNET = 0xc4;
 
     function generateAddress(bytes memory pubKey, bytes1 network) public pure returns (string memory addr) {
-        bytes20 _hash160 = TaprootHelper.hash160(pubKey);
+        bytes20 _hash160 = Script.hash160(pubKey);
         // Mainnet: p2pkh 0x00, p2sh 0x05, Testnet: p2pkh 0x6f, p2sh 0xc4
         bytes memory pubKeyWithNetwork = abi.encodePacked(network, _hash160);
         bytes4 checksum = bytes4(sha256(abi.encodePacked(sha256(pubKeyWithNetwork))));

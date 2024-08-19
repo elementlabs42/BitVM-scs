@@ -8,7 +8,7 @@ import "../src/libraries/Coder.sol";
 import "./fixture/ConstantsFixture.sol";
 import "../src/Storage.sol";
 import "./mockup/StorageTestnet.sol";
-import "./Util.sol";
+import "./utils/Util.sol";
 
 contract StorageTest is Test, ConstantsFixture {
     function testStorage_constructor_zeroDistance() public {

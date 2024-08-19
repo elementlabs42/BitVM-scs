@@ -6,6 +6,11 @@ import "forge-std/Test.sol";
 import "../src/libraries/Endian.sol";
 
 contract EndianTest is Test {
+    function testEndian_reverse24() public pure {
+        uint24 input = 0xd2393f;
+        assertEq(Endian.reverse24(input), 0x3f39d2);
+    }
+
     function testEndian_reverse32() public pure {
         uint32 input = 0x12345678;
         assertEq(Endian.reverse32(input), 0x78563412);

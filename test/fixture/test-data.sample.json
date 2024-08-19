@@ -1,0 +1,73 @@
+{
+  "pegIn": {
+    "storage": {
+      "constrcutor": {
+        "step": 0,
+        "height": 0,
+        "hash": "",
+        "timestamp": 0,
+        "bits": 0,
+        "epochTimestamp": 0
+      },
+      "submit": [
+        {
+          "headers": ""
+        }
+      ]
+    },
+    "verification": {
+      "proof1": {
+        "merkleProof": "",
+        "parents": "",
+        "children": "",
+        "index": 0,
+        "blockHeight": 0,
+        "blockHeader": "",
+        "rawTx": ""
+      },
+      "proof2": {
+        "merkleProof": "",
+        "parents": "",
+        "children": "",
+        "index": 0,
+        "blockHeight": 0,
+        "blockHeader": "",
+        "rawTx": ""
+      }
+    },
+    "depositor": "",
+    "nOfNPubKey": ""
+  },
+  "pegOut": {
+    "storage": {
+      "constrcutor": {
+        "step": 0,
+        "height": 0,
+        "hash": "",
+        "timestamp": 0,
+        "bits": 0,
+        "epochTimestamp": 0
+      },
+      "submit": [
+        {
+          "headers": ""
+        }
+      ]
+    },
+    "verification": {
+      "proof": {
+        "merkleProof": "",
+        "parents": "",
+        "children": "",
+        "index": 0,
+        "blockHeight": 0,
+        "blockHeader": "",
+        "rawTx": ""
+      }
+    },
+    "withdrawer": "",
+    "pegOutTimestamp": 0,
+    "amount": 0,
+    "nOfNPubKey": ""
+  }
+}

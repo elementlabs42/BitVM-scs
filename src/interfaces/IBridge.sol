@@ -21,18 +21,6 @@ struct Outpoint {
     uint256 vOut;
 }
 
-struct Input {
-    bytes32 prevTxID;
-    bytes4 prevTxIndex;
-    bytes scriptSig;
-    uint32 sequence;
-}
-
-struct Output {
-    uint64 value;
-    bytes scriptPubKey;
-}
-
 struct ProofParam {
     bytes merkleProof;
     bytes parents;
@@ -99,7 +87,6 @@ interface IBridge {
     error InvalidAmount();
     error MerkleRootMismatch();
     error DifficultyMismatch();
-    error ParentCheckFailed();
     error PreviousHashMismatch();
     error NextHashMismatch();
     error InsufficientAccumulatedDifficulty();

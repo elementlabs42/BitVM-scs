@@ -50,6 +50,12 @@ library Endian {
         v = (v >> 16) | (v << 16);
     }
 
+    function reverse24(uint24 input) internal pure returns (uint24 v) {
+        v = input;
+
+        v = (v >> 16) | (v << 16) | (v & 0x00FF00);
+    }
+
     function reverse16(uint16 input) internal pure returns (uint16 v) {
         v = input;
 
