@@ -58,6 +58,7 @@ import { getBlockInfoByHeight, getTransactionInfo } from './lib/api.mjs'
     testData.pegOut.withdrawer = SHARED_DATA.withdrawerEvmAddress
     testData.pegOut.pegOutTimestamp = SHARED_DATA.pegOutTimestamp
     testData.pegOut.amount = SHARED_DATA.pegOutValue
+    testData.pegOut.nOfNPubKey = SHARED_DATA.nOfNPubKey
     fs.writeFileSync(TEST_DATA_FILE, JSON.stringify(testData, null, 2) + '\n')
 
     console.log('>>> DONE')

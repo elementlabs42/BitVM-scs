@@ -16,6 +16,7 @@ export const SHARED_DATA = {
   withdrawerEvmAddress: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
   pegOutValue: 131072,
   pegOutTimestamp: 1722328130,
+  nOfNPubKey: '0xd0f30e3182fa18e4975996dbaaa5bfb7d9b15c6d5b57f9f7e5f5e046829d62a4',
 }
 
 export function initializaeTestData() {

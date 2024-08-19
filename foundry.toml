@@ -3,6 +3,14 @@ src = "src"
 out = "out"
 libs = ["lib"]
 solc_version = "0.8.26"
-fs_permissions = [{ access = "read", path = "./test/fixture"}]
+fs_permissions = [{ access = "read", path = "./test/fixture"}, { access = "read-write", path = "./deploy"}]
+
+[rpc_endpoints]
+mainnet = '${RPC_URL_MAINNET}'
+sepolia = '${RPC_URL_SEPOLIA}'
+
+[etherscan]
+mainnet = { key = "${ETHERSCAN_KEY_MAINNET}", chain = "mainnet" }
+sepolia = { key = "${ETHERSCAN_KEY_MAINNET}", chain = "sepolia" }
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

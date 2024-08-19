@@ -35,7 +35,8 @@
         "rawTx": ""
       }
     },
-    "depositor": ""
+    "depositor": "",
+    "nOfNPubKey": ""
   },
   "pegOut": {
     "storage": {
@@ -66,6 +67,7 @@
     },
     "withdrawer": "",
     "pegOutTimestamp": 0,
-    "amount": 0
+    "amount": 0,
+    "nOfNPubKey": ""
   }
 }

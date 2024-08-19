@@ -1,51 +1,35 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import "forge-std/Script.sol";
 import "../../src/interfaces/IBridge.sol";
+import "../../deploy/File.sol";
 import {StorageSetupInfo} from "./StorageFixture.sol";
 
-contract TestData is Script {
-    error InvalidContent();
-
-    bool public valid;
+contract TestData is FileBase {
     string public constant JSON_PATH = "test/fixture/test-data.json";
-    string private jsonContent;
-
-    modifier validated() {
-        if (!valid) {
-            revert InvalidContent();
-        }
-        _;
-    }
 
     constructor() {
-        reload();
+        reload(JSON_PATH);
     }
 
-    function reload() public {
-        try vm.readFile(JSON_PATH) returns (string memory _jsonContent) {
-            jsonContent = _jsonContent;
-            valid = true;
-        } catch {
-            valid = false;
-        }
+    function nOfNPubKey() public view validated returns (bytes32) {
+        return abi.decode(vm.parseJson(content, ".pegIn.nOfNPubKey"), (bytes32));
     }
 
     function depositor() public view validated returns (address) {
-        return abi.decode(vm.parseJson(jsonContent, ".pegIn.depositor"), (address));
+        return abi.decode(vm.parseJson(content, ".pegIn.depositor"), (address));
     }
 
     function withdrawer() public view validated returns (address) {
-        return abi.decode(vm.parseJson(jsonContent, ".pegOut.withdrawer"), (address));
+        return abi.decode(vm.parseJson(content, ".pegOut.withdrawer"), (address));
     }
 
     function pegOutTimestamp() public view validated returns (uint256) {
-        return abi.decode(vm.parseJson(jsonContent, ".pegOut.pegOutTimestamp"), (uint256));
+        return abi.decode(vm.parseJson(content, ".pegOut.pegOutTimestamp"), (uint256));
     }
 
     function pegOutAmount() public view validated returns (uint256) {
-        return abi.decode(vm.parseJson(jsonContent, ".pegOut.amount"), (uint256));
+        return abi.decode(vm.parseJson(content, ".pegOut.amount"), (uint256));
     }
 
     function _storage(string memory keyPrefix) public view validated returns (StorageSetupInfo memory) {
@@ -81,7 +65,7 @@ contract TestData is Script {
     }
 
     function node(string memory key) public view validated returns (bytes memory) {
-        return vm.parseJson(jsonContent, key);
+        return vm.parseJson(content, key);
     }
 
     function pegInStorageKey() public pure returns (string memory) {

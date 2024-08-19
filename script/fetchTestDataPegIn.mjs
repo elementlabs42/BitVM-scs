@@ -71,6 +71,7 @@ import { getBlockInfoByHeight, getTransactionInfo } from './lib/api.mjs'
     }
 
     testData.pegIn.depositor = SHARED_DATA.depositorEvmAddress
+    testData.pegIn.nOfNPubKey = SHARED_DATA.nOfNPubKey
     fs.writeFileSync(TEST_DATA_FILE, JSON.stringify(testData, null, 2) + '\n')
 
     console.log('>>> DONE')

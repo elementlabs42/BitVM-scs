@@ -8,8 +8,7 @@ out/
 
 # Ignores development broadcast logs
 !/broadcast
-/broadcast/*/31337/
-/broadcast/**/dry-run/
+/broadcast/*
 
 # Docs
 docs/
@@ -21,3 +20,4 @@ docs/
 blocks-*.json
 proof-*.json
 test-data.json
+Deployments.json
