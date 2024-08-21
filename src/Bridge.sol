@@ -94,6 +94,8 @@ contract Bridge is IBridge {
         ebtc.mint(depositor, txOut2Value);
 
         pegIns[proof2.txId] = true;
+
+        emit PegInInitiated(depositor, txOut2Value, depositorPubKey);
     }
 
     function pegOut(
