@@ -36,6 +36,8 @@ contract PegOutTest is StorageFixture {
         string memory withdrawerAddr = Util.generateAddress(WITHDRAWER_PUBKEY, Util.P2PKH_TESTNET);
         vm.warp(1722328130);
         vm.startPrank(withdrawer);
+        vm.expectEmit(true, true, true, true, address(bridge));
+        emit IBridge.PegOutInitiated(withdrawer, withdrawerAddr, Outpoint(hex"1234", 0), 131072, OPERATOR_PUBKEY);
         bridge.pegOut(withdrawerAddr, Outpoint(hex"1234", 0), 131072, OPERATOR_PUBKEY);
         vm.stopPrank();
 
@@ -85,7 +87,11 @@ contract PegOutTest is StorageFixture {
         string memory withdrawerAddr = Util.generateAddress(WITHDRAWER_PUBKEY, Util.P2PKH_TESTNET);
         vm.warp(data.pegOutTimestamp());
         vm.startPrank(withdrawer);
-        bridge.pegOut(withdrawerAddr, Outpoint(hex"1234", 0), data.pegOutAmount(), OPERATOR_PUBKEY);
+        vm.expectEmit(true, true, true, true, address(bridge));
+        emit IBridge.PegOutInitiated(
+            withdrawer, withdrawerAddr, Outpoint(hex"1234", 0), data.pegOutAmount(), data.operatorPubKey()
+        );
+        bridge.pegOut(withdrawerAddr, Outpoint(hex"1234", 0), data.pegOutAmount(), data.operatorPubKey());
         vm.stopPrank();
 
         vm.prank(operator);

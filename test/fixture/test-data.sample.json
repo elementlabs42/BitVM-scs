@@ -36,6 +36,8 @@
       }
     },
     "depositor": "",
+    "depositorPubKey": "",
+    "amount": 0,
     "nOfNPubKey": ""
   },
   "pegOut": {
@@ -68,6 +70,7 @@
     "withdrawer": "",
     "pegOutTimestamp": 0,
     "amount": 0,
+    "operatorPubKey": "",
     "nOfNPubKey": ""
   }
 }

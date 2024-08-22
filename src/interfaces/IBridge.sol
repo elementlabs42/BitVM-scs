@@ -66,6 +66,7 @@ struct PegOutInfo {
  * @notice Manage and gatekeeping EBTC in transit during peg in/out phases.
  */
 interface IBridge {
+    event PegInMinted(address indexed depositor, uint256 amount, bytes32 depositorPubKey);
     event PegOutInitiated(
         address indexed withdrawer,
         string destinationAddress,

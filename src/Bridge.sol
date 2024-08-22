@@ -95,7 +95,7 @@ contract Bridge is IBridge {
 
         pegIns[proof2.txId] = true;
 
-        emit PegInInitiated(depositor, txOut2Value, depositorPubKey);
+        emit PegInMinted(depositor, txOut2Value, depositorPubKey);
     }
 
     function pegOut(
