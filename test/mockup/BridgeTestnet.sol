@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
+import {IBridge} from "../../src/interfaces/IBridge.sol";
 import {Bridge} from "../../src/Bridge.sol";
 import {EBTC} from "../../src/EBTC.sol";
 import {IStorage} from "../../src/interfaces/IStorage.sol";

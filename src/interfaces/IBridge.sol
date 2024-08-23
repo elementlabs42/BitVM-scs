@@ -99,4 +99,15 @@ interface IBridge {
     error InvalidPegOutProofScriptPubKey();
     error InvalidPegOutProofAmount();
     error InvalidPegOutProofTransactionId();
+
+    function pegIn(address depositor, bytes32 depositorPubKey, ProofInfo calldata proof1, ProofInfo calldata proof2)
+        external;
+    function pegOut(
+        string calldata destinationBitcoinAddress,
+        Outpoint calldata sourceOutpoint,
+        uint256 amount,
+        bytes32 operatorPubkey
+    ) external;
+    function burnEBTC(address withdrawer, ProofInfo calldata proof) external;
+    function refundEBTC() external;
 }

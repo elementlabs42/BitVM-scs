@@ -27,7 +27,7 @@ contract PegOutTest is StorageFixture {
         StorageSetupInfo memory initNormal = getPegOutSetupInfoNormal();
         StorageSetupResult memory fixture = buildStorage(initNormal);
 
-        Bridge bridge = Bridge(fixture.bridge);
+        IBridge bridge = IBridge(fixture.bridge);
         address withdrawer = fixture.withdrawer;
         address operator = fixture.operator;
         ProofParam memory proofParam = getPegOutProofParamNormal();
@@ -54,7 +54,7 @@ contract PegOutTest is StorageFixture {
         initNormal.headers = Util.slice(initNormal.headers, 0, insufficientStorageLength);
         StorageSetupResult memory fixture = buildStorage(initNormal);
 
-        Bridge bridge = Bridge(fixture.bridge);
+        IBridge bridge = IBridge(fixture.bridge);
         address withdrawer = fixture.withdrawer;
         address operator = fixture.operator;
         ProofInfo memory proof = Util.paramToProof(proofParam, false);
@@ -78,13 +78,13 @@ contract PegOutTest is StorageFixture {
 
         StorageSetupResult memory fixture = buildStorageFromDataFile(data._storage(data.pegOutStorageKey()));
 
-        Bridge bridge = Bridge(fixture.bridge);
+        IBridge bridge = IBridge(fixture.bridge);
         address withdrawer = fixture.withdrawer;
         address operator = fixture.operator;
         ProofParam memory proofParam = data.proof(data.pegOutProofKey());
         ProofInfo memory proof = Util.paramToProof(proofParam, false);
 
-        string memory withdrawerAddr = Util.generateAddress(WITHDRAWER_PUBKEY, Util.P2PKH_TESTNET);
+        string memory withdrawerAddr = Util.generateAddress(data.withdrawerPubKey(), Util.P2PKH_TESTNET);
         vm.warp(data.pegOutTimestamp());
         vm.startPrank(withdrawer);
         vm.expectEmit(true, true, true, true, address(bridge));

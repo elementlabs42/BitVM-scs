@@ -2,7 +2,7 @@
 pragma solidity ^0.8.26;
 
 import "../../src/interfaces/IBridge.sol";
-import "../../deploy/File.sol";
+import "../../script/File.sol";
 import {StorageSetupInfo} from "./StorageFixture.sol";
 
 contract TestData is FileBase {
@@ -40,6 +40,10 @@ contract TestData is FileBase {
         return abi.decode(vm.parseJson(content, ".pegOut.amount"), (uint256));
     }
 
+    function withdrawerPubKey() public view validated returns (bytes memory) {
+        return abi.decode(vm.parseJson(content, ".pegOut.withdrawerPubKey"), (bytes));
+    }
+
     function operatorPubKey() public view validated returns (bytes32) {
         return abi.decode(vm.parseJson(content, ".pegOut.operatorPubKey"), (bytes32));
     }
@@ -74,10 +78,6 @@ contract TestData is FileBase {
             blockHeight: blockHeight,
             blockHeader: blockHeader
         });
-    }
-
-    function node(string memory key) public view validated returns (bytes memory) {
-        return vm.parseJson(content, key);
     }
 
     function pegInStorageKey() public pure returns (string memory) {

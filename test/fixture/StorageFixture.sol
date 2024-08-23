@@ -65,7 +65,7 @@ contract StorageFixture is Test {
 
         vm.startPrank(owner);
         EBTC ebtc = new EBTC(address(0));
-        Bridge bridge = new BridgeTestnet(ebtc, _storage, N_OF_N_PUBKEY);
+        IBridge bridge = new BridgeTestnet(ebtc, _storage, N_OF_N_PUBKEY);
         ebtc.setBridge(address(bridge));
         vm.stopPrank();
 

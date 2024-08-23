@@ -70,6 +70,7 @@
     "withdrawer": "",
     "pegOutTimestamp": 0,
     "amount": 0,
+    "withdrawerPubKey": "",
     "operatorPubKey": "",
     "nOfNPubKey": ""
   }

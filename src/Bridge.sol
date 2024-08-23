@@ -103,7 +103,7 @@ contract Bridge is IBridge {
         Outpoint calldata sourceOutpoint,
         uint256 amount,
         bytes32 operatorPubkey
-    ) external {
+    ) external override {
         if (!isValidAmount(amount)) {
             revert InvalidAmount();
         }
@@ -124,7 +124,7 @@ contract Bridge is IBridge {
         emit PegOutInitiated(msg.sender, destinationBitcoinAddress, sourceOutpoint, amount, operatorPubkey);
     }
 
-    function burnEBTC(address withdrawer, ProofInfo calldata proof) external {
+    function burnEBTC(address withdrawer, ProofInfo calldata proof) external override {
         PegOutInfo memory info = pegOuts[withdrawer];
         if (info.status == PegOutStatus.VOID) {
             revert PegOutNotFound();
@@ -166,7 +166,7 @@ contract Bridge is IBridge {
         emit PegOutBurnt(withdrawer, info.sourceOutpoint, info.amount, info.operatorPubkey);
     }
 
-    function refundEBTC() external {
+    function refundEBTC() external override {
         PegOutInfo memory info = pegOuts[msg.sender];
         if (info.status == PegOutStatus.VOID) {
             revert PegOutNotFound();
