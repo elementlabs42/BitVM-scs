@@ -76,6 +76,7 @@ interface IBridge {
     );
     event PegOutClaimed(address indexed withdrawer, Outpoint sourceOutpoint, uint256 amount, bytes32 operatorPubkey);
     event PegOutBurnt(address indexed withdrawer, Outpoint sourceOutpoint, uint256 amount, bytes32 operatorPubkey);
+    event PegInInitiated(address indexed depositor, uint256 amount, bytes32 operatorPubkey);
 
     error PegInInvalid();
     error SpvCheckFailed();
