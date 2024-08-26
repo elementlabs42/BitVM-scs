@@ -5,6 +5,7 @@ import {Taproot} from "./Taproot.sol";
 import "./Endian.sol";
 import "./Base58.sol";
 import "./TypedMemView.sol";
+import "forge-std/console.sol";
 
 library Script {
     using Taproot for bytes32;
@@ -45,7 +46,14 @@ library Script {
         return generateScript(abi.encodePacked(nOfNPubKey, OP_CHECKSIG));
     }
 
-    function generatePreSignScriptAddress(bytes32 nOfNPubKey) internal pure returns (bytes memory) {
+    function generatePreSignScriptForTaproot(bytes32 nOfNPubKey) internal pure returns (bytes memory) {
+        bytes memory script = abi.encodePacked(uint8(0x20), nOfNPubKey, OP_CHECKSIG);
+        return script;
+        // uint8 scriptLength = uint8(script.length);
+        // return abi.encodePacked(scriptLength, script);
+    }
+
+    function generatePreSignScriptAddress(bytes32 nOfNPubKey) internal view returns (bytes memory) {
         return generateP2WSHScriptPubKey(generatePreSignScript(nOfNPubKey));
     }
 
@@ -99,7 +107,7 @@ library Script {
         address evmAddress,
         bytes32 depositorPubKey,
         uint32 lockDuration
-    ) internal pure returns (bytes32) {
+    ) internal view returns (bytes32) {
         bytes memory timelockScript = generateTimelockLeaf(depositorPubKey, lockDuration);
         bytes memory depositScript = generateDepositScript(nOfNPubKey, evmAddress, depositorPubKey);
         bytes[] memory scripts = new bytes[](2);
@@ -108,12 +116,21 @@ library Script {
         return depositorPubKey.createTaprootAddress(scripts);
     }
 
+    function generateConfirmTaprootAddress(bytes32 nOfNPubKey) internal view returns (bytes32) {
+        console.logBytes32(nOfNPubKey);
+        bytes memory preSignScript = generatePreSignScriptForTaproot(nOfNPubKey);
+        bytes[] memory scripts = new bytes[](1);
+        scripts[0] = preSignScript;
+        // scripts[1] = preSignScript;
+        bytes32 taproot = nOfNPubKey.createTaprootAddress(scripts);
+        console.logBytes32(taproot);
+        return taproot;
+    }
+
     function generateP2WSHScriptPubKey(bytes memory witnessScript) internal pure returns (bytes memory) {
         bytes32 scriptHash = sha256(witnessScript);
-
-        bytes1 versionByte = 0x00;
-        bytes1 hashLength = 0x20;
-        return abi.encodePacked(versionByte, hashLength, scriptHash);
+        // 0x00: version byte, 0x20: hash length
+        return abi.encodePacked(bytes1(0x00), bytes1(0x20), scriptHash);
     }
 
     function toPubKeyHash(string memory addr) internal view returns (bytes memory) {
@@ -123,6 +140,7 @@ library Script {
     }
 
     function convertToScriptPubKey(bytes32 outputKey) public pure returns (bytes memory) {
+        // 0x51: OP_1, 0x20: OP_PUSHBYTES_32
         return abi.encodePacked(bytes1(0x51), bytes1(0x20), outputKey);
     }
 

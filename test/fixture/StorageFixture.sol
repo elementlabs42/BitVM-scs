@@ -33,7 +33,8 @@ struct StorageSetupResult {
 contract StorageFixture is Test {
     uint256 constant DEFAULT_STEP = 10;
     bytes32 constant N_OF_N_PUBKEY = 0xd0f30e3182fa18e4975996dbaaa5bfb7d9b15c6d5b57f9f7e5f5e046829d62a4;
-    bytes32 constant OPERATOR_PUBKEY = 0x58f54b8ba6af3f25b9bafaaf881060eafb761c6579c22eab31161d29e387bcc0;
+    // bytes32 constant OPERATOR_PUBKEY = 0x58f54b8ba6af3f25b9bafaaf881060eafb761c6579c22eab31161d29e387bcc0;
+    bytes constant OPERATOR_PUBKEY = hex"03484db4a2950d63da8455a1b705b39715e4075dd33511d0c7e3ce308c93449deb";
     bytes constant WITHDRAWER_PUBKEY = hex"02f80c9d1ef9ff640df2058c431c282299f48424480d34f1bade2274746fb4df8b";
     bytes32 constant DEPOSITOR_PUBKEY = hex"edf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301b";
 
@@ -50,6 +51,8 @@ contract StorageFixture is Test {
         returns (StorageSetupResult memory)
     {
         address _withdrawer = useDataFile ? data.withdrawer() : withdrawer;
+        uint32 peginTimelock = useDataFile ? data.pegInTimelock() : 2;
+        bytes32 nOfNPubKey = useDataFile ? data.nOfNPubKey() : N_OF_N_PUBKEY;
 
         vm.deal(owner, 100 ether);
 
@@ -65,7 +68,7 @@ contract StorageFixture is Test {
 
         vm.startPrank(owner);
         EBTC ebtc = new EBTC(address(0));
-        IBridge bridge = new BridgeTestnet(ebtc, _storage, N_OF_N_PUBKEY);
+        IBridge bridge = new BridgeTestnet(ebtc, _storage, nOfNPubKey, peginTimelock);
         ebtc.setBridge(address(bridge));
         vm.stopPrank();
 

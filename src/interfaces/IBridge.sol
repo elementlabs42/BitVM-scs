@@ -57,7 +57,7 @@ struct PegOutInfo {
     string destinationAddress;
     Outpoint sourceOutpoint;
     uint256 amount;
-    bytes32 operatorPubkey;
+    bytes operatorPubkey;
     uint256 pegOutTime;
     PegOutStatus status;
 }
@@ -72,18 +72,18 @@ interface IBridge {
         string destinationAddress,
         Outpoint sourceOutpoint,
         uint256 amount,
-        bytes32 operatorPubkey
+        bytes operatorPubkey
     );
-    event PegOutClaimed(address indexed withdrawer, Outpoint sourceOutpoint, uint256 amount, bytes32 operatorPubkey);
-    event PegOutBurnt(address indexed withdrawer, Outpoint sourceOutpoint, uint256 amount, bytes32 operatorPubkey);
+    event PegOutClaimed(address indexed withdrawer, Outpoint sourceOutpoint, uint256 amount, bytes operatorPubkey);
+    event PegOutBurnt(address indexed withdrawer, Outpoint sourceOutpoint, uint256 amount, bytes operatorPubkey);
 
     error PegInInvalid();
     error SpvCheckFailed();
     error InvalidVoutLength();
-    error InvalidScriptKey();
+    error ScriptKeyMismatch();
     error InvalidVinLength();
-    error MismatchTransactionId();
-    error MismatchMultisigScript();
+    error TransactionIdMismatch();
+    error MultisigScriptMismatch();
     error InvalidVoutValue();
     error InvalidAmount();
     error MerkleRootMismatch();
@@ -106,7 +106,7 @@ interface IBridge {
         string calldata destinationBitcoinAddress,
         Outpoint calldata sourceOutpoint,
         uint256 amount,
-        bytes32 operatorPubkey
+        bytes calldata operatorPubkey
     ) external;
     function burnEBTC(address withdrawer, ProofInfo calldata proof) external;
     function refundEBTC() external;

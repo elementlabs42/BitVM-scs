@@ -3,6 +3,7 @@ pragma solidity ^0.8.26;
 pragma experimental ABIEncoderV2;
 
 import "./EllipticCurve.sol";
+import "forge-std/console.sol";
 
 library Taproot {
     using EllipticCurve for uint256;
@@ -19,12 +20,15 @@ library Taproot {
         return sha256(abi.encodePacked(tagHash, tagHash, m));
     }
 
-    function tapleafTaggedHash(bytes memory script) internal pure returns (bytes32) {
+    function tapleafTaggedHash(bytes memory script) internal view returns (bytes32) {
         bytes memory scriptPart = abi.encodePacked(LEAF_VERSION_TAPSCRIPT, prependCompactSize(script));
+        console.log("tapleafTaggedHash: ");
+        console.logBytes(scriptPart);
+        console.log("==========================");
         return taggedHash("TapLeaf", scriptPart);
     }
 
-    function tapbranchTaggedHash(bytes32 thashedA, bytes32 thashedB) internal pure returns (bytes32) {
+    function tapbranchTaggedHash(bytes32 thashedA, bytes32 thashedB) internal view returns (bytes32) {
         if (thashedA < thashedB) {
             return taggedHash("TapBranch", abi.encodePacked(thashedA, thashedB));
         } else {
@@ -44,12 +48,18 @@ library Taproot {
         }
     }
 
-    function createTaprootAddress(bytes32 n_of_n_pubkey, bytes[] memory scripts) public pure returns (bytes32) {
-        bytes32 internalKey = n_of_n_pubkey;
+    function createTaprootAddress(bytes32 _internalKey, bytes[] memory scripts) public view returns (bytes32) {
+        bytes32 internalKey = _internalKey;
 
+        console.log();
+        console.log();
+        console.log(">>>>>>>>>>>>>>>>>>>");
+        console.logBytes(scripts[0]);
         bytes32 merkleRootHash = merkleRoot(scripts);
 
         bytes32 tweak = taggedHash("TapTweak", abi.encodePacked(internalKey, merkleRootHash));
+        console.log("TapTweak");
+        console.logBytes32(tweak);
         uint256 tweakInt = uint256(tweak);
 
         // Convert internalKey to elliptic curve point
@@ -74,13 +84,16 @@ library Taproot {
         return (x, y);
     }
 
-    function merkleRoot(bytes[] memory scripts) internal pure returns (bytes32) {
+    function merkleRoot(bytes[] memory scripts) internal view returns (bytes32) {
         if (scripts.length == 0) {
             return bytes32(0);
         }
 
         if (scripts.length == 1) {
-            return tapleafTaggedHash(scripts[0]);
+            bytes32 tapLeaf = tapleafTaggedHash(scripts[0]);
+            console.log("tapLeaf:");
+            console.logBytes32(tapLeaf);
+            return tapLeaf;
         }
 
         if (scripts.length == 2) {

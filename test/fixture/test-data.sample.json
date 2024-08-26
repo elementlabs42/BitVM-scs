@@ -37,6 +37,7 @@
     },
     "depositor": "",
     "depositorPubKey": "",
+    "timelock": 0,
     "amount": 0,
     "nOfNPubKey": ""
   },

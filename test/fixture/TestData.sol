@@ -28,6 +28,10 @@ contract TestData is FileBase {
         return abi.decode(vm.parseJson(content, ".pegIn.amount"), (uint256));
     }
 
+    function pegInTimelock() public view validated returns (uint32) {
+        return abi.decode(vm.parseJson(content, ".pegIn.timelock"), (uint32));
+    }
+
     function withdrawer() public view validated returns (address) {
         return abi.decode(vm.parseJson(content, ".pegOut.withdrawer"), (address));
     }
@@ -44,8 +48,8 @@ contract TestData is FileBase {
         return abi.decode(vm.parseJson(content, ".pegOut.withdrawerPubKey"), (bytes));
     }
 
-    function operatorPubKey() public view validated returns (bytes32) {
-        return abi.decode(vm.parseJson(content, ".pegOut.operatorPubKey"), (bytes32));
+    function operatorPubKey() public view validated returns (bytes memory) {
+        return abi.decode(vm.parseJson(content, ".pegOut.operatorPubKey"), (bytes));
     }
 
     function _storage(string memory keyPrefix) public view validated returns (StorageSetupInfo memory) {

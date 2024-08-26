@@ -89,7 +89,7 @@ contract Deployer is Script {
         EBTCTest ebtcTest = new EBTCTest(address(0));
         EBTC ebtc = EBTC(ebtcTest);
         IBridge bridge = useTestnet
-            ? new BridgeTestnet(ebtc, _storage, data.nOfNPubKey())
+            ? new BridgeTestnet(ebtc, _storage, data.nOfNPubKey(), data.pegInTimelock())
             : new Bridge(ebtc, _storage, data.nOfNPubKey());
         ebtc.setBridge(address(bridge));
 

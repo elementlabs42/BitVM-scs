@@ -13,14 +13,15 @@ export const TEST_DATA_FILE = path.join(__dirname, '../../test/fixture/test-data
 
 export const SHARED_DATA = {
   depositorEvmAddress: '0xDDdDddDdDdddDDddDDddDDDDdDdDDdDDdDDDDDDd',
+  pegInTimelock: 1,
   pegInValue: 131072,
   depositorPubKey: '0xedf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301b',
   withdrawerEvmAddress: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
   pegOutValue: 131072,
   pegOutTimestamp: 1722328130,
   withdrawerPubKey: '0x02f80c9d1ef9ff640df2058c431c282299f48424480d34f1bade2274746fb4df8b',
-  operatorPubKey: '0x58f54b8ba6af3f25b9bafaaf881060eafb761c6579c22eab31161d29e387bcc0',
-  nOfNPubKey: '0xd0f30e3182fa18e4975996dbaaa5bfb7d9b15c6d5b57f9f7e5f5e046829d62a4',
+  operatorPubKey: '0x03484db4a2950d63da8455a1b705b39715e4075dd33511d0c7e3ce308c93449deb',
+  nOfNPubKey: '0x8b839569cde368894237913fe4fbd25d75eaf1ed019a39d479e693dac35be19e',
 }
 
 export function initializaeTestData() {

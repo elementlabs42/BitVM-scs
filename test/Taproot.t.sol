@@ -6,7 +6,7 @@ import "forge-std/Test.sol";
 import "../src/libraries/Taproot.sol";
 
 contract TaprootTest is Test {
-    function testTaprootHelper_createTaprootAddress() public pure {
+    function testTaprootHelper_createTaprootAddress() public view {
         bytes[] memory scripts = new bytes[](2);
         scripts[0] = hex"2013f523102815e9fbbe132ffb8329b0fef5a9e4836d216dce1824633287b0abc6ac";
         scripts[1] = hex"20e808f1396f12a253cf00efdf841e01c8376b616fb785c39595285c30f2817e71ac";
