@@ -55,6 +55,10 @@ library Script {
         );
     }
 
+    function generatePreSignLeaf(bytes32 nOfNPubKey) internal pure returns (bytes memory) {
+        return abi.encodePacked(encodeData(bytes.concat(nOfNPubKey)), OP_CHECKSIG);
+    }
+
     function generateDepositScript(bytes32 nOfNPubKey, address evmAddress, bytes32 depositorPubKey)
         internal
         pure
@@ -106,6 +110,13 @@ library Script {
         scripts[0] = timelockScript;
         scripts[1] = depositScript;
         return depositorPubKey.createTaprootAddress(scripts);
+    }
+
+    function generateConfirmTaprootAddress(bytes32 nOfNPubKey) internal pure returns (bytes32) {
+        bytes memory preSignScript = generatePreSignLeaf(nOfNPubKey);
+        bytes[] memory scripts = new bytes[](1);
+        scripts[0] = preSignScript;
+        return nOfNPubKey.createTaprootAddress(scripts);
     }
 
     function generateP2WSHScriptPubKey(bytes memory witnessScript) internal pure returns (bytes memory) {

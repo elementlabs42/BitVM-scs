@@ -31,7 +31,7 @@ contract PegInTest is StorageFixture {
         ProofInfo memory proof2 = Util.paramToProof(proofParam2, false);
 
         Bridge bridge = Bridge(fixture.bridge);
-        address depositor = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+        address depositor = 0xDDdDddDdDdddDDddDDddDDDDdDdDDdDDdDDDDDDd;
         address operator = fixture.operator;
 
         vm.startPrank(operator);
@@ -39,7 +39,6 @@ contract PegInTest is StorageFixture {
         emit IBridge.PegInMinted(depositor, 131072, DEPOSITOR_PUBKEY);
         bridge.pegIn(depositor, DEPOSITOR_PUBKEY, proof1, proof2);
         vm.stopPrank();
-
         assertEq(true, true);
     }
 

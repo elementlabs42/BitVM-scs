@@ -36,17 +36,20 @@ contract Bridge is IBridge {
 
     mapping(bytes32 txId => bool) pegIns;
 
+    uint32 private pegInTimelock;
+
     uint256 private constant PEG_OUT_MAX_PENDING_TIME = 8 weeks;
 
     bytes4 private version = 0x02000000;
     bytes4 private locktime = 0x00000000;
 
-    constructor(EBTC _ebtc, IStorage _blockStorage, bytes32 _nOfNPubKey) {
+    constructor(EBTC _ebtc, IStorage _blockStorage, bytes32 _nOfNPubKey, uint32 _pegInTimelock) {
         ebtc = _ebtc;
         blockStorage = _blockStorage;
         nOfNPubKey = _nOfNPubKey;
         // difficult from block 855614(90666502495565) and 2016 blocks two weeks
         difficultyThreshold = 182783669031059040;
+        pegInTimelock = _pegInTimelock;
     }
 
     function pegIn(address depositor, bytes32 depositorPubKey, ProofInfo calldata proof1, ProofInfo calldata proof2)
@@ -70,7 +73,8 @@ contract Bridge is IBridge {
         bytes29 txOut1 = vout1.indexVout(0);
         bytes29 txOut2 = vout2.indexVout(0);
         bytes29 txIn2 = vin2.indexVin(0);
-        bytes32 taproot = nOfNPubKey.generateDepositTaprootAddress(depositor, depositorPubKey, 2);
+        bytes32 taproot = nOfNPubKey.generateDepositTaprootAddress(depositor, depositorPubKey, pegInTimelock);
+
         if (!txOut1.scriptPubkeyWithoutLength().equals(taproot.convertToScriptPubKey())) {
             revert InvalidScriptKey();
         }
@@ -79,8 +83,8 @@ contract Bridge is IBridge {
             revert MismatchTransactionId();
         }
 
-        bytes memory multisigScript = nOfNPubKey.generatePreSignScriptAddress();
-        if (!txOut2.scriptPubkeyWithoutLength().equals(multisigScript)) {
+        bytes32 multisigScript = nOfNPubKey.generateConfirmTaprootAddress();
+        if (!txOut2.scriptPubkeyWithoutLength().equals(multisigScript.convertToScriptPubKey())) {
             revert MismatchMultisigScript();
         }
         uint64 txOut2Value = txOut2.value();
