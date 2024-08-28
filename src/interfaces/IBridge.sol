@@ -66,7 +66,7 @@ struct PegOutInfo {
  * @notice Manage and gatekeeping EBTC in transit during peg in/out phases.
  */
 interface IBridge {
-    event PegInMinted(address indexed depositor, uint256 amount, bytes32 depositorPubKey);
+    event PegInMinted(address indexed depositor, uint256 amount, bytes depositorPubKey);
     event PegOutInitiated(
         address indexed withdrawer,
         string destinationAddress,
@@ -100,8 +100,12 @@ interface IBridge {
     error InvalidPegOutProofAmount();
     error InvalidPegOutProofTransactionId();
 
-    function pegIn(address depositor, bytes32 depositorPubKey, ProofInfo calldata proof1, ProofInfo calldata proof2)
-        external;
+    function pegIn(
+        address depositor,
+        bytes calldata depositorPubKey,
+        ProofInfo calldata proof1,
+        ProofInfo calldata proof2
+    ) external;
     function pegOut(
         string calldata destinationBitcoinAddress,
         Outpoint calldata sourceOutpoint,

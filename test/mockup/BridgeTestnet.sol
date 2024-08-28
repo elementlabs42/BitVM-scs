@@ -10,7 +10,7 @@ import {IStorage} from "../../src/interfaces/IStorage.sol";
  * @dev ignore retargeting for test net
  */
 contract BridgeTestnet is Bridge {
-    constructor(EBTC _ebtc, IStorage _blockStorage, bytes32 _nOfNPubKey, uint32 _timelock)
+    constructor(EBTC _ebtc, IStorage _blockStorage, bytes memory _nOfNPubKey, uint32 _timelock)
         Bridge(_ebtc, _blockStorage, _nOfNPubKey)
     {
         difficultyThreshold = 2270;

@@ -3,9 +3,10 @@ pragma solidity ^0.8.26;
 pragma experimental ABIEncoderV2;
 
 import "./EllipticCurve.sol";
-import "forge-std/console.sol";
 
 library Taproot {
+    error InvalidCompressedPublicKey();
+
     using EllipticCurve for uint256;
 
     uint256 private constant SECP256K1_P = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;
@@ -14,21 +15,27 @@ library Taproot {
     uint256 private constant SECP256K1_GX = 0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798;
     uint256 private constant SECP256K1_GY = 0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8;
     uint8 private constant LEAF_VERSION_TAPSCRIPT = 0xc0;
+    uint256 private constant COMPRESSED_PUBLICK_KEY_LENGTH = 33;
+
+    function toXOnly(bytes calldata pubKey) public pure returns (bytes32 xOnly, bytes1 parity) {
+        if (pubKey.length != COMPRESSED_PUBLICK_KEY_LENGTH) {
+            revert InvalidCompressedPublicKey();
+        }
+        xOnly = bytes32(pubKey[1:COMPRESSED_PUBLICK_KEY_LENGTH]);
+        parity = pubKey[0];
+    }
 
     function taggedHash(string memory tag, bytes memory m) internal pure returns (bytes32) {
         bytes32 tagHash = sha256(abi.encodePacked(tag));
         return sha256(abi.encodePacked(tagHash, tagHash, m));
     }
 
-    function tapleafTaggedHash(bytes memory script) internal view returns (bytes32) {
+    function tapleafTaggedHash(bytes memory script) internal pure returns (bytes32) {
         bytes memory scriptPart = abi.encodePacked(LEAF_VERSION_TAPSCRIPT, prependCompactSize(script));
-        console.log("tapleafTaggedHash: ");
-        console.logBytes(scriptPart);
-        console.log("==========================");
         return taggedHash("TapLeaf", scriptPart);
     }
 
-    function tapbranchTaggedHash(bytes32 thashedA, bytes32 thashedB) internal view returns (bytes32) {
+    function tapbranchTaggedHash(bytes32 thashedA, bytes32 thashedB) internal pure returns (bytes32) {
         if (thashedA < thashedB) {
             return taggedHash("TapBranch", abi.encodePacked(thashedA, thashedB));
         } else {
@@ -48,22 +55,18 @@ library Taproot {
         }
     }
 
-    function createTaprootAddress(bytes32 _internalKey, bytes[] memory scripts) public view returns (bytes32) {
-        bytes32 internalKey = _internalKey;
-
-        console.log();
-        console.log();
-        console.log(">>>>>>>>>>>>>>>>>>>");
-        console.logBytes(scripts[0]);
+    function createTaprootAddress(bytes32 internalKey, bytes1 parity, bytes[] memory scripts)
+        public
+        pure
+        returns (bytes32)
+    {
         bytes32 merkleRootHash = merkleRoot(scripts);
 
         bytes32 tweak = taggedHash("TapTweak", abi.encodePacked(internalKey, merkleRootHash));
-        console.log("TapTweak");
-        console.logBytes32(tweak);
         uint256 tweakInt = uint256(tweak);
 
         // Convert internalKey to elliptic curve point
-        (uint256 px, uint256 py) = publicKeyToPoint(internalKey);
+        (uint256 px, uint256 py) = publicKeyToPoint(internalKey, parity);
 
         // Compute H(P|c)G
         (uint256 gx, uint256 gy) = EllipticCurve.ecMul(tweakInt, SECP256K1_GX, SECP256K1_GY, SECP256K1_A, SECP256K1_P);
@@ -77,22 +80,19 @@ library Taproot {
         return outputKey;
     }
 
-    function publicKeyToPoint(bytes32 pubKey) internal pure returns (uint256, uint256) {
+    function publicKeyToPoint(bytes32 pubKey, bytes1 parity) internal pure returns (uint256, uint256) {
         uint256 x = uint256(pubKey);
-        uint8 prefix = x & 1 == 0 ? 0x03 : 0x02;
-        uint256 y = EllipticCurve.deriveY(prefix, x, SECP256K1_A, SECP256K1_B, SECP256K1_P);
+        uint256 y = EllipticCurve.deriveY(uint8(parity), x, SECP256K1_A, SECP256K1_B, SECP256K1_P);
         return (x, y);
     }
 
-    function merkleRoot(bytes[] memory scripts) internal view returns (bytes32) {
+    function merkleRoot(bytes[] memory scripts) internal pure returns (bytes32) {
         if (scripts.length == 0) {
             return bytes32(0);
         }
 
         if (scripts.length == 1) {
             bytes32 tapLeaf = tapleafTaggedHash(scripts[0]);
-            console.log("tapLeaf:");
-            console.logBytes32(tapLeaf);
             return tapLeaf;
         }
 

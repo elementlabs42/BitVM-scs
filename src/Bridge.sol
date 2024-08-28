@@ -14,8 +14,9 @@ contract Bridge is IBridge {
     using ViewSPV for bytes32;
     using ViewSPV for bytes29;
     using ViewSPV for bytes4;
-    using Script for bytes32;
     using Script for bytes;
+    using Script for bytes32;
+    using Script for string;
     using TypedMemView for bytes;
     using TypedMemView for bytes29;
 
@@ -34,11 +35,11 @@ contract Bridge is IBridge {
     mapping(bytes32 txId => bool) pegIns;
     EBTC ebtc;
     IStorage blockStorage;
-    bytes32 nOfNPubKey;
+    bytes nOfNPubKey;
     bytes4 private version = 0x02000000;
     bytes4 private locktime = 0x00000000;
 
-    constructor(EBTC _ebtc, IStorage _blockStorage, bytes32 _nOfNPubKey) {
+    constructor(EBTC _ebtc, IStorage _blockStorage, bytes memory _nOfNPubKey) {
         ebtc = _ebtc;
         blockStorage = _blockStorage;
         nOfNPubKey = _nOfNPubKey;
@@ -47,9 +48,12 @@ contract Bridge is IBridge {
         pegInTimelock = 2016;
     }
 
-    function pegIn(address depositor, bytes32 depositorPubKey, ProofInfo calldata proof1, ProofInfo calldata proof2)
-        external
-    {
+    function pegIn(
+        address depositor,
+        bytes calldata depositorPubKey,
+        ProofInfo calldata proof1,
+        ProofInfo calldata proof2
+    ) external {
         if (isPegInExist(proof1.txId)) {
             revert PegInInvalid();
         }
@@ -68,8 +72,8 @@ contract Bridge is IBridge {
         bytes29 txOut1 = vout1.indexVout(0);
         bytes29 txOut2 = vout2.indexVout(0);
         bytes29 txIn2 = vin2.indexVin(0);
-        bytes32 taproot = nOfNPubKey.generateDepositTaprootAddress(depositor, depositorPubKey, pegInTimelock);
-        if (!txOut1.scriptPubkeyWithoutLength().equals(taproot.convertToScriptPubKey())) {
+        bytes32 taproot1 = nOfNPubKey.generateDepositTaprootAddress(depositor, depositorPubKey, pegInTimelock);
+        if (!txOut1.scriptPubkeyWithoutLength().equals(taproot1.convertToScriptPubKey())) {
             revert ScriptKeyMismatch();
         }
 
@@ -77,8 +81,8 @@ contract Bridge is IBridge {
             revert TransactionIdMismatch();
         }
 
-        bytes32 multisigScript = nOfNPubKey.generateConfirmTaprootAddress();
-        if (!txOut2.scriptPubkeyWithoutLength().equals(abi.encodePacked(multisigScript))) {
+        bytes32 taproot2 = nOfNPubKey.generateConfirmTaprootAddress();
+        if (!txOut2.scriptPubkeyWithoutLength().equals(taproot2.convertToScriptPubKey())) {
             revert MultisigScriptMismatch();
         }
         uint64 txOut2Value = txOut2.value();
@@ -134,13 +138,9 @@ contract Bridge is IBridge {
         }
 
         bytes29 txOut = vout.indexVout(0);
-        if (
-            !txOut.scriptPubkeyWithoutLength().equals(
-                Script.generatePayToPubKeyHashWithInscriptionScript(
-                    info.destinationAddress, uint32(info.pegOutTime), withdrawer
-                ).generateP2WSHScriptPubKey()
-            )
-        ) {
+        bytes memory inscriptionScript =
+            info.destinationAddress.generatePayToPubKeyHashWithInscriptionScript(uint32(info.pegOutTime), withdrawer);
+        if (!txOut.scriptPubkeyWithoutLength().equals(inscriptionScript.generateP2WSHScriptPubKey())) {
             revert InvalidPegOutProofScriptPubKey();
         }
         if (txOut.value() != info.amount) {

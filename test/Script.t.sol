@@ -6,26 +6,12 @@ import "../src/libraries/Script.sol";
 import "./utils/Util.sol";
 
 contract ScriptTest is Test {
-    using Script for bytes32;
+    using Script for bytes;
 
-    bytes32 nOfNPubKey = hex"d0f30e3182fa18e4975996dbaaa5bfb7d9b15c6d5b57f9f7e5f5e046829d62a4";
-
-    function testScript_generatePreSignScript() public view {
-        bytes memory expected = (hex"2102d0f30e3182fa18e4975996dbaaa5bfb7d9b15c6d5b57f9f7e5f5e046829d62a4ac");
-        bytes memory result = Script.generatePreSignScript(nOfNPubKey);
-        assertEq(expected, result);
-        // assertTrue(Script.equals(result, expected));
-    }
-
-    function testScript_generatePreSignScriptAddress() public view {
-        bytes memory expected = (hex"0020be87e5c1a6f9957f1adc7d4296635b6b3f0da03a3a7819f919a827feff19501d");
-        bytes memory result = Script.generatePreSignScriptAddress(nOfNPubKey);
-        assertEq(expected, result);
-        // assertTrue(Script.equals(result, expected));
-    }
+    bytes nOfNPubKey = hex"02d0f30e3182fa18e4975996dbaaa5bfb7d9b15c6d5b57f9f7e5f5e046829d62a4";
 
     function testScript_generateDepositTaprootAddress() public view {
-        bytes32 userPubKey = 0xedf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301b;
+        bytes memory userPubKey = hex"02edf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301b";
         {
             address evmAddress = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
             uint32 time = 2;
