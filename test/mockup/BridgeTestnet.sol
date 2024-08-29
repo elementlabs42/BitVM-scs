@@ -16,4 +16,8 @@ contract BridgeTestnet is Bridge {
         difficultyThreshold = 2270;
         pegInTimelock = _timelock;
     }
+
+    function setBlockStorage(IStorage _blockStorage) external {
+        blockStorage = _blockStorage;
+    }
 }

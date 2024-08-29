@@ -34,12 +34,18 @@ contract Deployer is Script {
 
     function submit() public {
         StorageSetupInfo memory params = data._storage(data.pegOutStorageKey());
-        _submit(params, false);
+        (address storageAddress,,) = deployments.getLastRunDeployment();
+        IStorage _storage = Storage(storageAddress);
+
+        _submit(_storage, params);
     }
 
     function submitTestnet() public {
         StorageSetupInfo memory params = data._storage(data.pegOutStorageKey());
-        _submit(params, true);
+        (address storageAddress,,) = deployments.getLastRunDeployment();
+        IStorage _storage = StorageTestnet(storageAddress);
+
+        _submit(_storage, params);
     }
 
     function pegOut() public {
@@ -66,7 +72,39 @@ contract Deployer is Script {
         vm.stopBroadcast();
     }
 
+    function resetStorage() public {
+        uint256 operatorPrivateKey = vm.envUint("PRIVATE_KEY_0");
+        (, address bridgeAddress,) = deployments.getLastRunDeployment();
+
+        IStorage _storage = _deployStorage(true);
+
+        vm.startBroadcast(operatorPrivateKey);
+        BridgeTestnet(bridgeAddress).setBlockStorage(_storage);
+        vm.stopBroadcast();
+    }
+
     function _deploy(bool useTestnet) public {
+        uint256 privateKey = vm.envUint("PRIVATE_KEY_0");
+
+        IStorage _storage = _deployStorage(useTestnet);
+
+        vm.startBroadcast(privateKey);
+
+        EBTCTest ebtcTest = new EBTCTest(address(0));
+        EBTC ebtc = EBTC(ebtcTest);
+        IBridge bridge = useTestnet
+            ? new BridgeTestnet(ebtc, _storage, data.nOfNPubKey(), data.pegInTimelock())
+            : new Bridge(ebtc, _storage, data.nOfNPubKey());
+        ebtc.setBridge(address(bridge));
+
+        _mintForTesting(ebtcTest);
+
+        vm.stopBroadcast();
+
+        deployments.writeDeployment(address(_storage), address(bridge), address(ebtc));
+    }
+
+    function _deployStorage(bool useTestnet) public returns (IStorage) {
         uint256 privateKey = vm.envUint("PRIVATE_KEY_0");
         StorageSetupInfo memory params = data._storage(data.pegOutStorageKey());
 
@@ -86,18 +124,11 @@ contract Deployer is Script {
                 IStorage.Epoch(bytes4(Endian.reverse32(params.bits)), params.epochTimestamp)
             );
 
-        EBTCTest ebtcTest = new EBTCTest(address(0));
-        EBTC ebtc = EBTC(ebtcTest);
-        IBridge bridge = useTestnet
-            ? new BridgeTestnet(ebtc, _storage, data.nOfNPubKey(), data.pegInTimelock())
-            : new Bridge(ebtc, _storage, data.nOfNPubKey());
-        ebtc.setBridge(address(bridge));
-
-        _mintForTesting(ebtcTest);
-
         vm.stopBroadcast();
 
-        deployments.writeDeployment(address(_storage), address(bridge), address(ebtc));
+        _submit(_storage, params);
+
+        return _storage;
     }
 
     function _mintForTesting(EBTCTest ebtc) public {
@@ -106,12 +137,8 @@ contract Deployer is Script {
         ebtc.mintForTest(withdrawer, 100 ** ebtc.decimals());
     }
 
-    function _submit(StorageSetupInfo memory params, bool useTestnet) public {
+    function _submit(IStorage _storage, StorageSetupInfo memory params) public {
         uint256 privateKey = vm.envUint("PRIVATE_KEY_0");
-
-        (address storageAddress,,) = deployments.getLastRunDeployment();
-        IStorage _storage = useTestnet ? StorageTestnet(storageAddress) : Storage(storageAddress);
-
         vm.startBroadcast(privateKey);
         _storage.submit(params.headers, params.startHeight);
         vm.stopBroadcast();
