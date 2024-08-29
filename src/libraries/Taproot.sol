@@ -55,7 +55,7 @@ library Taproot {
         }
     }
 
-    function createTaprootAddress(bytes32 internalKey, bytes1 parity, bytes[] memory scripts)
+    function createTaprootAddress(bytes32 internalKey, uint8 parity, bytes[] memory scripts)
         public
         pure
         returns (bytes32)
@@ -80,9 +80,9 @@ library Taproot {
         return outputKey;
     }
 
-    function publicKeyToPoint(bytes32 pubKey, bytes1 parity) internal pure returns (uint256, uint256) {
+    function publicKeyToPoint(bytes32 pubKey, uint8 parity) internal pure returns (uint256, uint256) {
         uint256 x = uint256(pubKey);
-        uint256 y = EllipticCurve.deriveY(uint8(parity), x, SECP256K1_A, SECP256K1_B, SECP256K1_P);
+        uint256 y = EllipticCurve.deriveY(parity, x, SECP256K1_A, SECP256K1_B, SECP256K1_P);
         return (x, y);
     }
 

@@ -36,11 +36,12 @@ library Script {
     bytes1 constant OP_PUSHDATA2 = 0x4d;
     bytes1 constant OP_PUSHDATA4 = 0x4e;
 
+    // BIP340 always uses even Y-coordinates
+    uint8 constant BIP340_PARITY = 0x02;
     bytes16 private constant HEX_DIGITS = "0123456789abcdef";
 
-    function generatePreSignScriptForTaproot(bytes32 nOfNPubKey) internal pure returns (bytes memory) {
-        bytes memory script = abi.encodePacked(OP_PUSHBYTES_32, nOfNPubKey, OP_CHECKSIG);
-        return script;
+    function generatePreSignLeaf(bytes32 nOfNPubKey) internal pure returns (bytes memory) {
+        return abi.encodePacked(encodeData(bytes.concat(nOfNPubKey)), OP_CHECKSIG);
     }
 
     function generateTimelockLeaf(bytes32 pubKey, uint32 blocks) internal pure returns (bytes memory) {
@@ -89,28 +90,24 @@ library Script {
     }
 
     function generateDepositTaprootAddress(
-        bytes calldata nOfNPubKey,
+        bytes32 nOfNPubKey,
         address depositorAddress,
-        bytes calldata depositorPubKey,
+        bytes32 depositorPubKey,
         uint32 lockDuration
     ) public pure returns (bytes32) {
-        (bytes32 nOfNPubKeyXOnly,) = nOfNPubKey.toXOnly();
-        (bytes32 depositorPubKeyXOnly, bytes1 parity) = depositorPubKey.toXOnly();
-
-        bytes memory timelockScript = generateTimelockLeaf(depositorPubKeyXOnly, lockDuration);
-        bytes memory depositScript = generateDepositScript(nOfNPubKeyXOnly, depositorAddress, depositorPubKeyXOnly);
+        bytes memory timelockScript = generateTimelockLeaf(depositorPubKey, lockDuration);
+        bytes memory depositScript = generateDepositScript(nOfNPubKey, depositorAddress, depositorPubKey);
         bytes[] memory scripts = new bytes[](2);
         scripts[0] = timelockScript;
         scripts[1] = depositScript;
-        return depositorPubKeyXOnly.createTaprootAddress(parity, scripts);
+        return depositorPubKey.createTaprootAddress(BIP340_PARITY, scripts);
     }
 
-    function generateConfirmTaprootAddress(bytes calldata nOfNPubKey) public pure returns (bytes32) {
-        (bytes32 nOfNPubKeyXOnly, bytes1 parity) = nOfNPubKey.toXOnly();
-        bytes memory preSignScript = generatePreSignScriptForTaproot(nOfNPubKeyXOnly);
+    function generateConfirmTaprootAddress(bytes32 nOfNPubKey) public pure returns (bytes32) {
+        bytes memory preSignScript = generatePreSignLeaf(nOfNPubKey);
         bytes[] memory scripts = new bytes[](1);
         scripts[0] = preSignScript;
-        return nOfNPubKeyXOnly.createTaprootAddress(parity, scripts);
+        return nOfNPubKey.createTaprootAddress(BIP340_PARITY, scripts);
     }
 
     function generateP2WSHScriptPubKey(bytes memory witnessScript) internal pure returns (bytes memory) {

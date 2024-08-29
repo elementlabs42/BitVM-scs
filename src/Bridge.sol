@@ -35,25 +35,23 @@ contract Bridge is IBridge {
     mapping(bytes32 txId => bool) pegIns;
     EBTC ebtc;
     IStorage blockStorage;
-    bytes nOfNPubKey;
+    bytes32 nOfNPubKey;
     bytes4 private version = 0x02000000;
     bytes4 private locktime = 0x00000000;
 
-    constructor(EBTC _ebtc, IStorage _blockStorage, bytes memory _nOfNPubKey) {
+    constructor(EBTC _ebtc, IStorage _blockStorage, bytes32 _nOfNPubKey) {
         ebtc = _ebtc;
         blockStorage = _blockStorage;
         nOfNPubKey = _nOfNPubKey;
         // difficult from block 855614(90666502495565) and 2016 blocks two weeks
         difficultyThreshold = 182783669031059040;
+        // two weeks block count
         pegInTimelock = 2016;
     }
 
-    function pegIn(
-        address depositor,
-        bytes calldata depositorPubKey,
-        ProofInfo calldata proof1,
-        ProofInfo calldata proof2
-    ) external {
+    function pegIn(address depositor, bytes32 depositorPubKey, ProofInfo calldata proof1, ProofInfo calldata proof2)
+        external
+    {
         if (isPegInExist(proof1.txId)) {
             revert PegInInvalid();
         }

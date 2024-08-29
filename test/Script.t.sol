@@ -6,12 +6,12 @@ import "../src/libraries/Script.sol";
 import "./utils/Util.sol";
 
 contract ScriptTest is Test {
-    using Script for bytes;
+    using Script for bytes32;
 
-    bytes nOfNPubKey = hex"02d0f30e3182fa18e4975996dbaaa5bfb7d9b15c6d5b57f9f7e5f5e046829d62a4";
+    bytes32 nOfNPubKey = hex"d0f30e3182fa18e4975996dbaaa5bfb7d9b15c6d5b57f9f7e5f5e046829d62a4";
 
     function testScript_generateDepositTaprootAddress() public view {
-        bytes memory userPubKey = hex"02edf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301b";
+        bytes32 userPubKey = hex"edf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301b";
         {
             address evmAddress = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
             uint32 time = 2;

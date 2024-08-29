@@ -12,16 +12,16 @@ contract TestData is FileBase {
         reload(JSON_PATH);
     }
 
-    function nOfNPubKey() public view validated returns (bytes memory) {
-        return abi.decode(vm.parseJson(content, ".pegIn.nOfNPubKey"), (bytes));
+    function nOfNPubKey() public view validated returns (bytes32) {
+        return abi.decode(vm.parseJson(content, ".pegIn.nOfNPubKey"), (bytes32));
     }
 
     function depositor() public view validated returns (address) {
         return abi.decode(vm.parseJson(content, ".pegIn.depositor"), (address));
     }
 
-    function depositorPubKey() public view validated returns (bytes memory) {
-        return abi.decode(vm.parseJson(content, ".pegIn.depositorPubKey"), (bytes));
+    function depositorPubKey() public view validated returns (bytes32) {
+        return abi.decode(vm.parseJson(content, ".pegIn.depositorPubKey"), (bytes32));
     }
 
     function pegInAmount() public view validated returns (uint256) {
