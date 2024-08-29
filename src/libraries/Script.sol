@@ -40,14 +40,14 @@ library Script {
     uint8 constant BIP340_PARITY = 0x02;
     bytes16 private constant HEX_DIGITS = "0123456789abcdef";
 
-    function generatePreSignLeaf(bytes32 nOfNPubKey) internal pure returns (bytes memory) {
-        return abi.encodePacked(encodeData(bytes.concat(nOfNPubKey)), OP_CHECKSIG);
-    }
-
     function generateTimelockLeaf(bytes32 pubKey, uint32 blocks) internal pure returns (bytes memory) {
         return abi.encodePacked(
             encodeNumber(blocks), OP_CHECKSEQUENCEVERIFY, OP_DROP, encodeData(bytes.concat(pubKey)), OP_CHECKSIG
         );
+    }
+
+    function generatePreSignLeaf(bytes32 nOfNPubKey) internal pure returns (bytes memory) {
+        return abi.encodePacked(encodeData(bytes.concat(nOfNPubKey)), OP_CHECKSIG);
     }
 
     function generateDepositScript(bytes32 nOfNPubKey, address evmAddress, bytes32 depositorPubKey)
@@ -103,7 +103,7 @@ library Script {
         return depositorPubKey.createTaprootAddress(BIP340_PARITY, scripts);
     }
 
-    function generateConfirmTaprootAddress(bytes32 nOfNPubKey) public pure returns (bytes32) {
+    function generateConfirmTaprootAddress(bytes32 nOfNPubKey) internal pure returns (bytes32) {
         bytes memory preSignScript = generatePreSignLeaf(nOfNPubKey);
         bytes[] memory scripts = new bytes[](1);
         scripts[0] = preSignScript;
