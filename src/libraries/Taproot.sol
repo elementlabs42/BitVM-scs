@@ -94,12 +94,14 @@ library Taproot {
             while (hashes.length > 1) {
                 uint256 newLength = (hashes.length + 1) / 2;
                 bytes32[] memory newHashes = new bytes32[](newLength);
-                for (uint256 i; i < newLength; ++i) {
-                    if (2 * i + 1 < hashes.length) {
-                        newHashes[i] = tapbranchTaggedHash(hashes[2 * i], hashes[2 * i + 1]);
+                uint256 j;
+                for (uint256 i; i < hashes.length; i += 2) {
+                    if (i + 1 < hashes.length) {
+                        newHashes[j] = tapbranchTaggedHash(hashes[i], hashes[i + 1]);
                     } else {
-                        newHashes[i] = tapbranchTaggedHash(hashes[2 * i], hashes[2 * i]);
+                        newHashes[j] = hashes[i];
                     }
+                    j++;
                 }
                 hashes = newHashes;
             }
