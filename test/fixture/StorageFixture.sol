@@ -63,7 +63,10 @@ contract StorageFixture is Test {
             IStorage.Epoch(bytes4(Endian.reverse32(params.bits)), params.epochTimestamp)
         );
         vm.prank(submitter);
+        uint256 gas = gasleft();
         _storage.submit(params.headers, params.startHeight);
+        uint256 gasUsed = gas - gasleft();
+        console.log("Submit gas used: ", gasUsed);
 
         vm.startPrank(owner);
         EBTC ebtc = new EBTC(address(0));

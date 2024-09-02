@@ -38,11 +38,17 @@ contract PegOutTest is StorageFixture {
         vm.startPrank(withdrawer);
         vm.expectEmit(true, true, true, true, address(bridge));
         emit IBridge.PegOutInitiated(withdrawer, withdrawerAddr, Outpoint(hex"1234", 0), 131072, OPERATOR_PUBKEY);
+        uint256 gas = gasleft();
         bridge.pegOut(withdrawerAddr, Outpoint(hex"1234", 0), 131072, OPERATOR_PUBKEY);
+        uint256 gasUsed = gas - gasleft();
+        console.log("pegOut gas used: ", gasUsed);
         vm.stopPrank();
 
         vm.prank(operator);
+        gas = gasleft();
         bridge.burnEBTC(withdrawer, proof);
+        gasUsed = gas - gasleft();
+        console.log("burnEBTC gas used: ", gasUsed);
     }
 
     function testPegOut_pegOut_insufficientAccumulatedDifficulty() public {
@@ -85,16 +91,22 @@ contract PegOutTest is StorageFixture {
         ProofInfo memory proof = Util.paramToProof(proofParam, false);
 
         string memory withdrawerAddr = Util.generateAddress(data.withdrawerPubKey(), Util.P2PKH_TESTNET);
+        uint256 pegOutAmount = data.pegOutAmount();
+        bytes memory operatorPubKey = data.operatorPubKey();
         vm.warp(data.pegOutTimestamp());
         vm.startPrank(withdrawer);
         vm.expectEmit(true, true, true, true, address(bridge));
-        emit IBridge.PegOutInitiated(
-            withdrawer, withdrawerAddr, Outpoint(hex"1234", 0), data.pegOutAmount(), data.operatorPubKey()
-        );
-        bridge.pegOut(withdrawerAddr, Outpoint(hex"1234", 0), data.pegOutAmount(), data.operatorPubKey());
+        emit IBridge.PegOutInitiated(withdrawer, withdrawerAddr, Outpoint(hex"1234", 0), pegOutAmount, operatorPubKey);
+        uint256 gas = gasleft();
+        bridge.pegOut(withdrawerAddr, Outpoint(hex"1234", 0), pegOutAmount, operatorPubKey);
+        uint256 gasUsed = gas - gasleft();
+        console.log("pegOut gas used: ", gasUsed);
         vm.stopPrank();
 
         vm.prank(operator);
+        gas = gasleft();
         bridge.burnEBTC(withdrawer, proof);
+        gasUsed = gas - gasleft();
+        console.log("burnEBTC gas used: ", gasUsed);
     }
 }
