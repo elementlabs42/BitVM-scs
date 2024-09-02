@@ -19,23 +19,8 @@ forge test -vv --match-test testPegOut_pegOut_file
 ```
 
 ## Test with Anvil
-Start anvil, then run script with sig arg as: 'runTestnet', 'submitTestnet', 'pegOut'
+Start anvil, then run script with sig arg as: 'runTestnet', 'pegOut', 'burnEBTC'
 ```bash
 anvil -f https://mainnet.infura.io/v3/<API_KEY> --fork-block-number <BLOCK_NUM>
 forge script script/Deployer.s.sol:Deployer --slow --sig "<FUNCTION_NAME>" --broadcast --rpc-url ${RPC_URL_ANVIL}
 ```
-
-<del>
-
-## Deploy script
-```bash
-source .env
-forge script deploy/Deployer.s.sol:Deployer --broadcast --verify --rpc-url <${RPC_URL_SEPOLIA} | ${RPC_URL_MAINNET}>
-```
-
-## Deploy script with BT Testnet support
-```bash
-source .env
-forge script deploy/Deployer.s.sol:Deployer --sig "testnet()" --broadcast --verify --rpc-url <${RPC_URL_SEPOLIA} | ${RPC_URL_MAINNET}>
-```
-</del>
