@@ -37,6 +37,7 @@
     },
     "depositor": "",
     "depositorPubKey": "",
+    "timelock": 0,
     "amount": 0,
     "nOfNPubKey": ""
   },
@@ -70,6 +71,7 @@
     "withdrawer": "",
     "pegOutTimestamp": 0,
     "amount": 0,
+    "withdrawerPubKey": "",
     "operatorPubKey": "",
     "nOfNPubKey": ""
   }

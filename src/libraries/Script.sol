@@ -8,6 +8,7 @@ import "./TypedMemView.sol";
 
 library Script {
     using Taproot for bytes32;
+    using Taproot for bytes;
     using {toChecksumHexString} for address;
     using TypedMemView for bytes;
     using TypedMemView for bytes29;
@@ -30,24 +31,14 @@ library Script {
     bytes1 constant OP_EQUAL = 0x87;
     bytes1 constant OP_CHECKSIGVERIFY = 0xAD;
 
+    bytes1 constant OP_PUSHBYTES_32 = 0x20;
     bytes1 constant OP_PUSHDATA1 = 0x4c;
     bytes1 constant OP_PUSHDATA2 = 0x4d;
     bytes1 constant OP_PUSHDATA4 = 0x4e;
 
+    // BIP340 always uses even Y-coordinates
+    uint8 constant BIP340_PARITY = 0x02;
     bytes16 private constant HEX_DIGITS = "0123456789abcdef";
-
-    function generateScript(bytes memory script) internal pure returns (bytes memory) {
-        uint8 scriptLength = uint8(script.length);
-        return abi.encodePacked(scriptLength, VERSION, script);
-    }
-
-    function generatePreSignScript(bytes32 nOfNPubKey) internal pure returns (bytes memory) {
-        return generateScript(abi.encodePacked(nOfNPubKey, OP_CHECKSIG));
-    }
-
-    function generatePreSignScriptAddress(bytes32 nOfNPubKey) internal pure returns (bytes memory) {
-        return generateP2WSHScriptPubKey(generatePreSignScript(nOfNPubKey));
-    }
 
     function generateTimelockLeaf(bytes32 pubKey, uint32 blocks) internal pure returns (bytes memory) {
         return abi.encodePacked(
@@ -100,31 +91,29 @@ library Script {
 
     function generateDepositTaprootAddress(
         bytes32 nOfNPubKey,
-        address evmAddress,
+        address depositorAddress,
         bytes32 depositorPubKey,
         uint32 lockDuration
-    ) internal pure returns (bytes32) {
+    ) public pure returns (bytes32) {
         bytes memory timelockScript = generateTimelockLeaf(depositorPubKey, lockDuration);
-        bytes memory depositScript = generateDepositScript(nOfNPubKey, evmAddress, depositorPubKey);
+        bytes memory depositScript = generateDepositScript(nOfNPubKey, depositorAddress, depositorPubKey);
         bytes[] memory scripts = new bytes[](2);
         scripts[0] = timelockScript;
         scripts[1] = depositScript;
-        return depositorPubKey.createTaprootAddress(scripts);
+        return depositorPubKey.createTaprootAddress(BIP340_PARITY, scripts);
     }
 
     function generateConfirmTaprootAddress(bytes32 nOfNPubKey) internal pure returns (bytes32) {
         bytes memory preSignScript = generatePreSignLeaf(nOfNPubKey);
         bytes[] memory scripts = new bytes[](1);
         scripts[0] = preSignScript;
-        return nOfNPubKey.createTaprootAddress(scripts);
+        return nOfNPubKey.createTaprootAddress(BIP340_PARITY, scripts);
     }
 
     function generateP2WSHScriptPubKey(bytes memory witnessScript) internal pure returns (bytes memory) {
         bytes32 scriptHash = sha256(witnessScript);
-
-        bytes1 versionByte = 0x00;
-        bytes1 hashLength = 0x20;
-        return abi.encodePacked(versionByte, hashLength, scriptHash);
+        // 0x00: version byte, 0x20: hash length
+        return abi.encodePacked(bytes1(0x00), bytes1(0x20), scriptHash);
     }
 
     function toPubKeyHash(string memory addr) internal view returns (bytes memory) {
@@ -134,7 +123,7 @@ library Script {
     }
 
     function convertToScriptPubKey(bytes32 outputKey) public pure returns (bytes memory) {
-        return abi.encodePacked(bytes1(0x51), bytes1(0x20), outputKey);
+        return abi.encodePacked(OP_TRUE, OP_PUSHBYTES_32, outputKey);
     }
 
     function equals(bytes memory a, bytes memory b) internal pure returns (bool) {

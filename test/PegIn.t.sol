@@ -30,15 +30,19 @@ contract PegInTest is StorageFixture {
         ProofInfo memory proof1 = Util.paramToProof(proofParam1, false);
         ProofInfo memory proof2 = Util.paramToProof(proofParam2, false);
 
-        Bridge bridge = Bridge(fixture.bridge);
+        IBridge bridge = IBridge(fixture.bridge);
         address depositor = 0xDDdDddDdDdddDDddDDddDDDDdDdDDdDDdDDDDDDd;
         address operator = fixture.operator;
 
         vm.startPrank(operator);
         vm.expectEmit(true, true, true, true, address(bridge));
         emit IBridge.PegInMinted(depositor, 131072, DEPOSITOR_PUBKEY);
+        uint256 gas = gasleft();
         bridge.pegIn(depositor, DEPOSITOR_PUBKEY, proof1, proof2);
+        uint256 gasUsed = gas - gasleft();
+        console.log("pegIn gas used: ", gasUsed);
         vm.stopPrank();
+
         assertEq(true, true);
     }
 
@@ -55,13 +59,19 @@ contract PegInTest is StorageFixture {
         ProofInfo memory proof1 = Util.paramToProof(proofParam1, false);
         ProofInfo memory proof2 = Util.paramToProof(proofParam2, false);
 
-        Bridge bridge = Bridge(fixture.bridge);
+        IBridge bridge = IBridge(fixture.bridge);
         address operator = fixture.operator;
+        address depositor = data.depositor();
+        bytes32 depositorPubKey = data.depositorPubKey();
+        uint256 pegInAmount = data.pegInAmount();
 
         vm.startPrank(operator);
         vm.expectEmit(true, true, true, true, address(bridge));
-        emit IBridge.PegInMinted(data.depositor(), data.pegInAmount(), data.depositorPubKey());
-        bridge.pegIn(data.depositor(), data.depositorPubKey(), proof1, proof2);
+        emit IBridge.PegInMinted(depositor, pegInAmount, depositorPubKey);
+        uint256 gas = gasleft();
+        bridge.pegIn(depositor, depositorPubKey, proof1, proof2);
+        uint256 gasUsed = gas - gasleft();
+        console.log("pegIn gas used: ", gasUsed);
         vm.stopPrank();
 
         assertEq(true, true);

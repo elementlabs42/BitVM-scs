@@ -2,7 +2,7 @@
 pragma solidity ^0.8.26;
 
 import "forge-std/Base.sol";
-import "forge-std/stdJson.sol";
+import "forge-std/StdJson.sol";
 
 abstract contract FileBase is CommonBase {
     error InvalidContent();
@@ -26,5 +26,9 @@ abstract contract FileBase is CommonBase {
         } catch {
             valid = false;
         }
+    }
+
+    function node(string memory key) public view validated returns (bytes memory) {
+        return vm.parseJson(content, key);
     }
 }

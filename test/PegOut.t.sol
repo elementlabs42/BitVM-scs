@@ -27,7 +27,7 @@ contract PegOutTest is StorageFixture {
         StorageSetupInfo memory initNormal = getPegOutSetupInfoNormal();
         StorageSetupResult memory fixture = buildStorage(initNormal);
 
-        Bridge bridge = Bridge(fixture.bridge);
+        IBridge bridge = IBridge(fixture.bridge);
         address withdrawer = fixture.withdrawer;
         address operator = fixture.operator;
         ProofParam memory proofParam = getPegOutProofParamNormal();
@@ -38,11 +38,17 @@ contract PegOutTest is StorageFixture {
         vm.startPrank(withdrawer);
         vm.expectEmit(true, true, true, true, address(bridge));
         emit IBridge.PegOutInitiated(withdrawer, withdrawerAddr, Outpoint(hex"1234", 0), 131072, OPERATOR_PUBKEY);
+        uint256 gas = gasleft();
         bridge.pegOut(withdrawerAddr, Outpoint(hex"1234", 0), 131072, OPERATOR_PUBKEY);
+        uint256 gasUsed = gas - gasleft();
+        console.log("pegOut gas used: ", gasUsed);
         vm.stopPrank();
 
         vm.prank(operator);
+        gas = gasleft();
         bridge.burnEBTC(withdrawer, proof);
+        gasUsed = gas - gasleft();
+        console.log("burnEBTC gas used: ", gasUsed);
     }
 
     function testPegOut_pegOut_insufficientAccumulatedDifficulty() public {
@@ -54,7 +60,7 @@ contract PegOutTest is StorageFixture {
         initNormal.headers = Util.slice(initNormal.headers, 0, insufficientStorageLength);
         StorageSetupResult memory fixture = buildStorage(initNormal);
 
-        Bridge bridge = Bridge(fixture.bridge);
+        IBridge bridge = IBridge(fixture.bridge);
         address withdrawer = fixture.withdrawer;
         address operator = fixture.operator;
         ProofInfo memory proof = Util.paramToProof(proofParam, false);
@@ -78,23 +84,29 @@ contract PegOutTest is StorageFixture {
 
         StorageSetupResult memory fixture = buildStorageFromDataFile(data._storage(data.pegOutStorageKey()));
 
-        Bridge bridge = Bridge(fixture.bridge);
+        IBridge bridge = IBridge(fixture.bridge);
         address withdrawer = fixture.withdrawer;
         address operator = fixture.operator;
         ProofParam memory proofParam = data.proof(data.pegOutProofKey());
         ProofInfo memory proof = Util.paramToProof(proofParam, false);
 
-        string memory withdrawerAddr = Util.generateAddress(WITHDRAWER_PUBKEY, Util.P2PKH_TESTNET);
+        string memory withdrawerAddr = Util.generateAddress(data.withdrawerPubKey(), Util.P2PKH_TESTNET);
+        uint256 pegOutAmount = data.pegOutAmount();
+        bytes memory operatorPubKey = data.operatorPubKey();
         vm.warp(data.pegOutTimestamp());
         vm.startPrank(withdrawer);
         vm.expectEmit(true, true, true, true, address(bridge));
-        emit IBridge.PegOutInitiated(
-            withdrawer, withdrawerAddr, Outpoint(hex"1234", 0), data.pegOutAmount(), data.operatorPubKey()
-        );
-        bridge.pegOut(withdrawerAddr, Outpoint(hex"1234", 0), data.pegOutAmount(), data.operatorPubKey());
+        emit IBridge.PegOutInitiated(withdrawer, withdrawerAddr, Outpoint(hex"1234", 0), pegOutAmount, operatorPubKey);
+        uint256 gas = gasleft();
+        bridge.pegOut(withdrawerAddr, Outpoint(hex"1234", 0), pegOutAmount, operatorPubKey);
+        uint256 gasUsed = gas - gasleft();
+        console.log("pegOut gas used: ", gasUsed);
         vm.stopPrank();
 
         vm.prank(operator);
+        gas = gasleft();
         bridge.burnEBTC(withdrawer, proof);
+        gasUsed = gas - gasleft();
+        console.log("burnEBTC gas used: ", gasUsed);
     }
 }

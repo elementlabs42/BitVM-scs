@@ -5,6 +5,8 @@ pragma experimental ABIEncoderV2;
 import "./EllipticCurve.sol";
 
 library Taproot {
+    error InvalidCompressedPublicKey();
+
     using EllipticCurve for uint256;
 
     uint256 private constant SECP256K1_P = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F;
@@ -13,6 +15,15 @@ library Taproot {
     uint256 private constant SECP256K1_GX = 0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798;
     uint256 private constant SECP256K1_GY = 0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8;
     uint8 private constant LEAF_VERSION_TAPSCRIPT = 0xc0;
+    uint256 private constant COMPRESSED_PUBLICK_KEY_LENGTH = 33;
+
+    function toXOnly(bytes calldata pubKey) public pure returns (bytes32 xOnly, bytes1 parity) {
+        if (pubKey.length != COMPRESSED_PUBLICK_KEY_LENGTH) {
+            revert InvalidCompressedPublicKey();
+        }
+        xOnly = bytes32(pubKey[1:COMPRESSED_PUBLICK_KEY_LENGTH]);
+        parity = pubKey[0];
+    }
 
     function taggedHash(string memory tag, bytes memory m) internal pure returns (bytes32) {
         bytes32 tagHash = sha256(abi.encodePacked(tag));
@@ -44,16 +55,18 @@ library Taproot {
         }
     }
 
-    function createTaprootAddress(bytes32 n_of_n_pubkey, bytes[] memory scripts) public pure returns (bytes32) {
-        bytes32 internalKey = n_of_n_pubkey;
-
+    function createTaprootAddress(bytes32 internalKey, uint8 parity, bytes[] memory scripts)
+        public
+        pure
+        returns (bytes32)
+    {
         bytes32 merkleRootHash = merkleRoot(scripts);
 
         bytes32 tweak = taggedHash("TapTweak", abi.encodePacked(internalKey, merkleRootHash));
         uint256 tweakInt = uint256(tweak);
 
         // Convert internalKey to elliptic curve point
-        (uint256 px, uint256 py) = publicKeyToPoint(internalKey);
+        (uint256 px, uint256 py) = publicKeyToPoint(internalKey, parity);
 
         // Compute H(P|c)G
         (uint256 gx, uint256 gy) = EllipticCurve.ecMul(tweakInt, SECP256K1_GX, SECP256K1_GY, SECP256K1_A, SECP256K1_P);
@@ -67,9 +80,9 @@ library Taproot {
         return outputKey;
     }
 
-    function publicKeyToPoint(bytes32 pubKey) internal pure returns (uint256, uint256) {
+    function publicKeyToPoint(bytes32 pubKey, uint8 parity) internal pure returns (uint256, uint256) {
         uint256 x = uint256(pubKey);
-        uint256 y = EllipticCurve.deriveY(0x02, x, SECP256K1_A, SECP256K1_B, SECP256K1_P);
+        uint256 y = EllipticCurve.deriveY(parity, x, SECP256K1_A, SECP256K1_B, SECP256K1_P);
         return (x, y);
     }
 
@@ -79,7 +92,8 @@ library Taproot {
         }
 
         if (scripts.length == 1) {
-            return tapleafTaggedHash(scripts[0]);
+            bytes32 tapLeaf = tapleafTaggedHash(scripts[0]);
+            return tapLeaf;
         }
 
         if (scripts.length == 2) {

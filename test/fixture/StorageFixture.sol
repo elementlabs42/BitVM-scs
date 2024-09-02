@@ -33,7 +33,7 @@ struct StorageSetupResult {
 contract StorageFixture is Test {
     uint256 constant DEFAULT_STEP = 10;
     bytes32 constant N_OF_N_PUBKEY = 0x8b839569cde368894237913fe4fbd25d75eaf1ed019a39d479e693dac35be19e;
-    bytes32 constant OPERATOR_PUBKEY = 0x58f54b8ba6af3f25b9bafaaf881060eafb761c6579c22eab31161d29e387bcc0;
+    bytes constant OPERATOR_PUBKEY = hex"03484db4a2950d63da8455a1b705b39715e4075dd33511d0c7e3ce308c93449deb";
     bytes constant WITHDRAWER_PUBKEY = hex"02f80c9d1ef9ff640df2058c431c282299f48424480d34f1bade2274746fb4df8b";
     bytes32 constant DEPOSITOR_PUBKEY = hex"edf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301b";
 
@@ -50,6 +50,8 @@ contract StorageFixture is Test {
         returns (StorageSetupResult memory)
     {
         address _withdrawer = useDataFile ? data.withdrawer() : withdrawer;
+        uint32 peginTimelock = useDataFile ? data.pegInTimelock() : 1;
+        bytes32 nOfNPubKey = useDataFile ? data.nOfNPubKey() : N_OF_N_PUBKEY;
 
         vm.deal(owner, 100 ether);
 
@@ -61,11 +63,14 @@ contract StorageFixture is Test {
             IStorage.Epoch(bytes4(Endian.reverse32(params.bits)), params.epochTimestamp)
         );
         vm.prank(submitter);
+        uint256 gas = gasleft();
         _storage.submit(params.headers, params.startHeight);
+        uint256 gasUsed = gas - gasleft();
+        console.log("Submit gas used: ", gasUsed);
 
         vm.startPrank(owner);
         EBTC ebtc = new EBTC(address(0));
-        Bridge bridge = new BridgeTestnet(ebtc, _storage, N_OF_N_PUBKEY, 1);
+        IBridge bridge = new BridgeTestnet(ebtc, _storage, nOfNPubKey, peginTimelock);
         ebtc.setBridge(address(bridge));
         vm.stopPrank();
 

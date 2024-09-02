@@ -1,13 +1,15 @@
 [profile.default]
 src = "src"
 out = "out"
+script = "script"
 libs = ["lib"]
 solc_version = "0.8.26"
-fs_permissions = [{ access = "read", path = "./test/fixture"}, { access = "read-write", path = "./deploy"}]
+fs_permissions = [{ access = "read", path = "./test/fixture"}, { access = "read-write", path = "./script"}]
 
 [rpc_endpoints]
 mainnet = '${RPC_URL_MAINNET}'
 sepolia = '${RPC_URL_SEPOLIA}'
+anvil = '${RPC_URL_ANVIL}'
 
 [etherscan]
 mainnet = { key = "${ETHERSCAN_KEY_MAINNET}", chain = "mainnet" }
