@@ -12,7 +12,7 @@ import {StorageFixture, StorageSetupInfo} from "../test/fixture/StorageFixture.s
 import {Outpoint, ProofInfo} from "../src/interfaces/IBridge.sol";
 import "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
-contract Deployer is Script {
+contract End2End is Script {
     TestData data;
     DeploymentsFile deployments;
 
