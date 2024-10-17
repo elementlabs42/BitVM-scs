@@ -46,6 +46,30 @@ contract PegInTest is StorageFixture {
         assertEq(true, true);
     }
 
+    function testPegIn_pegIn_PegInInvalid() public {
+        StorageSetupInfo memory initNormal = getNormalSetupInfo();
+        StorageSetupResult memory fixture = buildStorage(initNormal);
+
+        ProofParam memory proofParam1 = getPegInProofParamNormal(1);
+        ProofParam memory proofParam2 = getPegInProofParamNormal(2);
+
+        ProofInfo memory proof1 = Util.paramToProof(proofParam1, false);
+        ProofInfo memory proof2 = Util.paramToProof(proofParam2, false);
+
+        IBridge bridge = IBridge(fixture.bridge);
+        address depositor = 0xDDdDddDdDdddDDddDDddDDDDdDdDDdDDdDDDDDDd;
+        address operator = fixture.operator;
+
+        vm.startPrank(operator);
+        bridge.pegIn(depositor, DEPOSITOR_PUBKEY, proof1, proof2);
+
+        vm.expectRevert(abi.encodeWithSelector(IBridge.PegInInvalid.selector));
+        bridge.pegIn(depositor, DEPOSITOR_PUBKEY, proof1, proof2);
+        vm.stopPrank();
+
+        assertEq(IERC20(fixture.ebtc).balanceOf(depositor), 131072);
+    }
+
     function testPegIn_pegIn_file() public {
         if (!data.valid()) {
             console.log("Invalid Data file");
