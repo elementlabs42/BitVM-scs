@@ -21,7 +21,7 @@ contract End2End is Script {
         if (!data.valid()) {
             revert("Invalid Data file");
         }
-        deployments = new DeploymentsFile();
+        deployments = new DeploymentsFile(new Chain[](0));
     }
 
     function run() public {
