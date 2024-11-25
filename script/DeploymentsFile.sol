@@ -24,7 +24,7 @@ contract DeploymentsFile is FileBase, StdChains {
 
     function writeDeployment(address _storageAddress, address _bridgeAddress, address ebtcAddress) public {
         string memory chain = getChain(block.chainid).name;
-        string memory timestamp = vm.toString(block.timestamp);
+        string memory timestamp = vm.toString(vm.unixTime());
         string memory oldContent = content;
         loadOldContent(oldContent);
 
