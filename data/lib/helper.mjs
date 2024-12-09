@@ -12,12 +12,14 @@ const TEST_DATA_SAMPLE_FILE = path.join(__dirname, '../../test/fixture/test-data
 export const TEST_DATA_FILE = path.join(__dirname, '../../test/fixture/test-data.json')
 
 export const SHARED_DATA = {
-  depositorEvmAddress: '0xDDdDddDdDdddDDddDDddDDDDdDdDDdDDdDDDDDDd',
+  depositorEvmAddress: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8', //anvil 1
   pegInTimelock: 1,
   pegInValue: 131072,
   depositorPubKey: '0xedf074e2780407ed6ff9e291b8617ee4b4b8d7623e85b58318666f33a422301b',
-  withdrawerEvmAddress: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-  pegOutValue: 131072,
+  // withdrawerEvmAddress: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+  withdrawerEvmAddress: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8', //anvil 1
+  // withdrawerEvmAddress: '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC', //anvil 2
+  pegOutValue: 131072, //TODO: remove this, should get it in prevout
   pegOutTimestamp: 1722328130,
   withdrawerPubKey: '0x02f80c9d1ef9ff640df2058c431c282299f48424480d34f1bade2274746fb4df8b',
   operatorPubKey: '0x03484db4a2950d63da8455a1b705b39715e4075dd33511d0c7e3ce308c93449deb',

@@ -2,14 +2,14 @@
 pragma solidity ^0.8.26;
 
 import "forge-std/Script.sol";
-import "../test/mockup/EBTCTest.sol";
-import "../test/mockup/StorageTestnet.sol";
-import "../test/mockup/BridgeTestnet.sol";
-import {Util} from "../test/utils/Util.sol";
-import {TestData} from "../test/fixture/TestData.sol";
-import {DeploymentsFile} from "./DeploymentsFile.sol";
-import {StorageFixture, StorageSetupInfo} from "../test/fixture/StorageFixture.sol";
-import {Outpoint, ProofInfo} from "../src/interfaces/IBridge.sol";
+import "../../test/mockup/EBTCTest.sol";
+import "../../test/mockup/StorageTestnet.sol";
+import "../../test/mockup/BridgeTestnet.sol";
+import {Util} from "../../test/utils/Util.sol";
+import {TestData} from "../../test/fixture/TestData.sol";
+import {DeploymentsFile} from "../DeploymentsFile.sol";
+import {StorageFixture, StorageSetupInfo} from "../../test/fixture/StorageFixture.sol";
+import {Outpoint, ProofInfo} from "../../src/interfaces/IBridge.sol";
 import "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 contract End2End is Script {

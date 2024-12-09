@@ -12,6 +12,10 @@ const BLOCKSTREAM_BLOCK_CHUNK_SIZE = 10
 const MUTINYNET_API_URL = 'https://www.mutinynet.com/api'
 const MUTINYNET_BLOCK_CHUNK_SIZE = 10
 
+// local regtest network
+const LOCAL_REGTEST_API_URL = 'http://127.0.0.1:8094/regtest/api'
+const LOCAL_REGTEST_BLOCK_CHUNK_SIZE = 10
+
 const getAPIs = (baseUrl, blockChunkSize) => {
   return {
     blockChunkSize,
@@ -30,6 +34,8 @@ export const getProvider = (providerId) => {
       return getAPIs(BLOCKSTREAM_API_URL, BLOCKSTREAM_BLOCK_CHUNK_SIZE)
     case 2:
       return getAPIs(MUTINYNET_API_URL, MUTINYNET_BLOCK_CHUNK_SIZE)
+    case 3:
+      return getAPIs(LOCAL_REGTEST_API_URL, LOCAL_REGTEST_BLOCK_CHUNK_SIZE)
     default:
       throw new Error(`unknown provider id ${providerId}`)
   }
