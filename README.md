@@ -34,10 +34,10 @@ forge script script/Test.s.sol:End2End --slow --sig "<FUNCTION_NAME>" --broadcas
 
 ## Test for UI
 1. Start Anvil forking mainnet, use anvil dev account private keys for PRIVATE_KEY_0 and PRIVATE_KEY_1 in .env
-2. run script TestForUI.s.sol to deploy bridge and eBtc<br>
+2. run deployment script to deploy bridge and eBtc<br>
 *Try removing cache file if deployment fails*
 ```bash
-anvil --chain-id <CHAIN_ID> --state <CACHE_FILE_PATH> -f https://mainnet.infura.io/v3/<API_KEY>
+anvil --chain-id 831337 --state <CACHE_FILE_PATH> -f https://mainnet.infura.io/v3/<API_KEY>
 
 source .env
 forge script script/e2e/0.Deployment.s.sol:End2End --broadcast --rpc-url ${RPC_URL_ANVIL}
@@ -55,7 +55,7 @@ cargo test -- --nocapture --ignored test_e2e_0
 ```bash
 cargo test -- --nocapture --ignored test_e2e_1
 ``` 
-7. Fetch data from local regtest and burn eBTC
+7. Fetch data from local regtest and reset storage
 ```bash
 node script/fetchTestDataPegOut.mjs 3 <pegOutTxId>
 forge script script/e2e/1.BurnEBTC.s.sol:End2End --broadcast --rpc-url ${RPC_URL_ANVIL}
