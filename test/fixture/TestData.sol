@@ -65,7 +65,7 @@ contract TestData is FileBase {
     }
 
     function proof(string memory keyPrefix) public view validated returns (ProofParam memory) {
-        bytes memory merkleProof = abi.decode(node(string.concat(keyPrefix, ".merkleProof")), (bytes));
+        bytes memory merkleProof = node(string.concat(keyPrefix, ".merkleProof"));
         bytes memory parents = abi.decode(node(string.concat(keyPrefix, ".parents")), (bytes));
         bytes memory children = abi.decode(node(string.concat(keyPrefix, ".children")), (bytes));
         bytes memory rawTx = abi.decode(node(string.concat(keyPrefix, ".rawTx")), (bytes));

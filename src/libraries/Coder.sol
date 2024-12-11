@@ -14,6 +14,7 @@ library Coder {
     uint256 public constant BLOCK_HEADER_LENGTH = 80;
     uint256 public constant MAX_TARGET = 0x00000000FFFF0000000000000000000000000000000000000000000000000000;
     uint256 public constant DIFFICULTY_PRECISION = 10 ** 6;
+    uint256 public constant DIFFICULTY_PRECISION_TESTNET = 10 ** 18;
     uint32 public constant EPOCH_BLOCK_COUNT = 2016;
     uint32 public constant EPOCH_TARGET_TIMESPAN = 10 * 60 * EPOCH_BLOCK_COUNT;
 
@@ -54,7 +55,12 @@ library Coder {
     }
 
     function toDifficulty(uint256 target) internal pure returns (uint256) {
-        return MAX_TARGET * DIFFICULTY_PRECISION / target;
+        if (MAX_TARGET >= target) {
+            return MAX_TARGET * DIFFICULTY_PRECISION / target;
+        } else {
+            // for testnet to prevent overflow
+            return DIFFICULTY_PRECISION_TESTNET / (target / MAX_TARGET);
+        }
     }
 
     function bitToDifficulty(bytes32 bits) internal pure returns (uint256) {

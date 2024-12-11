@@ -10,17 +10,21 @@ contract DeploymentsFile is FileBase, StdChains {
     string public constant DEPLOYMENTS_PATH = "script/Deployments.json";
     string private constant ROOT_KEY = "deployments";
 
-    constructor() {
+    constructor(Chain[] memory customChains) {
         reload(DEPLOYMENTS_PATH);
         if (!valid) {
             vm.writeJson("{}", path);
             reload(DEPLOYMENTS_PATH);
         }
+
+        for (uint256 i = 0; i < customChains.length; i++) {
+            setChain(customChains[i].chainAlias, customChains[i]);
+        }
     }
 
     function writeDeployment(address _storageAddress, address _bridgeAddress, address ebtcAddress) public {
         string memory chain = getChain(block.chainid).name;
-        string memory timestamp = vm.toString(block.timestamp);
+        string memory timestamp = vm.toString(vm.unixTime());
         string memory oldContent = content;
         loadOldContent(oldContent);
 

@@ -38,6 +38,7 @@ contract Bridge is IBridge {
     bytes32 nOfNPubKey;
     bytes4 private version = 0x02000000;
     bytes4 private locktime = 0x00000000;
+    uint256 private constant DUST_AMOUNT = 10000;
 
     constructor(EBTC _ebtc, IStorage _blockStorage, bytes32 _nOfNPubKey) {
         ebtc = _ebtc;
@@ -141,7 +142,7 @@ contract Bridge is IBridge {
         if (!txOut.scriptPubkeyWithoutLength().equals(inscriptionScript.generateP2WSHScriptPubKey())) {
             revert InvalidPegOutProofScriptPubKey();
         }
-        if (txOut.value() != info.amount) {
+        if (txOut.value() != info.amount - DUST_AMOUNT) {
             revert InvalidPegOutProofAmount();
         }
         bytes32 txId = ViewSPV.calculateTxId(

@@ -6,7 +6,7 @@ import { getProvider } from './lib/provider.mjs'
 import { reverseBytesNArray, BLOCK_HEADER_BYTES, EPOCH_BLOCK_COUNT } from './lib/coder.mjs'
 import { getBlockInfoByHeight, getTransactionInfo } from './lib/api.mjs'
 
-  // usage: `node script/fetchTestDataPegOut.mjs <provider> <txId>`
+  // usage: `node script/fetchTestDataPegOut.mjs <provider> <pegOutTxId>`
   ; (async () => {
     const providerId = parseInt(process.argv[2])
     const provider = getProvider(providerId)
@@ -57,7 +57,8 @@ import { getBlockInfoByHeight, getTransactionInfo } from './lib/api.mjs'
 
     testData.pegOut.withdrawer = SHARED_DATA.withdrawerEvmAddress
     testData.pegOut.pegOutTimestamp = SHARED_DATA.pegOutTimestamp
-    testData.pegOut.amount = SHARED_DATA.pegOutValue
+    // testData.pegOut.amount = SHARED_DATA.pegOutValue
+    testData.pegOut.amount = proofResult.proofInfo.vin[0].prevout.value
     testData.pegOut.withdrawerPubKey = SHARED_DATA.withdrawerPubKey
     testData.pegOut.operatorPubKey = SHARED_DATA.operatorPubKey
     testData.pegOut.nOfNPubKey = SHARED_DATA.nOfNPubKey
